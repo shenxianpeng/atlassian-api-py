@@ -1,6 +1,8 @@
 # Atlassian REST API Python Wrapper
 
-This library is a wrapper of Atlassian Rest APIs using Python, such as Jira(In progress), BitBucket(TODO), etc.
+![PyPI](https://img.shields.io/pypi/v/atlassian-api-py)
+
+This library is a wrapper of Atlassian Rest APIs written by Python, will support Jira(In progress), BitBucket(todo), etc.
 
 ## Purpose
 
@@ -15,4 +17,14 @@ from jira import JIRA
 jira = Jira(url='https://jira.atlassian.com', username='username', password='password')
 status = jira.get_status('TEST-001')
 print(status)
+```
+
+## Install from PyPI
+
+```bash
+# install
+$ pip install atlassian-api-py
+
+# upgrade
+$ pip install atlassian-api-py --upgrade
 ```
