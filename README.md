@@ -1,4 +1,4 @@
-# Atlassian Python APIs
+# Atlassian REST API Python Wrapper
 
 This library is a wrapper of Atlassian Rest APIs using Python, such as Jira(In progress), BitBucket(TODO), etc.
 
