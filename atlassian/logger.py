@@ -1,4 +1,22 @@
 import logging
+import sys
+import os
+from logging.handlers import RotatingFileHandler
+
+FORMATTER = logging.Formatter("%(asctime)s — %(name)s — %(levelname)s — %(message)s")
+LOG_FILE = 'logs/atlassian-api.log'
+
+
+def get_console_handler():
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(FORMATTER)
+    return console_handler
+
+
+def get_file_handler():
+    file_handler = RotatingFileHandler(filename=LOG_FILE, backupCount=1, encoding="utf-8")
+    file_handler.setFormatter(FORMATTER)
+    return file_handler
 
 
 def get_logger(name):
@@ -13,12 +31,10 @@ def get_logger(name):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    logger.addHandler(get_console_handler())
+    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+    logger.addHandler(get_file_handler())
 
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    logger.propagate = False
 
     return logger

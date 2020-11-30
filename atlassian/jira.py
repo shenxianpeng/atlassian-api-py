@@ -1,3 +1,4 @@
+import configparser
 from atlassian.client import AtlassianAPI
 
 
@@ -13,7 +14,13 @@ class Jira(AtlassianAPI):
 
 
 if __name__ == '__main__':
+    config = configparser.ConfigParser()
+    config.read('config.ini')
 
-    jira = Jira(url='https://jira.rocketsoftware.com', username='username', password='password')
+    jira_url = config['jira']['url']
+    jira_usr = config['jira']['username']
+    jira_psw = config['jira']['password']
+
+    jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
     status = jira.get_status('MVQA-901')
     print(status)
