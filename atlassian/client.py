@@ -32,6 +32,17 @@ class AtlassianAPI:
     def _create_basic_session(self, username, password):
         self._session.auth = (username, password)
 
+    @staticmethod
+    def _response_handler(response):
+        try:
+            return response.json()
+        except ValueError:
+            logger.debug("Received response with no content.")
+            return None
+        except Exception as e:
+            logger.error(e)
+            return None
+
     def close(self):
         return self._session.close()
 
@@ -55,4 +66,11 @@ class AtlassianAPI:
             logger.error(e)
             return response.text
 
+    def post(self, path, data=None, json=None):
+        response = self.request("POST", path, data=data, json=json)
+        return self._response_handler(response)
+
+    def delete(self, path, data=None):
+        response = self.request("DELETE", path, data=data)
+        return self._response_handler(response)
 
