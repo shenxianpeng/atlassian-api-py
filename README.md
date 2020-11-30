@@ -11,8 +11,6 @@ This library is a wrapper of Atlassian Rest APIs written by Python, will support
 
 ## QuickStart
 
-### Pass credentail directll
-
 ```python
 from jira import JIRA
 
@@ -20,9 +18,7 @@ jira = Jira(url='https://jira.atlassian.com', username='username', password='pas
 status = jira.get_status('TEST-1')
 print(status)
 ```
-Or
-
-update `config.ini` file under atlassian folder, for example:
+Or update `config.ini` first which under atlassian folder
 
 ```markdown
 [jira]
