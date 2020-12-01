@@ -46,18 +46,24 @@ class AtlassianAPI:
     def close(self):
         return self._session.close()
 
-    def request(self, method='GET', path='', data=None, json=None):
+    def request(self, method='GET', path='', data=None, json=None, params=None):
         if path:
             url = self.url + path
         else:
             url = self.url
-        response = self._session.request(method=method, url=url, data=data, json=json, timeout=self.timeout)
+        response = self._session.request(
+            method=method,
+            url=url,
+            data=data,
+            json=json,
+            params=params,
+            timeout=self.timeout)
         response.encoding = 'utf-8'
         logger.debug("HTTP: {0} -> {1} {2}".format(method, response.status_code, response.reason))
         return response
 
-    def get(self, path, data=None):
-        response = self.request("GET", path, data=data)
+    def get(self, path, data=None, params=None):
+        response = self.request("GET", path, data=data, params=params)
         if not response.text:
             return None
         try:
@@ -66,11 +72,11 @@ class AtlassianAPI:
             logger.error(e)
             return response.text
 
-    def post(self, path, data=None, json=None):
-        response = self.request("POST", path, data=data, json=json)
+    def post(self, path, data=None, json=None, params=None):
+        response = self.request("POST", path, data=data, json=json, params=params)
         return self._response_handler(response)
 
-    def delete(self, path, data=None):
-        response = self.request("DELETE", path, data=data)
+    def delete(self, path, data=None, params=None):
+        response = self.request("DELETE", path, data=data, params=params)
         return self._response_handler(response)
 

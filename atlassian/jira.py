@@ -10,6 +10,7 @@ class Jira(AtlassianAPI):
     JIRA API Reference
     https://docs.atlassian.com/software/jira/docs/api/REST/7.6.1/
     """
+
     def get_id(self, issue_key):
         url = "/rest/api/2/issue/{issue_key}".format(issue_key=issue_key)
         return (self.get(url) or {}).get("id") or {}
@@ -103,6 +104,21 @@ class Jira(AtlassianAPI):
             }
         }
         return self.post(url, json=json)
+
+    def search_with_sql(self, jql, max_result=25):
+        url = '/rest/api/2/search'
+        json = {
+            "jql": jql,
+            "startAt": 0,
+            "maxResults": max_result,
+            "fields": [
+                "summary",
+                "status",
+                "issuetype",
+                "fixVersions"
+            ]
+        }
+        return self.post(url, json=json) or {}
 
 
 if __name__ == '__main__':
