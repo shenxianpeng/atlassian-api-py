@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/atlassian-api-py)](https://pypi.org/project/atlassian-api-py/)
 
-This library is a wrapper of Atlassian Rest APIs written by Python, will support Jira(In progress), BitBucket(todo), etc.
+This library is a wrapper of Atlassian Rest APIs written by Python, will support Jira, BitBucket, etc.
 
 ## Purpose
 
