@@ -76,6 +76,10 @@ class AtlassianAPI:
         response = self.request("POST", path, data=data, json=json, params=params)
         return self._response_handler(response)
 
+    def put(self, path, data=None, json=None, params=None):
+        response = self.request("PUT", path, data=data, json=json, params=params)
+        return self._response_handler(response)
+
     def delete(self, path, data=None, params=None):
         response = self.request("DELETE", path, data=data, params=params)
         return self._response_handler(response)

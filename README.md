@@ -15,7 +15,7 @@ This library is a wrapper of Atlassian Rest APIs written by Python, will support
 from jira import JIRA
 
 jira = Jira(url='https://jira.atlassian.com', username='username', password='password')
-status = jira.get_status('TEST-1')
+status = jira.get_issue_status('TEST-1')
 print(status)
 ```
 Or update `config.ini` first which under atlassian folder
@@ -37,7 +37,7 @@ jira_usr = config['jira']['username']
 jira_psw = config['jira']['password']
 
 jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
-status = jira.get_status('TEST-1')
+status = jira.get_issue_status('TEST-1')
 print(status)
 
 ```

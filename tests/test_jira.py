@@ -16,5 +16,5 @@ class TestJira(unittest.TestCase):
         self.jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
 
     def test_get_status(self):
-        status = self.jira.get_status('MVQA-1')
+        status = self.jira.get_issue_status('MVQA-1')
         self.assertEqual(status, 'Closed')
