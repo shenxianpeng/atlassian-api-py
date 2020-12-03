@@ -160,6 +160,23 @@ class Bitbucket(AtlassianAPI):
         except AttributeError as e:
             logger.error(e)
 
+    def get_open_pull_request_id(self, project_key, repo_key, pr_state="OPEN"):
+        prs = self.get_pull_request(project_key, repo_key, pr_state=pr_state)
+        pr_ids = []
+        for pr in prs:
+            pr_ids.append(pr['id'])
+        return pr_ids
+
+    def get_the_pull_request_diff(self, project_key, repo_key, pr_id):
+        url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/diff'.format(project_key, repo_key, pr_id)
+        return self.get(url)
+
+    def add_comment_to_pull_request(self, project_key, repo_slug, pr_id, comment):
+        url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/' \
+              'comments?diffType=EFFECTIVE&markup=true&avatarSize=64'.format(project_key, repo_slug, pr_id, comment)
+        json = {"text": comment}
+        return self.post(url, json=json)
+
 
 if __name__ == '__main__':
     config = configparser.ConfigParser()
@@ -170,5 +187,5 @@ if __name__ == '__main__':
     git_psw = config['bitbucket']['password']
 
     git = Bitbucket(url=git_url, username=git_usr, password=git_psw)
-    ret = git.get_pull_request_source_branch_name("MVAS", "uvuddb", '668')
+    ret = git.add_comment_to_pull_request("MVAS", "uvuddb", "585", "Add by REST API")
     print(ret)
