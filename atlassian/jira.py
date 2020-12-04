@@ -126,8 +126,10 @@ class Jira(AtlassianAPI):
                         fix_version=None,
                         assignee=None,
                         description=None,
+                        labels=None,
                         team=None):
         url = '/rest/api/2/issue'
+
         json = {
             "fields": {
                 "project": {"key": project_key},
@@ -137,19 +139,21 @@ class Jira(AtlassianAPI):
                 "assignee": {"key": assignee, "name": assignee},
                 "priority": {"id": "4"},
                 "description": description,
+                "labels": labels,
                 "customfield_13430": {"value": "Testing / Debugging"},
                 "customfield_11360": {"value": team},
                 "fixVersions": [{"name": fix_version}]
             }
         }
+        if team is None:
+            del json["fields"]['customfield_11360']
+
         return self.post(url, json=json)
 
     def assign_issue(self, issue_key, assignee=None):
         url = '/rest/api/2/issue/{0}/assignee'.format(issue_key)
         if assignee is None:
             assignee = -1
-        else:
-            assignee = assignee
         json = {"name": assignee}
         return self.put(url, json=json) or {}
 
