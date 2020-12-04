@@ -144,7 +144,7 @@ class Jira(AtlassianAPI):
         }
         return self.post(url, json=json)
 
-    def assigne_issue(self, issue_key, assignee=None):
+    def assign_issue(self, issue_key, assignee=None):
         url = '/rest/api/2/issue/{0}/assignee'.format(issue_key)
         if assignee is None:
             assignee = -1

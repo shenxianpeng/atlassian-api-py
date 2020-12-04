@@ -1,5 +1,6 @@
 from .jira import Jira
 
 __all__ = [
-    "Jira"
+    "Jira",
+    "Bitbucket"
 ]
