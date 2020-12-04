@@ -23,6 +23,10 @@ class Jira(AtlassianAPI):
         url = '/rest/api/2/issue/{0}/subtask'.format(jira_key)
         return self.get(url) or {}
 
+    def get_issue_summary(self, issue_key):
+        url = '/rest/api/2/issue/{issue_key}?fields=summary'.format(issue_key=issue_key)
+        return ((self.get(url) or {}).get("fields") or {}).get("summary") or {}
+
     def get_issue_component(self, issue_key):
         url = "/rest/api/2/issue/{issue_key}?fields=components".format(issue_key=issue_key)
         return (((self.get(url) or {}).get("fields") or {}).get("components") or {}).get("name") or {}
@@ -220,6 +224,6 @@ if __name__ == '__main__':
     jira_psw = config['jira']['password']
 
     jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
-    req = jira.get_issue_label("MVQA-904")
+    req = jira.get_issue_summary("MVQA-901")
     print(req)
 
