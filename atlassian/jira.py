@@ -19,9 +19,9 @@ class Jira(AtlassianAPI):
         url = "/rest/api/2/issue/{issue_key}?fields=status".format(issue_key=issue_key)
         return (((self.get(url) or {}).get("fields") or {}).get("status") or {}).get("name") or {}
 
-    def get_sub_tasks_under_jira(self, jira_key):
-        url = '/rest/api/2/issue/{0}/subtask'.format(jira_key)
-        return self.get(url) or {}
+    def get_sub_tasks_under_jira(self, issue_key):
+        url = '/rest/api/2/issue/{issue_key}'.format(issue_key=issue_key)
+        return ((self.get(url) or {}).get('fields') or {}).get("subtasks") or {}
 
     def get_issue_summary(self, issue_key):
         url = '/rest/api/2/issue/{issue_key}?fields=summary'.format(issue_key=issue_key)
@@ -232,6 +232,7 @@ if __name__ == '__main__':
     jira_psw = config['jira']['password']
 
     jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
-    req = jira.get_issue_fix_versions_name("MVQA-901")
+    req = jira.get_issue_status("UNV-29641")
+    # req = jira.get_issue_fix_versions_name("MVQA-901")
     print(req)
 
