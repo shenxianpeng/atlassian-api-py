@@ -28,7 +28,7 @@ class Bitbucket(AtlassianAPI):
         params = {}
         if start:
             params["start"] = start
-        if limit:
+        if limit is not None:
             params['limit'] = limit
         return self._get_paged(url, params=params)
 
@@ -48,7 +48,7 @@ class Bitbucket(AtlassianAPI):
         params = {}
         if start:
             params["start"] = start
-        if limit:
+        if limit is not None:
             params['limit'] = limit
         return self._get_paged(url, params=params)
 
@@ -66,7 +66,8 @@ class Bitbucket(AtlassianAPI):
                 return branch['latestCommit']
 
     def create_branch(self, project_key, repo_key, branch_name, start_point):
-        """This func not work cause of this issue https://jira.atlassian.com/browse/BSERV-9340"""
+        """Using service account to create branch failed because of
+        this issue https://jira.atlassian.com/browse/BSERV-9340"""
         url = '/rest/branch-utils/1.0/projects/{0}/repos/{1}/branches'.format(project_key, repo_key)
         json = {"name": branch_name, "startPoint": start_point}
         return self.post(url, json=json)
@@ -81,7 +82,7 @@ class Bitbucket(AtlassianAPI):
         params = {}
         if start:
             params["start"] = start
-        if limit:
+        if limit is not None:
             params['limit'] = limit
         branches = self._get_paged(url, params=params)
 
@@ -101,7 +102,7 @@ class Bitbucket(AtlassianAPI):
         params = {}
         if start:
             params["start"] = start
-        if limit:
+        if limit is not None:
             params['limit'] = limit
         return self._get_paged(url, params=params)
 
@@ -125,7 +126,7 @@ class Bitbucket(AtlassianAPI):
         params = {}
         if start:
             params["start"] = start
-        if limit:
+        if limit is not None:
             params['limit'] = limit
         return self._get_paged(url, params=params)
 
@@ -137,8 +138,7 @@ class Bitbucket(AtlassianAPI):
             for pr in prs:
                 if pr['id'] == int(pr_id):
                     return pr['fromRef']['displayId']
-                else:
-                    return None
+            return None
 
     def get_pull_request_destination_branch_name(self, project_key, repo_key, pr_id):
         index = 0
@@ -148,8 +148,7 @@ class Bitbucket(AtlassianAPI):
             for pr in prs:
                 if pr['id'] == int(pr_id):
                     return pr['toRef']['displayId']
-                else:
-                    return None
+            return None
 
     def get_pull_request_relate_jira_key(self, project_key, repo_key, pr_id):
         source_branch_name = self.get_pull_request_source_branch_name(project_key, repo_key, pr_id)
@@ -159,8 +158,8 @@ class Bitbucket(AtlassianAPI):
         except AttributeError as e:
             logger.error(e)
 
-    def get_open_pull_request_id(self, project_key, repo_key, pr_state="OPEN"):
-        prs = self.get_pull_request(project_key, repo_key, pr_state=pr_state)
+    def get_open_pull_request_id(self, project_key, repo_key, pr_state="OPEN", start=0, limit=None):
+        prs = self.get_pull_request(project_key, repo_key, pr_state=pr_state, start=start, limit=limit)
         pr_ids = []
         for pr in prs:
             pr_ids.append(pr['id'])
@@ -170,8 +169,35 @@ class Bitbucket(AtlassianAPI):
         url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/diff'.format(project_key, repo_key, pr_id)
         return self.get(url)
 
+    def get_pull_request_comments(self, project_key, repo_slug, pr_id, start=0, limit=None):
+        url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/activities'.format(project_key, repo_slug, pr_id)
+        params = {}
+        if start:
+            params["start"] = start
+        if limit is not None:
+            params['limit'] = limit
+        return self._get_paged(url, params=params)
+
     def add_comment_to_pull_request(self, project_key, repo_slug, pr_id, comment):
         url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/' \
               'comments?diffType=EFFECTIVE&markup=true&avatarSize=64'.format(project_key, repo_slug, pr_id, comment)
         json = {"text": comment}
         return self.post(url, json=json)
+
+    # TODO not work
+    def remove_comment_from_pull_request(self, project_key, repo_slug, pr_id, comment):
+        comment_values = self.get_pull_request_comments(project_key, repo_slug, pr_id)
+        for comment_value in comment_values:
+            try:
+                if comment == comment_value['comment']['text']:
+                    commit_id = comment_value['comment']['id']
+                    break
+            except:
+                pass
+        if commit_id:
+            url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/comments/{3}?VERSION'.format(project_key, repo_slug, pr_id, commit_id)
+            return self.delete(url) or {}
+        else:
+            None
+
+

@@ -9,7 +9,7 @@ class AtlassianAPI:
     default_headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
     def __init__(self, url, username=None, password=None, timeout=60, session=None):
-        self.url = url
+        self.url = url.strip("/")
         self.username = username,
         self.password = password,
         self.timeout = int(timeout)
@@ -80,7 +80,7 @@ class AtlassianAPI:
         response = self.request("PUT", path, data=data, json=json, params=params)
         return self._response_handler(response)
 
-    def delete(self, path, data=None, params=None):
-        response = self.request("DELETE", path, data=data, params=params)
+    def delete(self, path, data=None, json=None, params=None):
+        response = self.request("DELETE", path, data=data, json=json, params=params)
         return self._response_handler(response)
 
