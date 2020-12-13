@@ -1,4 +1,3 @@
-import configparser
 import re
 from atlassian.client import AtlassianAPI
 from atlassian.logger import get_logger
@@ -176,16 +175,3 @@ class Bitbucket(AtlassianAPI):
               'comments?diffType=EFFECTIVE&markup=true&avatarSize=64'.format(project_key, repo_slug, pr_id, comment)
         json = {"text": comment}
         return self.post(url, json=json)
-
-
-if __name__ == '__main__':
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    git_url = config['bitbucket']['url']
-    git_usr = config['bitbucket']['username']
-    git_psw = config['bitbucket']['password']
-
-    git = Bitbucket(url=git_url, username=git_usr, password=git_psw)
-    ret = git.add_comment_to_pull_request("MVAS", "uvuddb", "585", "Add by REST API")
-    print(ret)

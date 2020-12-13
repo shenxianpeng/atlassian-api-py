@@ -1,4 +1,3 @@
-import configparser
 from atlassian.client import AtlassianAPI
 from atlassian.logger import get_logger
 
@@ -221,18 +220,4 @@ class Jira(AtlassianAPI):
             ]
         }
         return self.post(url, json=json) or {}
-
-
-if __name__ == '__main__':
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
-    jira_url = config['jira']['url']
-    jira_usr = config['jira']['username']
-    jira_psw = config['jira']['password']
-
-    jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
-    req = jira.get_issue_status("UNV-29641")
-    # req = jira.get_issue_fix_versions_name("MVQA-901")
-    print(req)
 
