@@ -3,7 +3,7 @@ import configparser
 from atlassian import Jira
 
 config = configparser.ConfigParser()
-config.read('../atlassian/config.ini')
+config.read('config.ini')
 
 jira_url = config['jira']['url']
 jira_usr = config['jira']['username']
@@ -37,9 +37,9 @@ class TestJira(unittest.TestCase):
         self.assertEqual(fix_version, ['0.1.0'])
 
     # TODO
-    def test_get_issue_component(self):
-        component = self.jira.get_issue_component('AAP-1')
-        self.assertEqual(component, ['unittest'])
+    # def test_get_issue_component(self):
+    #     component = self.jira.get_issue_component('AAP-1')
+    #     self.assertEqual(component, ['unittest'])
 
     def test_get_issue_label(self):
         label = self.jira.get_issue_label('AAP-1')
@@ -97,6 +97,11 @@ class TestJira(unittest.TestCase):
     def test_get_last_n_comment(self):
         comment = self.jira.get_last_n_comment('AAP-1', last_n=1)
         self.assertIn('Please don’t do any changes to this ticket. thanks\!', comment['body'])
+
+    def test_search_issue_with_sql(self):
+        sql = 'project = "AAP" and issuekey=AAP-1 ORDER BY created DESC'
+        result = self.jira.search_issue_with_sql(sql)
+        self.assertEqual(result['total'], 1)
 
 
 

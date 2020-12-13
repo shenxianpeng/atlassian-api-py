@@ -1,84 +1,178 @@
-#!/bin/bash
+import os
+import re
+import subprocess
+import datetime
 
-check_exec_result()
-{
-  if [ $? -ne 0 ]; then
-    echo "[X] last execution failed."
-    exit 1;
-  else
-    echo "[√] last execution successful."
-  fi
-}
+env = os.environ
 
-bump_version()
-{
-  read -p "   atlassian-api-py current version is ? " old_version
-  read -p "   atlassian-api-py increase version to ? " new_version
-  old_revision=`echo $old_version | cut -d. -f3`
-  new_revision=`echo $new_version | cut -d. -f3`
-  sed -i "s/$old_revision/$new_revision/g" setup.py
-  check_result
-  echo "[√] completed bump version. new version is:"
-  grep "version" setup.py
-  check_exec_result
-}
+# console colors
+OKGREEN = '\033[92m'
+ENDC = '\033[0m'
+FAIL = '\033[91m'
 
-git_push()
-{
-  current_branch=`git branch --show-current`
-  if [ ${current_branch} = "master" ]; then
-    git add setup.py
-    git commit -m "Bump atlassian-api-py version to $new_revision"
-    git push origin master
-    git tag $version
-    git push --tag
-  else
-    echo "[X] please switch to master branch first."
-    exit
-  fi
-}
+LOG = env.get('AAP_RELEASE_LOG', 'atlassian-api-py-release.log')
+SETUP_FILE = 'setup.py'
 
-release_to_PyPI()
-{
-  rm -rf dist build > /dev/null 2>&1
-  echo "[√] completed clean disk, build folders"
-  python setup.py bdist_wheel # add sdist if need
-  echo "[√] completed create wheel file"
-  twine upload dist/*
-#  check_exec_result
-  echo "[√] upload to PyPI successful."
-}
 
-echo "Checking release environment"
-which python > /dev/null 2>&1
-check_exec_result
-which twine > /dev/null 2>&1
-check_exec_result
-echo
+def log(msg):
+    log_plain('\n%s' % msg)
 
-while true; do
-  read -p "1. Do you need to upgrade version ? " yn
-  case $yn in
-    [Yy]* ) bump_version ; break ;;
-    [Nn]* ) echo; echo "[*] skip upgrade version"; echo; break;;
-    * ) echo "Please input yes or no";;
-  esac
-done
 
-while true; do
-  read -p "2. Ready to push version changes to GitHub ? " yn
-  case $yn in
-    [Yy]* ) git_push ; break ;;
-    [Nn]* ) echo; echo "[*] skip push to Git"; echo; break;;
-    * ) echo "Please input yes or no";;
-  esac
-done
+def log_plain(msg):
+    f = open(LOG, mode='ab')
+    f.write(msg.encode('utf-8'))
+    f.close()
 
-while true; do
-  read -p "3. Ready to release to PyPI ? " yn
-  case $yn in
-    [Yy]* ) release_to_PyPI ; break ;;
-    [Nn]* ) echo; echo "[*] skip deploy to PyPI for release"; echo; break;;
-    * ) echo "Please input yes or no";;
-  esac
-done
+
+def check_command_exists(name, cmd):
+    try:
+        print('%s' % cmd)
+        subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError:
+        raise RuntimeError('Could not run command %s - please make sure it is installed' % name)
+
+
+def run_and_print(text, run_function):
+    try:
+        print(text, end='')
+        run_function()
+        print(OKGREEN + 'OK' + ENDC)
+    except RuntimeError:
+        print(FAIL + 'NOT OK' + ENDC)
+
+
+def check_environment_and_commandline_tools():
+    check_command_exists('python', 'python --version')
+
+
+def git_checkout(branch):
+    run('git checkout %s' % branch)
+
+
+def get_current_branch():
+    return os.popen('git rev-parse --abbrev-ref HEAD  2>&1').read().strip()
+
+
+def get_head_hash():
+    return os.popen('git rev-parse --verify HEAD 2>&1').read().strip()
+
+
+def find_release_version(src_branch):
+    with open(SETUP_FILE, encoding='utf-8') as file:
+        for line in file.readlines():
+            match = re.search(r'\d.\d.\d', line)
+            if match:
+                return match.group(0)
+        raise RuntimeError('Could not find release version in %s branch' % src_branch)
+
+
+def run(command, quiet=False):
+    log('%s: RUN: %s\n' % (datetime.datetime.now(), command))
+    if os.system('%s >> %s 2>&1' % (command, LOG)):
+        msg = '    FAILED: %s [see log %s]' % (command, LOG)
+        if not quiet:
+            print(msg)
+        raise RuntimeError(msg)
+
+
+def run_coverage_unit_test():
+    run('coverage run -m unittest discover')
+
+
+def commit_master(release):
+    run('git commit -m "update for release %s"' % release)
+
+
+def tag_release(release):
+    run('git tag -a v%s -m "Tag release version %s"' % (release, release))
+
+
+def check_exec_result():
+    pass
+
+
+def bump_version_to(current_version=None, release_type=None):
+    # major.minor.micro
+    match = re.match(r'(\d).(\d).(\d)', current_version)
+    major = match.group(1)
+    minor = match.group(2)
+    micro = match.group(3)
+
+    if release_type == 'major':
+        major += 1
+    elif release_type == 'minor':
+        minor += 1
+    elif release_type == 'micro':
+        micro += 1
+    else:
+        raise('Release type %s not support' % release_type)
+
+    new_version = '{0}.{1}.{2}'.format(major, minor, micro)
+    return new_version
+
+
+def update_version(new_version):
+    with open(SETUP_FILE, encoding='utf-8') as file:
+        for line in file.readlines():
+            match = re.search(r'\d.\d.\d', line)
+            if match:
+                line.replace(match.group(0), new_version)
+                print('Update release version to %s' % new_version)
+        raise RuntimeError('Update release version to %s failed' % new_version)
+
+
+def git_push():
+    pass
+
+
+def upload_to_pypi(prod_env=None, test_env=None):
+    if prod_env:
+        pass
+    if test_env:
+        pass
+
+
+if __name__ == '__main__':
+
+        src_branch = get_current_branch()
+
+        run_coverage_unit_test()
+
+        check_environment_and_commandline_tools()
+
+        if src_branch != 'master':
+            raise RuntimeError('Need release from master branch.')
+
+        # input('Press Enter to continue...')
+
+        current_version = find_release_version('master')
+
+        print('Current release version: [%s]' % current_version)
+
+        success = False
+
+        try:
+            git_checkout('master')
+            master_hash = get_head_hash()
+            input('Input what type of this release')
+            
+            new_version = bump_version_to(current_version, release_type='micro')
+            update_version()
+            # input('Press Enter to continue...')
+            print('  tag')
+            tag_release(current_version)
+            git_push(src_branch, current_version)
+            success = True
+        except Exception as e:
+            print(e)
+        finally:
+            if not success:
+                print('Logs:')
+                with open(LOG, 'r') as log_file:
+                    print(log_file.read())
+                git_checkout('master')
+                run('git reset --hard %s' % master_hash)
+                try:
+                    run('git tag -d v%s' % current_version)
+                except RuntimeError:
+                    pass
