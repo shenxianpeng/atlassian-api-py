@@ -5,7 +5,7 @@ with open("README.md", "r") as file:
 
 setuptools.setup(
     name='atlassian-api-py',
-    version='0.0.8',
+    version='0.0.9',
     description='Atlassian REST API Python Wrapper.',
     long_description=long_description,
     long_description_content_type="text/markdown",

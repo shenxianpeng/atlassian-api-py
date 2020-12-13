@@ -2,6 +2,7 @@
 atlassian/__pycache__/
 build/
 dist/
+logs/
 atlassian_api_py.egg-info/
 /atlassian/logs/atlassian-api.log
 /tests/logs/atlassian-api.log
@@ -11,3 +12,4 @@ atlassian-api-py-release.log
 tests/__pycache__
 /tests/htmlcov
 tests/config.ini
+/.coverage
