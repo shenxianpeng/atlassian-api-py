@@ -11,35 +11,38 @@ This library is a wrapper of Atlassian Rest APIs written by Python, will support
 
 ## QuickStart
 
-```python
-from jira import JIRA
+This is a demo
 
-jira = Jira(url='https://jira.atlassian.com', username='username', password='password')
-status = jira.get_issue_status('TEST-1')
-print(status)
+```python
+>>> from atlassian import Jira
+
+>>> jira = Jira(url='https://shenxianpeng.atlassian.net', username="myusername", password="mypassword")
+>>> status = jira.get_issue_status('AAP-1')
+>>> print(status)
+Backlog
 ```
-Or update `config.ini` first which under atlassian folder
+Get credential information from a config file `config.ini`.
 
 ```markdown
 [jira]
-url = https://jira.atlassian.com
-username = username
-password = password
+url = https://shenxianpeng.atlassian.net
+username = myusername
+password = mypassword
 ```
 Then
 ```python
-import configparser
-config = configparser.ConfigParser()
-config.read('config.ini')
+>>> import configparser
+>>> config = configparser.ConfigParser()
+>>> config.read('config.ini')
 
-jira_url = config['jira']['url']
-jira_usr = config['jira']['username']
-jira_psw = config['jira']['password']
+>>> jira_url = config['jira']['url']
+>>> jira_usr = config['jira']['username']
+>>> jira_psw = config['jira']['password']
 
-jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
-status = jira.get_issue_status('TEST-1')
-print(status)
-
+>>> jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
+>>> status = jira.get_issue_status('AAP-1')
+>>> print(status)
+Backlog
 ```
 
 ## Install from PyPI
@@ -51,3 +54,10 @@ $ pip install atlassian-api-py
 # upgrade
 $ pip install atlassian-api-py --upgrade
 ```
+
+## FAQ
+
+### Q1: Which Jira/BitBucket version I used to develop?
+> For Jira I used Jira v8.5.9 and Jira Cloud.
+> For BitBucket I used Bitbucket v5.13.1. not support Bitbucket cloud for now.
+
