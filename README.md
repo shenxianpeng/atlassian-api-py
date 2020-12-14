@@ -11,17 +11,16 @@ This library is a wrapper of Atlassian Rest APIs written by Python, will support
 
 ## QuickStart
 
-This is a demo
-
 ```python
 >>> from atlassian import Jira
 
->>> jira = Jira(url='https://shenxianpeng.atlassian.net', username="myusername", password="mypassword")
+>>> jira = Jira(url='https://shenxianpeng.atlassian.net', 
+... username="myusername", password="mypassword")
 >>> status = jira.get_issue_status('AAP-1')
 >>> print(status)
 Backlog
 ```
-Get credential information from a config file `config.ini`.
+Or get credential information from a config file `config.ini`.
 
 ```markdown
 [jira]
@@ -59,5 +58,6 @@ $ pip install atlassian-api-py --upgrade
 
 ### Q1: Which Jira/BitBucket version I used to develop?
 > For Jira I used Jira v8.5.9 and Jira Cloud.
+>
 > For BitBucket I used Bitbucket v5.13.1. not support Bitbucket cloud for now.
 
