@@ -5,11 +5,11 @@ with open("README.md", "r") as file:
 
 setuptools.setup(
     name='atlassian-api-py',
-    version='0.0.11',
+    version='0.0.12',
     description='Atlassian REST API Python Wrapper.',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/shenxianpeng',
+    url='https://shenxianpeng.github.io',
     author='Xianpeng Shen',
     author_email='xianpeng.shen@qq.com',
     keywords=['atlassian', 'jira', 'rest', 'api'],
