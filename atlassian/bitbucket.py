@@ -78,7 +78,8 @@ class Bitbucket(AtlassianAPI):
         return self.delete(url, json=json)
 
     def get_merged_branch(self, project_key, repo_key, start=0, limit=None):
-        url = '/rest/api/latest/projects/{0}/repos/{1}/branches?base=refs/heads/master&details=true'.format(project_key, repo_key)
+        url = '/rest/api/latest/projects/{0}/repos/{1}/branches?base=refs/heads/master&details=true'.\
+            format(project_key, repo_key)
         params = {}
         if start:
             params["start"] = start
@@ -165,12 +166,13 @@ class Bitbucket(AtlassianAPI):
             pr_ids.append(pr['id'])
         return pr_ids
 
-    def get_the_pull_request_diff(self, project_key, repo_key, pr_id):
+    def get_pull_request_diff(self, project_key, repo_key, pr_id):
         url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/diff'.format(project_key, repo_key, pr_id)
         return self.get(url)
 
     def get_pull_request_comments(self, project_key, repo_slug, pr_id, start=0, limit=None):
-        url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/activities'.format(project_key, repo_slug, pr_id)
+        url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/activities'.format(
+            project_key, repo_slug, pr_id)
         params = {}
         if start:
             params["start"] = start
@@ -192,12 +194,19 @@ class Bitbucket(AtlassianAPI):
                 if comment == comment_value['comment']['text']:
                     commit_id = comment_value['comment']['id']
                     break
-            except:
+            except KeyError:
                 pass
         if commit_id:
-            url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/comments/{3}?VERSION'.format(project_key, repo_slug, pr_id, commit_id)
+            url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/comments/{3}?VERSION'.format(
+                project_key, repo_slug, pr_id, commit_id)
             return self.delete(url) or {}
-        else:
-            None
 
-
+    def get_file_change_history(self, project_key, repo_key, branch_name, file_path, start=0, limit=None):
+        url = '/rest/api/latest/projects/{0}/repos/{1}/commits?followRenames=true&path={2}&' \
+              'until=refs%2Fheads%2F{3}&start=0&avatarSize=32'.format(project_key, repo_key, file_path, branch_name)
+        params = {}
+        if start:
+            params["start"] = start
+        if limit is not None:
+            params['limit'] = limit
+        return self._get_paged(url, params=params)

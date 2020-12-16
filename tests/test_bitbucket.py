@@ -96,7 +96,7 @@ class TestJira(unittest.TestCase):
             self.assertGreaterEqual(pr_id, 671)
 
     def test_get_the_pull_request_diff(self):
-        pr_diff = self.git.get_the_pull_request_diff('MVAS', 'uvuddb', 671)
+        pr_diff = self.git.get_pull_request_diff('MVAS', 'uvuddb', 671)
         self.assertEqual(pr_diff['fromHash'], 'dad7e0380d6e665bfda907da8eec38e383994224')
         self.assertEqual(pr_diff['toHash'], 'e2e805087195616f43b1458472c6ecbf5264b180')
 
@@ -107,25 +107,13 @@ class TestJira(unittest.TestCase):
         for comment_value in comment_values:
             try:
                 comments.append(comment_value['comment']['text'])
-            except:
+            except KeyError:
                 pass
         self.assertIn('Add comment by rest api.', comments)
-
         self.git.remove_comment_from_pull_request('MVAS', 'uvuddb', 585, 'Add comment by rest api.')
-
         self.assertNotIn('Add comment by rest api.', comments)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def test_get_file_change_history(self):
+        history = self.git.get_file_change_history(
+            'MVAS', 'uvuddb', 'release/12.1.1.HF6.PE', 'src/uv/uvsrc/port.note', limit=0)
+        self.assertEqual(len(history), 1)

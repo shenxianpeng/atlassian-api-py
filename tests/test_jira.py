@@ -102,6 +102,3 @@ class TestJira(unittest.TestCase):
         sql = 'project = "AAP" and issuekey=AAP-1 ORDER BY created DESC'
         result = self.jira.search_issue_with_sql(sql)
         self.assertEqual(result['total'], 1)
-
-
-

@@ -10,8 +10,8 @@ class AtlassianAPI:
 
     def __init__(self, url, username=None, password=None, timeout=60, session=None):
         self.url = url.strip("/")
-        self.username = username,
-        self.password = password,
+        self.username = username
+        self.password = password
         self.timeout = int(timeout)
         if session is None:
             self._session = requests.Session()
@@ -83,4 +83,3 @@ class AtlassianAPI:
     def delete(self, path, data=None, json=None, params=None):
         response = self.request("DELETE", path, data=data, json=json, params=params)
         return self._response_handler(response)
-

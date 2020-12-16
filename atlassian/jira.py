@@ -220,4 +220,3 @@ class Jira(AtlassianAPI):
             ]
         }
         return self.post(url, json=json) or {}
-

@@ -27,7 +27,7 @@ def log_plain(msg):
 def check_command_exists(name, cmd):
     try:
         print('%s' % cmd)
-        subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+        subprocess.check_output(cmd, shell=False, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError:
         raise RuntimeError('Could not run command %s - please make sure it is installed' % name)
 

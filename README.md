@@ -1,6 +1,7 @@
 # Atlassian REST API Python Wrapper
 
 [![PyPI](https://img.shields.io/pypi/v/atlassian-api-py)](https://pypi.org/project/atlassian-api-py/)
+[![CodeFactor](https://www.codefactor.io/repository/github/shenxianpeng/atlassian-api-py/badge/master?s=3f5b565625069f5c5ab303a02b120197cd3abdde)](https://www.codefactor.io/repository/github/shenxianpeng/atlassian-api-py/overview/master)
 
 This library is a wrapper of Atlassian Rest APIs written by Python, will support Jira, BitBucket, etc.
 
