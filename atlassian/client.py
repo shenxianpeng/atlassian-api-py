@@ -21,7 +21,7 @@ class AtlassianAPI:
             try:
                 self._create_basic_session(username, password)
             except Exception as e:
-                logger(e)
+                logger.error(e)
 
     def __enter__(self):
         return self
