@@ -16,7 +16,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url='https://shenxianpeng.github.io',
     author='Xianpeng Shen',
-    author_email='xianpeng.shen@qq.com',
+    author_email='xianpeng.shen@gmail.com',
     keywords=['atlassian', 'jira', 'bitbucket', 'rest', 'api'],
     python_requires='>=3',
     license='Apache License 2.0',
