@@ -45,6 +45,18 @@ def tag_release(new_version):
     os.system('git tag -a v%s -m "Tag release version %s"' % (new_version, new_version))
 
 
+def build_package():
+    print("remove dist build folder if they exists.")
+    os.system('rm -rf dist build > /dev/null 2>&1')
+    print("build wheel file for release")
+    os.system(' python setup.py bdist_wheel')   # add sdist if need
+
+
+def upload_to_pypi():
+    print("start to upload wheel file to PyPI.")
+    # os.system('twine upload dist/*')
+
+
 if __name__ == "__main__":
     env = os.environ
     LOG = env.get('AAP_RELEASE_LOG', 'logs/atlassian-api-py-release.log')
@@ -58,13 +70,21 @@ if __name__ == "__main__":
     old_v = get_current_version()
     print("old version is: " + old_v)
 
-    new_v = input("bump version to: ")
-    bump_version_to(old_v, new_v)
+    new_v = input("bump version to (input N to skip): ")
+    if new_v in ("n", "N"):
+        print("skip bump version")
+    else:
+        bump_version_to(old_v, new_v)
 
-    curr_v = get_current_version()
-    print('new version is: ' + curr_v)
+        curr_v = get_current_version()
+        print('new version is: ' + curr_v)
 
-    tag_release(curr_v)
+    is_tag = input("ready to create tag?(Y/N): ")
+    if is_tag in ('y', 'Y'):
+        tag_release(curr_v)
+    else:
+        print("skip create tag")
 
+    build_package()
 
 

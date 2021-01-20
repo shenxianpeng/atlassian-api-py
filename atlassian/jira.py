@@ -102,6 +102,18 @@ class Jira(AtlassianAPI):
         json = {"body": content}
         return self.post(url, json=json) or {}
 
+    def get_issue_comments_body(self, issue_key, last_n=None):
+        comments_dict = self.get_issue_comments(issue_key)
+        index = len(comments_dict)
+        comments_body = []
+        if last_n is not None:
+            if index >= last_n:
+                index = last_n
+        while index:
+            comments_body.append(comments_dict[index-1]['body'])
+            index = index-1
+        return comments_body
+
     def get_last_n_comment(self, issue_key, last_n=1):
         comments = self.get_issue_comments(issue_key)
         try:

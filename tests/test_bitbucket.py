@@ -79,8 +79,8 @@ class TestJira(unittest.TestCase):
             self.assertGreaterEqual(pull_request['id'], 670)
 
     def test_get_pull_request_source_branch_name(self):
-        pr_soruce_branch_name = self.git.get_pull_request_source_branch_name('MVAS', 'uvuddb', '670')
-        self.assertEqual(pr_soruce_branch_name, 'hotfix/12.1.1.HF6')
+        pr_source_branch_name = self.git.get_pull_request_source_branch_name('MVAS', 'uvuddb', '670')
+        self.assertEqual(pr_source_branch_name, 'hotfix/12.1.1.HF6')
 
     def test_get_pull_request_destination_branch_name(self):
         pr_destination_branch_name = self.git.get_pull_request_destination_branch_name('MVAS', 'uvuddb', '670')

@@ -92,6 +92,10 @@ class TestJira(unittest.TestCase):
             if comment['body'] == 'Add comment by REST API.':
                 comment_id = comment['id']
         self.jira.delete_issue_comment('MVQA-900', comment_id)
+        
+    def test_get_issue_comments_body(self):
+        comments_body = self.jira.get_issue_comments_body('MVQA-900', last_n=10)
+        self.assertIn('Please don’t do any changes to this ticket. thanks!', comments_body)
 
     def test_get_last_n_comment(self):
         comment = self.jira.get_last_n_comment('MVQA-900', last_n=1)
