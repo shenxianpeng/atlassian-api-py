@@ -1,18 +1,23 @@
 import setuptools
 
+
 with open("README.md", "r") as file:
     long_description = file.read()
 
+version = {}
+with open("atlassian/_version.py") as fp:
+    exec(fp.read(), version)
+
 setuptools.setup(
     name='atlassian-api-py',
-    version='0.0.17',
+    version=version['__version__'],
     description='Atlassian REST API Python Wrapper.',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://shenxianpeng.github.io',
     author='Xianpeng Shen',
     author_email='xianpeng.shen@qq.com',
-    keywords=['atlassian', 'jira', 'rest', 'api'],
+    keywords=['atlassian', 'jira', 'bitbucket', 'rest', 'api'],
     python_requires='>=3',
     license='Apache License 2.0',
     packages=setuptools.find_packages(exclude=["tests"]),

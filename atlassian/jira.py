@@ -36,7 +36,11 @@ class Jira(AtlassianAPI):
 
     def get_issue_component(self, issue_key):
         url = "/rest/api/2/issue/{issue_key}?fields=components".format(issue_key=issue_key)
-        return (((self.get(url) or {}).get("fields") or {}).get("components") or {}).get("name") or {}
+        results = ((self.get(url) or {}).get("fields") or {}).get("components") or {}
+        components_name = []
+        for result in results:
+            components_name.append(result['name'])
+        return components_name
 
     def get_issue_label(self, issue_key):
         url = '/rest/api/2/issue/{0}'.format(issue_key)
@@ -220,3 +224,11 @@ class Jira(AtlassianAPI):
             ]
         }
         return self.post(url, json=json) or {}
+
+    def get_user(self, username):
+        url = '/rest/api/2/user?username={0}'.format(username)
+        return self.get(url) or {}
+
+    def get_user_active(self, username):
+        url = '/rest/api/2/user?username={0}'.format(username)
+        return (self.get(url) or {}).get("active")

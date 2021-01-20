@@ -1,28 +1,23 @@
 #!/bin/bash
 
-check_exec_result()
+_check_result()
 {
-  if [ $? -ne 0 ]; then
-    echo "[X] last execution failed."
-    exit 1;
-  else
-    echo "[√] last execution successful."
-  fi
+    if [ $? -ne 0 ]; then
+        exit 1
+    else
+        echo "[√] last command was successfully executed."
+    fi
 }
 
 bump_version()
 {
-  echo "current version is ?"
-  read -r old_version
-  echo "increase version to ?"
+  echo "bump version to ?"
   read -r new_version
-  old_revision=`echo $old_version | cut -d. -f3`
-  new_revision=`echo $new_version | cut -d. -f3`
   sed -i "s/$old_revision/$new_revision/g" setup.py
-  check_exec_result
+  _check_result
   echo "[√] bump version successful, new version is:"
   grep "version" setup.py
-  check_exec_result
+  _check_result
 }
 
 git_push()
@@ -47,15 +42,15 @@ release_to_PyPI()
   python setup.py bdist_wheel # add sdist if need
   echo "[√] completed create wheel file"
   twine upload dist/*
-  check_exec_result
+  _check_result
   echo "[√] upload to PyPI successful."
 }
 
 echo "Checking release environment"
 which python > /dev/null 2>&1
-check_exec_result
+_check_result
 which twine > /dev/null 2>&1
-check_exec_result
+_check_result
 echo
 
 while true; do
