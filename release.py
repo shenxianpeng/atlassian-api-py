@@ -52,19 +52,19 @@ def tag_release(new_version):
     os.system('git tag -a v%s -m "Tag release version %s"' % (new_version, new_version))
 
 
-def clean_build():
-    try:
-        print("starting remove dist build folders\n")
-        shutil.rmtree('dist')
-        shutil.rmtree('build')
-    except OSError as e:
-        print("[x]: remote %s - %s failed." % (e.filename, e.strerror))
-        exit(1)
-
-
 def build_package():
-    print("build wheel file for release\n")
-    os.system('python setup.py bdist_wheel')  # add sdist if need
+    is_build = input('ready to build? (Y/N)')
+    if is_build in ('y', "Y"):
+        try:
+            print("starting remove dist build folders\n")
+            shutil.rmtree('dist')
+            shutil.rmtree('build')
+        except OSError as e:
+            print("[x]: remote %s - %s failed." % (e.filename, e.strerror))
+            exit(1)
+
+        print("build wheel file for release\n")
+        os.system('python setup.py bdist_wheel')  # add sdist if need
 
 
 def check_wheel_file(curr_version):
@@ -144,8 +144,6 @@ if __name__ == "__main__":
     check_git_push(cv)
 
     check_git_tag(cv)
-
-    clean_build()
 
     build_package()
 
