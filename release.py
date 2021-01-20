@@ -1,6 +1,7 @@
 import os
 import subprocess
-import datetime
+import time
+import shutil
 from packaging import version
 
 
@@ -18,13 +19,13 @@ def get_current_branch():
 
 def get_current_version():
     version = {}
-    with open("atlassian/_version.py") as fp:
+    with open(version_file) as fp:
         exec(fp.read(), version)
 
     return version['__version__']
 
 
-def bump_version_to(old_version, new_version):
+def bump_version(old_version, new_version):
 
     if version.parse(old_version) < version.parse(new_version):
         f = open('atlassian/_version.py', 'r')
@@ -41,50 +42,117 @@ def bump_version_to(old_version, new_version):
         exit(1)
 
 
+def git_push(new_version):
+    os.system('git add {}'.format(version_file))
+    os.system('git commit -m "chore: bump version to {}"'.format(new_version))
+    os.system('git push -u origin master'.format(new_version))
+
+
 def tag_release(new_version):
     os.system('git tag -a v%s -m "Tag release version %s"' % (new_version, new_version))
 
 
+def clean_build():
+    try:
+        print("starting remove dist build folders\n")
+        shutil.rmtree('dist')
+        shutil.rmtree('build')
+    except OSError as e:
+        print("[x]: remote %s - %s failed." % (e.filename, e.strerror))
+        exit(1)
+
+
 def build_package():
-    print("remove dist build folder if they exists.")
-    os.system('rm -rf dist build > /dev/null 2>&1')
-    print("build wheel file for release")
-    os.system(' python setup.py bdist_wheel')   # add sdist if need
+    print("build wheel file for release\n")
+    os.system('python setup.py bdist_wheel')  # add sdist if need
+
+
+def check_wheel_file(curr_version):
+    whl_name = 'atlassian_api_py-{}-py3-none-any.whl'.format(curr_version)
+    if whl_name in os.listdir('dist'):
+        return whl_name
+    else:
+        return False
 
 
 def upload_to_pypi():
     print("start to upload wheel file to PyPI.")
-    # os.system('twine upload dist/*')
+    os.system('twine upload dist/*')
+
+
+def check_release_branch():
+    branch = get_current_branch()
+    if branch == 'master':
+        print("\n###################################")
+        print("# ready to release...             #")
+        print("###################################\n")
+    else:
+        print("could not release on %s branch." % branch)
+        exit(1)
+
+
+def check_bump_version():
+    old_v = get_current_version()
+    print("old version is: %s \n" % old_v)
+
+    new_v = input("bump version to? (input n/N to skip): ")
+    if new_v in ("n", "N"):
+        print("\n[x] skip bump version\n")
+    else:
+        bump_version(old_v, new_v)
+
+    curr_version = get_current_version()
+    print('current version is: %s\n' % curr_version)
+
+
+def check_git_push(curr_version):
+    is_push = input("commit and push _version.py to remote?(Y/N) ")
+    if is_push in ('y', 'Y'):
+        git_push(curr_version)
+    else:
+        print('\n[x] skip commit and push.\n')
+
+
+def check_git_tag(curr_version):
+    is_tag = input("ready to create tag?(Y/N): ")
+    if is_tag in ('y', 'Y'):
+        tag_release(curr_version)
+    else:
+        print("[x] skip create tag\n")
+
+
+def check_twine_upload(wheel_file):
+    if wheel_file:
+        is_upload = input('ready to upload {} to PyPI?(Y/N) '.format(wheel_file))
+        if is_upload in ('y', 'Y'):
+            upload_to_pypi()
+        else:
+            print('[X] skip upload {} to PyPI\n'.format(wheel_file))
 
 
 if __name__ == "__main__":
     env = os.environ
     LOG = env.get('AAP_RELEASE_LOG', 'logs/atlassian-api-py-release.log')
+    version_file = 'atlassian/_version.py'
 
-    branch = get_current_branch()
-    if branch == 'master':
-        print("ready to release")
-    else:
-        print("could not release on %s branch." % branch)
+    check_release_branch()
 
-    old_v = get_current_version()
-    print("old version is: " + old_v)
+    check_bump_version()
 
-    new_v = input("bump version to (input N to skip): ")
-    if new_v in ("n", "N"):
-        print("skip bump version")
-    else:
-        bump_version_to(old_v, new_v)
+    cv = get_current_version()
 
-        curr_v = get_current_version()
-        print('new version is: ' + curr_v)
+    check_git_push(cv)
 
-    is_tag = input("ready to create tag?(Y/N): ")
-    if is_tag in ('y', 'Y'):
-        tag_release(curr_v)
-    else:
-        print("skip create tag")
+    check_git_tag(cv)
+
+    clean_build()
 
     build_package()
+
+    wheel_name = check_wheel_file(cv)
+
+    check_twine_upload(wheel_name)
+
+
 
 
