@@ -57,6 +57,23 @@ $ pip install atlassian-api-py
 $ pip install atlassian-api-py --upgrade
 ```
 
+## Unittest and Coverage
+
+Run unittest 
+
+```bash
+cd tests
+python -m unittest
+```
+Run coverage
+
+```bash
+cd tests
+coverage run -m unittest
+coverage report -m              # to report on the results
+coverage html                   # to get annotated HTML
+```
+
 ## FAQ
 
 ### Q1: Which Jira/BitBucket version I used to develop?
