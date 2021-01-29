@@ -20,9 +20,13 @@ class TestJira(unittest.TestCase):
         issue_id = self.jira.get_issue_id('MVQA-900')
         self.assertEqual(issue_id, '1684517')
 
-    def test_get_status(self):
+    def test_get_issue_status(self):
         status = self.jira.get_issue_status('MVQA-900')
         self.assertEqual(status, 'Triage')
+
+    def test_get_issue_type(self):
+        issue_type = self.jira.get_issue_type('MVQA-900')
+        self.assertEqual(issue_type, 'Bug')
 
     def test_get_sub_tasks_under_jira(self):
         sub_tasks = self.jira.get_sub_tasks_under_jira('MVQA-900')

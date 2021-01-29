@@ -18,6 +18,10 @@ class Jira(AtlassianAPI):
         url = "/rest/api/2/issue/{issue_key}?fields=status".format(issue_key=issue_key)
         return (((self.get(url) or {}).get("fields") or {}).get("status") or {}).get("name") or {}
 
+    def get_issue_type(self, issue_key):
+        url = "/rest/api/2/issue/{issue_key}?fields=issuetype".format(issue_key=issue_key)
+        return (((self.get(url) or {}).get("fields") or {}).get("issuetype") or {}).get("name") or {}
+
     def get_sub_tasks_under_jira(self, issue_key):
         url = '/rest/api/2/issue/{issue_key}'.format(issue_key=issue_key)
         return ((self.get(url) or {}).get('fields') or {}).get("subtasks") or {}
