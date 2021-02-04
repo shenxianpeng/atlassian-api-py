@@ -46,6 +46,17 @@ class Jira(AtlassianAPI):
             components_name.append(result['name'])
         return components_name
 
+    def get_issue_attachment(self, issue_key):
+        url = '/rest/api/2/issue/{issue_key}?fields=attachment'.format(issue_key=issue_key)
+        return ((self.get(url) or {}).get("fields") or {}).get("attachment") or {}
+
+    def get_issue_attachment_download_url(self, issue_key):
+        attachments = self.get_issue_attachment(issue_key)
+        download_url = []
+        for attachment in attachments:
+            download_url.append(attachment['content'])
+        return download_url
+
     def get_issue_label(self, issue_key):
         url = '/rest/api/2/issue/{0}'.format(issue_key)
         return ((self.get(url) or {}).get("fields") or {}).get('labels') or {}
@@ -248,3 +259,4 @@ class Jira(AtlassianAPI):
     def get_user_active(self, username):
         url = '/rest/api/2/user?username={0}'.format(username)
         return (self.get(url) or {}).get("active")
+

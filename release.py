@@ -121,7 +121,7 @@ def check_git_tag(curr_version):
 
 def check_twine_upload(wheel_file):
     if wheel_file:
-        is_upload = input('ready to upload {} to PyPI?(Y/N) '.format(wheel_file))
+        is_upload = input('\nready to upload {} to PyPI?(Y/N) '.format(wheel_file))
         if is_upload in ('y', 'Y'):
             upload_to_pypi()
         else:

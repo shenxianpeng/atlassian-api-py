@@ -44,6 +44,14 @@ class TestJira(unittest.TestCase):
         component = self.jira.get_issue_component('MVQA-900')
         self.assertEqual(component, ['Test automation'])
 
+    def test_get_issue_attachment(self):
+        attachments = self.jira.get_issue_attachment('MVQA-900')
+        self.assertGreaterEqual(len(attachments), 2)
+
+    def test_get_issue_attachment_download_url(self):
+        download_url = self.jira.get_issue_attachment_download_url('MVQA-900')
+        self.assertIn('https://jira.rocketsoftware.com/secure/attachment/1269885/mv+repositories.png', download_url)
+
     def test_get_issue_label(self):
         label = self.jira.get_issue_label('MVQA-900')
         self.assertIn('Test', label)
