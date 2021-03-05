@@ -42,9 +42,13 @@ Then get the credential information though the configuration file `config.ini`
 >>> jira_psw = config['jira']['password']
 
 >>> jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
->>> status = jira.get_issue_status('AAP-1')
->>> print(status)
+>>> issue = self.jira.issue('MVQA-900')
+>>> print(issue.fields.description)
+this is a demo jira ticket
+>>> print(issue.fields.status.name)
 Backlog
+>>> print(issue.fields.issuetype.name)
+Bug
 ```
 
 ## Install from PyPI
