@@ -9,57 +9,9 @@ class Jira(AtlassianAPI):
     JIRA API Reference
     https://docs.atlassian.com/software/jira/docs/api/REST/7.6.1/
     """
-
-    def get_issue_id(self, issue_key):
+    def issue(self, issue_key):
         url = "/rest/api/2/issue/{issue_key}".format(issue_key=issue_key)
-        return (self.get(url) or {}).get("id") or {}
-
-    def get_issue_status(self, issue_key):
-        url = "/rest/api/2/issue/{issue_key}?fields=status".format(issue_key=issue_key)
-        return (((self.get(url) or {}).get("fields") or {}).get("status") or {}).get("name") or {}
-
-    def get_issue_type(self, issue_key):
-        url = "/rest/api/2/issue/{issue_key}?fields=issuetype".format(issue_key=issue_key)
-        return (((self.get(url) or {}).get("fields") or {}).get("issuetype") or {}).get("name") or {}
-
-    def get_sub_tasks_under_jira(self, issue_key):
-        url = '/rest/api/2/issue/{issue_key}'.format(issue_key=issue_key)
-        return ((self.get(url) or {}).get('fields') or {}).get("subtasks") or {}
-
-    def get_issue_summary(self, issue_key):
-        url = '/rest/api/2/issue/{issue_key}?fields=summary'.format(issue_key=issue_key)
-        return ((self.get(url) or {}).get("fields") or {}).get("summary") or {}
-
-    def get_issue_fix_versions_name(self, issue_key):
-        url = '/rest/api/2/issue/{issue_key}?fields=fixVersions'.format(issue_key=issue_key)
-        fix_versions_name = []
-        results = ((self.get(url) or {}).get("fields") or {}).get("fixVersions")
-        for result in results:
-            fix_versions_name.append(result['name'])
-        return fix_versions_name
-
-    def get_issue_component(self, issue_key):
-        url = "/rest/api/2/issue/{issue_key}?fields=components".format(issue_key=issue_key)
-        results = ((self.get(url) or {}).get("fields") or {}).get("components") or {}
-        components_name = []
-        for result in results:
-            components_name.append(result['name'])
-        return components_name
-
-    def get_issue_attachment(self, issue_key):
-        url = '/rest/api/2/issue/{issue_key}?fields=attachment'.format(issue_key=issue_key)
-        return ((self.get(url) or {}).get("fields") or {}).get("attachment") or {}
-
-    def get_issue_attachment_download_url(self, issue_key):
-        attachments = self.get_issue_attachment(issue_key)
-        download_url = []
-        for attachment in attachments:
-            download_url.append(attachment['content'])
-        return download_url
-
-    def get_issue_label(self, issue_key):
-        url = '/rest/api/2/issue/{0}'.format(issue_key)
-        return ((self.get(url) or {}).get("fields") or {}).get('labels') or {}
+        return self.get(url) or {}
 
     def update_issue_label(self, issue_key, remove_labels=None, add_labels=None):
         url = '/rest/api/2/issue/{0}'.format(issue_key)
@@ -83,58 +35,15 @@ class Jira(AtlassianAPI):
             json = {"update": {"labels": remove_labels_list}}
         return self.put(url, json=json)
 
-    def get_issue_test_automation_status(self, issue_key):
-        url = "/rest/api/2/issue/{issue_key}?fields=customfield_17533".format(issue_key=issue_key)
-        return (((self.get(url) or {}).get("fields") or {}).get("customfield_17533") or {}).get("value") or {}
-
-    def get_issue_links(self, issue_key):
-        url = "/rest/api/2/issue/{issue_key}?fields=issuelinks".format(issue_key=issue_key)
-        return ((self.get(url) or {}).get("fields") or {}).get("issuelinks") or {}
-
-    def get_issue_description(self, issue_key):
-        url = '/rest/api/2/issue/{0}'.format(issue_key)
-        return ((self.get(url) or {}).get("fields") or {}).get("description") or {}
-
     def update_issue_description(self, issue_key, new_description):
         url = '/rest/api/2/issue/{0}'.format(issue_key)
         json = {"fields": {"description": new_description}}
         return self.put(url, json=json)
 
-    def get_issue_assignee_key(self, issue_key):
-        url = "/rest/api/2/issue/{issue_key}?fields=assignee".format(issue_key=issue_key)
-        return (((self.get(url) or {}).get("fields") or {}).get("assignee") or {}).get("key") or {}
-
-    def get_issue_assignee_name(self, issue_key):
-        url = "/rest/api/2/issue/{issue_key}?fields=assignee".format(issue_key=issue_key)
-        return (((self.get(url) or {}).get("fields") or {}).get("assignee") or {}).get("displayName") or {}
-
-    def get_issue_comments(self, issue_key):
-        url = "/rest/api/2/issue/{issue_key}/comment".format(issue_key=issue_key)
-        return (self.get(url) or {}).get("comments") or {}
-
     def add_issue_comment(self, issue_key, content=None):
         url = "/rest/api/2/issue/{issue_key}/comment".format(issue_key=issue_key)
         json = {"body": content}
         return self.post(url, json=json) or {}
-
-    def get_issue_comments_body(self, issue_key, last_n=None):
-        comments_dict = self.get_issue_comments(issue_key)
-        index = len(comments_dict)
-        comments_body = []
-        if last_n is not None:
-            if index >= last_n:
-                index = last_n
-        while index:
-            comments_body.append(comments_dict[index-1]['body'])
-            index = index-1
-        return comments_body
-
-    def get_last_n_comment(self, issue_key, last_n=1):
-        comments = self.get_issue_comments(issue_key)
-        try:
-            return comments[len(comments)-last_n] or {}
-        except IndexError as e:
-            logger.error(e)
 
     def delete_issue_comment(self, issue_key, comment_id):
         url = "/rest/api/2/issue/{issue_key}/comment/{comment_id}".format(issue_key=issue_key, comment_id=comment_id)

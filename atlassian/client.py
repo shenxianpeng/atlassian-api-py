@@ -1,6 +1,7 @@
 import requests
+import json
+from types import SimpleNamespace
 from .logger import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -67,7 +68,9 @@ class AtlassianAPI:
         if not response.text:
             return None
         try:
-            return response.json()
+            data = response.text
+            result = json.loads(data, object_hook=lambda d: SimpleNamespace(**d))
+            return result
         except Exception as e:
             logger.error(e)
             return response.text
