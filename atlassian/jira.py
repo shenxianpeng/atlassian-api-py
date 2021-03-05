@@ -161,11 +161,8 @@ class Jira(AtlassianAPI):
         }
         return self.post(url, json=json) or {}
 
-    def get_user(self, username):
+    def user(self, username):
         url = '/rest/api/2/user?username={0}'.format(username)
         return self.get(url) or {}
 
-    def get_user_active(self, username):
-        url = '/rest/api/2/user?username={0}'.format(username)
-        return (self.get(url) or {}).get("active")
 
