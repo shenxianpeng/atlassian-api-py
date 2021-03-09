@@ -15,20 +15,25 @@ Create an easy to use API package that I can use for all the projects when I nee
 ```python
 >>> from atlassian import Jira
 
->>> jira = Jira(url='https://shenxianpeng.atlassian.net', 
-... username="myusername", password="mypassword")
->>> status = jira.get_issue_status('AAP-1')
->>> print(status)
-Backlog
+>>> jira = Jira(url='https://jira.company.com', username="username", password="password")
+>>> issue = jira.issue('TEST-1')
+>>> print(issue.fields.status.name)
+Triage
+>>> print(issue.fields.description)
+this is a demo jira ticket
+>>> print(issue.fields.status.name)
+Triage
+>>> print(issue.fields.issuetype.name)
+Bug
 ```
 
 Put your username and password in a configuration file `config.ini`, for example:
 
 ```markdown
 [jira]
-url = https://shenxianpeng.atlassian.net
-username = myusername
-password = mypassword
+url = https://jira.company.com
+username = username
+password = password
 ```
 Then get the credential information though the configuration file `config.ini`
 
@@ -42,11 +47,13 @@ Then get the credential information though the configuration file `config.ini`
 >>> jira_psw = config['jira']['password']
 
 >>> jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
->>> issue = self.jira.issue('MVQA-900')
+>>> issue = jira.issue('TEST-1')
+>>> print(issue.fields.status.name)
+Triage
 >>> print(issue.fields.description)
 this is a demo jira ticket
 >>> print(issue.fields.status.name)
-Backlog
+Triage
 >>> print(issue.fields.issuetype.name)
 Bug
 ```
@@ -84,4 +91,7 @@ coverage html                   # to get annotated HTML
 > For Jira I used Jira v8.5.9 and Jira Cloud.
 >
 > For BitBucket I used Bitbucket v5.13.1. not support Bitbucket cloud for now.
+
+### Q2: Are there any recent incompatible updates?
+> From v0.2.0 (3/9/2021), convert Get JIra API data from dict to object, no longer compatible with past old versions.
 
