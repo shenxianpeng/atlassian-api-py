@@ -164,5 +164,3 @@ class Jira(AtlassianAPI):
     def user(self, username):
         url = '/rest/api/2/user?username={0}'.format(username)
         return self.get(url) or {}
-
-

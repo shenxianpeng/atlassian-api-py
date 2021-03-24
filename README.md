@@ -4,11 +4,11 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/shenxianpeng/atlassian-api-py/badge/master?s=3f5b565625069f5c5ab303a02b120197cd3abdde)](https://www.codefactor.io/repository/github/shenxianpeng/atlassian-api-py/overview/master)
 ![PyPI - Downloads](https://img.shields.io/pypi/dw/atlassian-api-py)
 
-This library is a wrapper of Atlassian Rest APIs written by Python, currently only supports JIRA and Bitbucket.
+What is this?
 
-## Purpose
+This package is a wrapper of Atlassian Rest APIs written in Python, currently it supports Atlassian products: JIRA and Bitbucket.
 
-Create an easy to use API package that I can use for all the projects when I need CI/CD with JIRA, Bitubket.
+This API package was created to bring ease of implementation for integration with JIRA and Bitbucket.
 
 ## QuickStart
 
@@ -92,6 +92,6 @@ coverage html                   # to get annotated HTML
 >
 > For BitBucket I used Bitbucket v5.13.1. not support Bitbucket cloud for now.
 
-### Q2: Are there any recent incompatible updates?
+### Q2: Are there any major changes?
 > From v0.2.0 (3/9/2021), convert Get JIra API data from dict to object, no longer compatible with past old versions.
 
