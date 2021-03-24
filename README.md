@@ -4,7 +4,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/shenxianpeng/atlassian-api-py/badge/master?s=3f5b565625069f5c5ab303a02b120197cd3abdde)](https://www.codefactor.io/repository/github/shenxianpeng/atlassian-api-py/overview/master)
 ![PyPI - Downloads](https://img.shields.io/pypi/dw/atlassian-api-py)
 
-What is this?
+## What is this?
 
 This package is a wrapper of Atlassian Rest APIs written in Python, currently it supports Atlassian products: JIRA and Bitbucket.
 
