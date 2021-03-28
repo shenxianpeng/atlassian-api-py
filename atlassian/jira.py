@@ -9,6 +9,7 @@ class Jira(AtlassianAPI):
     JIRA API Reference
     https://docs.atlassian.com/software/jira/docs/api/REST/7.6.1/
     """
+
     def issue(self, issue_key):
         url = "/rest/api/2/issue/{issue_key}".format(issue_key=issue_key)
         return self.get(url) or {}
@@ -26,14 +27,14 @@ class Jira(AtlassianAPI):
             for remove_label in remove_labels:
                 remove_temp = {"remove": remove_label}
                 remove_labels_list.append(remove_temp)
-
+        label_data = {}
         if add_labels and remove_labels:
-            json = {"update": {"labels": remove_labels_list + add_labels_list}}
+            label_data = {"update": {"labels": remove_labels_list + add_labels_list}}
         elif add_labels:
-            json = {"update": {"labels": add_labels_list}}
+            label_data = {"update": {"labels": add_labels_list}}
         elif remove_labels:
-            json = {"update": {"labels": remove_labels_list}}
-        return self.put(url, json=json)
+            label_data = {"update": {"labels": remove_labels_list}}
+        return self.put(url, json=label_data)
 
     def update_issue_description(self, issue_key, new_description):
         url = '/rest/api/2/issue/{0}'.format(issue_key)
@@ -70,23 +71,31 @@ class Jira(AtlassianAPI):
         url = '/rest/api/2/issueLink/{link_id}'.format(link_id=link_id)
         return self.delete(url) or {}
 
-    def create_sub_task(self,
-                        project_key=None,
-                        parent_issue_key=None,
-                        summary=None,
-                        fix_version=None,
-                        assignee=None,
-                        description=None,
-                        labels=None,
-                        team=None):
+    def create_task(self, project_key=None, summary=None, assignee=None, owner=None, labels=None, issue_type=10):
         url = '/rest/api/2/issue'
+        json = {
+            "fields": {
+                "project": {"key": project_key},
+                "summary": summary,
+                "issuetype": {"id": issue_type},
+                "assignee": {"key": assignee, "name": assignee},
+                "customfield_11386": {"key": owner, "name": owner},
+                "priority": {"id": "4"},  # "name": "3 - Medium"
+                "labels": labels,
+            }
+        }
 
+        return self.post(url, json=json)
+
+    def create_sub_task(self, project_key=None, parent_issue_key=None, summary=None, fix_version=None, assignee=None,
+                        description=None, labels=None, team=None, issue_type=20):
+        url = '/rest/api/2/issue'
         json = {
             "fields": {
                 "project": {"key": project_key},
                 "parent": {"key": parent_issue_key},
                 "summary": summary,
-                "issuetype": {"id": "20"},
+                "issuetype": {"id": issue_type},
                 "assignee": {"key": assignee, "name": assignee},
                 "priority": {"id": "4"},
                 "description": description,
@@ -114,7 +123,7 @@ class Jira(AtlassianAPI):
 
     def close_issue(self, issue_key, comment):
         url = '/rest/api/2/issue/{0}/transitions'.format(issue_key)
-        json = {
+        comment_data = {
             "update": {
                 "comment": [
                     {
@@ -136,7 +145,7 @@ class Jira(AtlassianAPI):
                 "id": "31"
             }
         }
-        return self.post(url, json=json)
+        return self.post(url, json=comment_data)
 
     def reopen_issue(self, issue_key, comment):
         url = '/rest/api/2/issue/{0}/transitions'.format(issue_key)
@@ -146,6 +155,7 @@ class Jira(AtlassianAPI):
         }
         return self.post(url, json=json)
 
+    # FIXME currently search with sql only support maxResults is 1000.
     def search_issue_with_sql(self, jql, max_result=25):
         url = '/rest/api/2/search'
         json = {

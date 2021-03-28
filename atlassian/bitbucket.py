@@ -189,6 +189,7 @@ class Bitbucket(AtlassianAPI):
     # TODO not work
     def remove_comment_from_pull_request(self, project_key, repo_slug, pr_id, comment):
         comment_values = self.get_pull_request_comments(project_key, repo_slug, pr_id)
+        commit_id = None
         for comment_value in comment_values:
             try:
                 if comment == comment_value['comment']['text']:

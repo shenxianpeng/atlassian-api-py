@@ -50,9 +50,9 @@ class TestJira(unittest.TestCase):
                 self.jira.delete_issue_comment('MVQA-900', comment.id)
 
     def test_search_issue_with_sql(self):
-        sql = 'project = "MVQA" and issuekey=MVQA-900 ORDER BY created DESC'
-        result = self.jira.search_issue_with_sql(sql)
-        self.assertEqual(result['total'], 1)
+        sql = 'project = MVQA ORDER BY priority DESC, updated DESC'
+        result = self.jira.search_issue_with_sql(sql, max_result=2000)
+        self.assertEqual(len(result['issues']), 1000)
 
     def test_user(self):
         username = self.jira.user('xshen')
