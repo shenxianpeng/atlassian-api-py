@@ -30,6 +30,16 @@ class TestJira(unittest.TestCase):
         self.assertGreaterEqual(len(self.issue.fields.attachment), 2)
         self.assertEqual(self.issue.fields.labels, ['AddLabel', 'Test'])
 
+    def test_update_issue_label(self):
+        labels = ['AddLabel', 'Test']
+        self.jira.update_issue_label(issue_key='MVQA-900', add_labels=labels)
+        self.jira.update_issue_label(issue_key='MVQA-900', remove_labels=labels)
+
+    def test_update_issue_component(self):
+        components = ['UDT', 'UNV', 'UNDK']
+        self.jira.update_issue_component(issue_key='MVQA-900', add_components=components)
+        self.jira.update_issue_component(issue_key='MVQA-900', remove_components=components)
+
     def test_update_issue_description(self):
         self.jira.update_issue_description('MVQA-900', 'update description')
         issue = self.jira.issue('MVQA-900')

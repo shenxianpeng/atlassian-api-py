@@ -14,7 +14,7 @@ class Jira(AtlassianAPI):
         url = "/rest/api/2/issue/{issue_key}".format(issue_key=issue_key)
         return self.get(url) or {}
 
-    def update_issue_label(self, issue_key, remove_labels=None, add_labels=None):
+    def update_issue_label(self, issue_key, add_labels=None, remove_labels=None):
         url = '/rest/api/2/issue/{0}'.format(issue_key)
         add_labels_list = []
         remove_labels_list = []
@@ -35,6 +35,27 @@ class Jira(AtlassianAPI):
         elif remove_labels:
             label_data = {"update": {"labels": remove_labels_list}}
         return self.put(url, json=label_data)
+
+    def update_issue_component(self, issue_key, add_components=None, remove_components=None):
+        url = '/rest/api/2/issue/{0}'.format(issue_key)
+        add_component_list = []
+        remove_component_list = []
+        if add_components is not None:
+            for add_component in add_components:
+                add_temp = {"add": {"name": add_component}}
+                add_component_list.append(add_temp)
+        if remove_components is not None:
+            for remove_component in remove_components:
+                remove_temp = {"remove": {"name": remove_component}}
+                remove_component_list.append(remove_temp)
+        component_data = {}
+        if add_components and remove_components:
+            component_data = {"update": {"components": add_component_list + remove_component_list}}
+        elif add_components:
+            component_data = {"update": {"components": add_component_list}}
+        elif remove_components:
+            component_data = {"update": {"components": remove_component_list}}
+        return self.put(url, json=component_data)
 
     def update_issue_description(self, issue_key, new_description):
         url = '/rest/api/2/issue/{0}'.format(issue_key)
