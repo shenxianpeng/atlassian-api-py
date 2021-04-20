@@ -28,11 +28,12 @@ class TestJira(unittest.TestCase):
         self.assertEqual(self.issue.fields.fixVersions[0].name, '2019')
         self.assertEqual(self.issue.fields.components[0].name, 'Test automation')
         self.assertGreaterEqual(len(self.issue.fields.attachment), 2)
-        self.assertEqual(self.issue.fields.labels, ['AddLabel', 'Test'])
 
     def test_update_issue_label(self):
         labels = ['AddLabel', 'Test']
         self.jira.update_issue_label(issue_key='MVQA-900', add_labels=labels)
+        issue = self.jira.issue('MVQA-900')
+        self.assertEqual(issue.fields.labels, labels)
         self.jira.update_issue_label(issue_key='MVQA-900', remove_labels=labels)
 
     def test_update_issue_component(self):
