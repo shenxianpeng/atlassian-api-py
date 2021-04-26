@@ -192,6 +192,10 @@ class Jira(AtlassianAPI):
         }
         return self.post(url, json=json) or {}
 
+    def get_project_components(self, project_id):
+        url = '/rest/api/2/project/{}/components'.format(project_id)
+        return self.get(url) or {}
+
     def user(self, username):
         url = '/rest/api/2/user?username={0}'.format(username)
         return self.get(url) or {}

@@ -27,7 +27,7 @@ Triage
 Bug
 ```
 
-Put your username and password in a configuration file `config.ini`, for example:
+Save your username and password in a configuration file `config.ini`, for example:
 
 ```markdown
 [jira]
@@ -64,7 +64,7 @@ Bug
 # install
 $ pip install atlassian-api-py
 
-# upgrade
+# upgrade to latest
 $ pip install atlassian-api-py --upgrade
 ```
 
@@ -93,5 +93,5 @@ coverage html                   # to get annotated HTML
 > For BitBucket I used Bitbucket v5.13.1. not support Bitbucket cloud for now.
 
 ### Q2: Are there any major changes?
-> From v0.2.0 (3/9/2021), convert Get JIra API data from dict to object, no longer compatible with past old versions.
+> From v0.2.0 (3/9/2021), convert get JIra API data from dict to object, no longer compatible with past old versions.
 

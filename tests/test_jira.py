@@ -65,6 +65,13 @@ class TestJira(unittest.TestCase):
         result = self.jira.search_issue_with_sql(sql, max_result=2000)
         self.assertEqual(len(result['issues']), 1000)
 
+    def test_get_project_components(self):
+        results = self.jira.get_project_components("LINF")
+        component_name_list = []
+        for result in results:
+            component_name_list.append(result.name)
+        self.assertIn("Large", component_name_list)
+
     def test_user(self):
         username = self.jira.user('xshen')
         self.assertEqual(username.key, 'xshen')
