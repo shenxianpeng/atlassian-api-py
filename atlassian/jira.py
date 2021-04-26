@@ -92,7 +92,8 @@ class Jira(AtlassianAPI):
         url = '/rest/api/2/issueLink/{link_id}'.format(link_id=link_id)
         return self.delete(url) or {}
 
-    def create_task(self, project_key=None, summary=None, assignee=None, owner=None, labels=None, issue_type=10):
+    def create_task(self, project_key=None, summary=None, assignee=None, owner=None, labels=None, components=None,
+                    issue_type=10):
         url = '/rest/api/2/issue'
         json = {
             "fields": {
@@ -103,6 +104,7 @@ class Jira(AtlassianAPI):
                 "customfield_11386": {"key": owner, "name": owner},
                 "priority": {"id": "4"},  # "name": "3 - Medium"
                 "labels": labels,
+                "components": components
             }
         }
 
