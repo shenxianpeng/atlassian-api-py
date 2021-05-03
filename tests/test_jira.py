@@ -60,13 +60,11 @@ class TestJira(unittest.TestCase):
             if comment.body == 'Add comment by REST API.':
                 self.jira.delete_issue_comment('MVQA-900', comment.id)
 
-    def test_close_issue(self):
-        self.jira.close_issue('LINF-4')
+    def test_issue_transition(self):
+        self.jira.issue_transition('LINF-4', transition_id=51)  # Close issue
         issue = self.jira.issue('LINF-4')
         self.assertEqual('Closed', issue.fields.status.name)
-
-    def test_open_issue(self):
-        self.jira.reopen_issue('LINF-4')
+        self.jira.issue_transition('LINF-4', transition_id=61)  # Open issue
         issue = self.jira.issue('LINF-4')
         self.assertEqual('Open', issue.fields.status.name)
 

@@ -144,25 +144,16 @@ class Jira(AtlassianAPI):
         url = '/rest/api/2/issue/{0}/watchers'.format(issue_key)
         return self.post(url, json=watcher)
 
-    def close_issue(self, issue_key):
-        """ Each Jira project may have different id, in my project close id is 51.
-        You can find the Close button in Jira, then right click on the view elements
-        then find id="action_id_51", 51 is your close id."""
+    def issue_transition(self, issue_key, transition_id=None):
+        """ Each Jira project may have different transition_id. You can find your transition_id like below:
+        Chose transition Button then right click on the view elements. for example:
+        I find Close button's elements is id="action_id_51", so the close transition_id = 51.
+        I find Open button's elements is id="action_id_61", so the open transition_id = 61."""
         url = '/rest/api/2/issue/{0}/transitions'.format(issue_key)
         json = {
             "transition": {
-                "id": "51"
+                "id": transition_id
             }
-        }
-        return self.post(url, json=json)
-
-    def reopen_issue(self, issue_key):
-        """ Each Jira project may have different id, in my project open id is 61.
-        You can find the Close button in Jira, then right click on the view elements
-        then find id="action_id_61", 61 is your open id."""
-        url = '/rest/api/2/issue/{0}/transitions'.format(issue_key)
-        json = {
-            "transition": {"id": "61"}
         }
         return self.post(url, json=json)
 
