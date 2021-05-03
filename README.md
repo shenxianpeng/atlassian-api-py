@@ -58,6 +58,20 @@ Triage
 Bug
 ```
 
+### More fields
+
+```python
+>>> print(issue.id)
+1684517
+>>> print(issue.key)
+TEST-1
+>>> print(issue.fields.assignee.key)
+xpshen
+>>> print(issue.fields.summary)
+Jira REST API Unit Test Example
+>>> ...
+```
+
 ## Install from PyPI
 
 ```bash
