@@ -60,6 +60,16 @@ class TestJira(unittest.TestCase):
             if comment.body == 'Add comment by REST API.':
                 self.jira.delete_issue_comment('MVQA-900', comment.id)
 
+    def test_close_issue(self):
+        self.jira.close_issue('LINF-4')
+        issue = self.jira.issue('LINF-4')
+        self.assertEqual('Closed', issue.fields.status.name)
+
+    def test_open_issue(self):
+        self.jira.reopen_issue('LINF-4')
+        issue = self.jira.issue('LINF-4')
+        self.assertEqual('Open', issue.fields.status.name)
+
     def test_search_issue_with_sql(self):
         sql = 'project = MVQA ORDER BY priority DESC, updated DESC'
         result = self.jira.search_issue_with_sql(sql, max_result=2000)
