@@ -13,7 +13,6 @@ password = config['jira']['password']
 class TestJira(unittest.TestCase):
 
     def setUp(self):
-        # https://jira.rocketsoftware.com/browse/MVQA-900
         self.jira = Jira(url=jira_url, username=jira_usr, password=password)
         self.issue = self.jira.issue('MVQA-900')
 

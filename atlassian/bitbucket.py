@@ -9,18 +9,19 @@ class Bitbucket(AtlassianAPI):
 
     def _get_paged(self, url, params):
         response = self.get(url, params=params)
-        if "values" not in response:
+        if response.values:
+            values = response.values
+        else:
             return []
-        values = (response or {}).get("values", [])
         limit = params.get("limit")
-        while not response.get("isLastPage"):
+        while not response.isLastPage:
             if limit is not None:
                 params["limit"] = limit - len(values)
                 if params["limit"] < 0:
                     break
-            params["start"] = response.get("nextPageStart")
+            params["start"] = response.nextPageStart
             response = self.get(url, params=params)
-            values += (response or {}).get("values", [])
+            values += response.values or {}
         return values
 
     def get_project_repo(self, project_key, start=0, limit=None):
@@ -34,10 +35,10 @@ class Bitbucket(AtlassianAPI):
 
     def get_project_repo_name(self, project_key):
         values = self.get_project_repo(project_key)
-        repo_names = []
+        repo_name = []
         for value in values:
-            repo_names.append(value['name'])
-        return repo_names
+            repo_name.append(value.name)
+        return repo_name
 
     def get_repo_info(self, project_key, repo_key):
         url = '/rest/api/latest/projects/{0}/repos/{1}'.format(project_key, repo_key)
@@ -54,16 +55,16 @@ class Bitbucket(AtlassianAPI):
 
     def get_repo_branch_names(self, project_key, repo_key):
         values = self.get_repo_branch(project_key, repo_key)
-        branch_names = []
+        branch_name = []
         for value in values:
-            branch_names.append(value['displayId'])
-        return branch_names
+            branch_name.append(value.displayId)
+        return branch_name
 
     def get_branch_latest_commit(self, project_key, repo_key, branch_name):
         branches = self.get_repo_branch(project_key, repo_key)
         for branch in branches:
-            if branch_name == branch['displayId']:
-                return branch['latestCommit']
+            if branch_name == branch.displayId:
+                return branch.latestCommit
 
     def create_branch(self, project_key, repo_key, branch_name, start_point):
         """Using service account to create branch failed because of
@@ -87,16 +88,23 @@ class Bitbucket(AtlassianAPI):
             params['limit'] = limit
         branches = self._get_paged(url, params=params)
 
-        merged_branches = []
+        merged_branch = []
         for branch in branches:
-            for ojb_key, ojb_value in branch.items():
-                if ojb_key == 'metadata':
-                    for metadata_key, metadata_value in ojb_value.items():
-                        if 'outgoing-pull-request-metadata' in metadata_key and 'pullRequest' in metadata_value \
-                                and metadata_value['pullRequest']['state'] == 'MERGED':
-                            if branch['displayId'] not in merged_branches:
-                                merged_branches.append(branch['displayId'])
-        return merged_branches
+            pull_request = [x for x in dir(branch.metadata) if x.endswith('outgoing-pull-request-metadata')]
+            if pull_request:
+                d_metadata = branch.metadata.__dict__
+                metadata = d_metadata['com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata']
+                try:
+                    state = metadata.pullRequest.state
+                except AttributeError:
+                    state = None
+                try:
+                    merged = metadata.merged
+                except AttributeError:
+                    merged = None
+                if state == 'MERGED' or merged:
+                    merged_branch.append(branch.displayId)
+        return merged_branch
 
     def get_branch_commits(self, project_key, repo_key, branch_name, start=0, limit=None):
         url = '/rest/api/latest/projects/{0}/repos/{1}/commits/?until={2}'.format(project_key, repo_key, branch_name)
@@ -111,7 +119,7 @@ class Bitbucket(AtlassianAPI):
         commits = self.get_branch_commits(project_key, repo_key, branch_name, start=start, limit=limit)
         committer = []
         for commit in commits:
-            committer.append(commit['committer'])
+            committer.append(commit.committer)
         return committer
 
     def get_pull_request(self, project_key, repo_key, pr_state="ALL", start=0, limit=None):
@@ -137,8 +145,8 @@ class Bitbucket(AtlassianAPI):
             index += 25
             prs = self.get_pull_request(project_key, repo_key, limit=index)
             for pr in prs:
-                if pr['id'] == int(pr_id):
-                    return pr['fromRef']['displayId']
+                if pr.id == int(pr_id):
+                    return pr.fromRef.displayId
             return None
 
     def get_pull_request_destination_branch_name(self, project_key, repo_key, pr_id):
@@ -147,8 +155,8 @@ class Bitbucket(AtlassianAPI):
             index += 25
             prs = self.get_pull_request(project_key, repo_key, limit=index)
             for pr in prs:
-                if pr['id'] == int(pr_id):
-                    return pr['toRef']['displayId']
+                if pr.id == int(pr_id):
+                    return pr.toRef.displayId
             return None
 
     def get_pull_request_relate_jira_key(self, project_key, repo_key, pr_id):
@@ -161,10 +169,10 @@ class Bitbucket(AtlassianAPI):
 
     def get_open_pull_request_id(self, project_key, repo_key, pr_state="OPEN", start=0, limit=None):
         prs = self.get_pull_request(project_key, repo_key, pr_state=pr_state, start=start, limit=limit)
-        pr_ids = []
+        pr_id = []
         for pr in prs:
-            pr_ids.append(pr['id'])
-        return pr_ids
+            pr_id.append(pr.id)
+        return pr_id
 
     def get_pull_request_diff(self, project_key, repo_key, pr_id):
         url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/diff'.format(project_key, repo_key, pr_id)
@@ -182,7 +190,7 @@ class Bitbucket(AtlassianAPI):
 
     def add_comment_to_pull_request(self, project_key, repo_slug, pr_id, comment):
         url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/' \
-              'comments?diffType=EFFECTIVE&markup=true&avatarSize=64'.format(project_key, repo_slug, pr_id, comment)
+              'comments?diffType=EFFECTIVE&markup=true&avatarSize=64'.format(project_key, repo_slug, pr_id)
         json = {"text": comment}
         return self.post(url, json=json)
 
@@ -192,10 +200,10 @@ class Bitbucket(AtlassianAPI):
         commit_id = None
         for comment_value in comment_values:
             try:
-                if comment == comment_value['comment']['text']:
-                    commit_id = comment_value['comment']['id']
+                if comment == comment_value.comment.text:
+                    commit_id = comment_value.comment.id
                     break
-            except KeyError:
+            except AttributeError:
                 pass
         if commit_id:
             url = '/rest/api/latest/projects/{0}/repos/{1}/pull-requests/{2}/comments/{3}?VERSION'.format(
