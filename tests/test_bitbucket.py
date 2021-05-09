@@ -31,23 +31,16 @@ class TestBitbucket(unittest.TestCase):
         self.assertEqual(repo_info.project.name, 'MV Application Server')
 
     def test_get_repo_branch(self):
-        branches_info = self.git.get_repo_branch('MVAS', 'uvuddb')
+        """assert the branch latest commit and these branches exist."""
+        branches = self.git.get_repo_branch('MVAS', 'uvuddb')
         branch_names = []
-        for branch_info in branches_info:
-            branch_names.append(branch_info.displayId)
+        for branch in branches:
+            branch_names.append(branch.displayId)
+            if branch.displayId == 'hotfix/12.1.1.HF1':
+                self.assertEqual(branch.latestCommit, 'da7696ceacaff863d40a3215eea08e661d5b1c5a')
         exist_branches = ['hotfix/12.1.1.HF1', 'hotfix/12.1.1.HF2', 'hotfix/12.1.1.HF3', 'hotfix/12.1.1.HF4']
         for branch in exist_branches:
             self.assertIn(branch, branch_names)
-
-    def test_get_repo_branch_names(self):
-        branch_names = self.git.get_repo_branch_names('MVAS', 'uvuddb')
-        exist_branches = ['hotfix/12.1.1.HF1', 'hotfix/12.1.1.HF2', 'hotfix/12.1.1.HF3', 'hotfix/12.1.1.HF4']
-        for branch in exist_branches:
-            self.assertIn(branch, branch_names)
-
-    def test_get_branch_latest_commit(self):
-        last_commit = self.git.get_branch_latest_commit('MVAS', 'uvuddb', 'hotfix/12.1.1.HF1')
-        self.assertEqual(last_commit, 'da7696ceacaff863d40a3215eea08e661d5b1c5a')
 
     def test_create_delete_branch(self):
         # Create branch failed because of When performing a ref operation, the author must have an e-mail address.
@@ -69,8 +62,8 @@ class TestBitbucket(unittest.TestCase):
             self.assertIn(commit.displayId, exist_commits)
 
     def test_get_branch_committer_info(self):
-        committers = self.git.get_branch_committer_info('MVAS', 'uvuddb', 'hotfix/12.1.1.HF1', limit=0)
-        for committer in committers:
+        all_committer = self.git.get_branch_committer_info('MVAS', 'uvuddb', 'hotfix/12.1.1.HF1', limit=0)
+        for committer in all_committer:
             self.assertEqual('Xianpeng Shen', committer.displayName)
 
     def test_get_pull_request(self):
@@ -91,8 +84,8 @@ class TestBitbucket(unittest.TestCase):
         relate_jira_key = self.git.get_pull_request_relate_jira_key('MVAS', 'uvuddb', '671')
         self.assertEqual(relate_jira_key, 'UNV-30005')
 
-    def test_get_open_pull_request_id(self):
-        pr_ids = self.git.get_open_pull_request_id('MVAS', 'uvuddb', pr_state="MERGED", limit=0)
+    def test_get_pull_request_id(self):
+        pr_ids = self.git.get_pull_request_id('MVAS', 'uvuddb', pr_state="MERGED", limit=0)
         for pr_id in pr_ids:
             self.assertGreaterEqual(pr_id, 671)
 
@@ -103,7 +96,7 @@ class TestBitbucket(unittest.TestCase):
 
     def test_add_delete_comment_to_pull_request(self):
         # self.git.add_comment_to_pull_request('MVAS', 'uvuddb', 585, 'Add comment by rest api.')
-        comment_values = self.git.get_pull_request_comments('MVAS', 'uvuddb', 585)
+        comment_values = self.git.get_pull_request_activities('MVAS', 'uvuddb', 585)
         comments = []
         for comment_value in comment_values:
             try:
