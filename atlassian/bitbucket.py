@@ -6,6 +6,7 @@ logger = get_logger(__name__)
 
 
 class Bitbucket(AtlassianAPI):
+    """https://docs.atlassian.com/bitbucket-server/rest/7.12.1/bitbucket-rest.html"""
 
     def _get_paged(self, url, params):
         response = self.get(url, params=params)

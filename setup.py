@@ -14,7 +14,7 @@ setuptools.setup(
     description='Atlassian REST API Python Wrapper.',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://shenxianpeng.github.io',
+    url='https://shenxianpeng.github.io/2021/05/atlassian-api-py/',
     author='Xianpeng Shen',
     author_email='xianpeng.shen@gmail.com',
     keywords=['atlassian', 'jira', 'bitbucket', 'rest', 'api'],
@@ -22,6 +22,7 @@ setuptools.setup(
     license='Apache License 2.0',
     packages=setuptools.find_packages(exclude=["tests"]),
     project_urls={
+        'Download': 'https://pypi.org/project/atlassian-api-py/#files',
         # "Source": "https://github.com/shenxianpeng/atlassian-api-py",
         # "Documentation": "https://github.com/shenxianpeng/atlassian-api-py/docs/atlassian.html",
         # "Tracker": "https://github.com/shenxianpeng/atlassian-api-py/issues"
