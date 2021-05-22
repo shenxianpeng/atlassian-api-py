@@ -99,6 +99,24 @@ coverage report -m              # to report on the results
 coverage html                   # to get annotated HTML
 ```
 
+## Changelog
+
+To track some `minor` and `micro` changes.
+
+<details>
+<summary>Click to expand changelog</summary>
+
+* [0.3.0](https://pypi.org/project/atlassian-api-py/0.3.0/) - May 9, 2021 - Fixed bitbucket and test_bitbucket issues.
+
+* [0.2.7](https://pypi.org/project/atlassian-api-py/0.2.7/) - Apr 20, 2021 - Support create task with components.
+
+* [0.2.5](https://pypi.org/project/atlassian-api-py/0.2.5/) - Apr 20, 2021 - Support update_issue_component.
+
+* [0.2.4](https://pypi.org/project/atlassian-api-py/0.2.4/) - Mar 28, 2021 - Added create_task into Jira and refactor code.
+
+* [0.2.0](https://pypi.org/project/atlassian-api-py/0.2.0/) - Mar 9, 2021 - Convert API return from JSON data into Python object.
+</details>
+
 ## FAQ
 
 ### Q1: Which Jira/BitBucket version I used to develop?
@@ -107,5 +125,5 @@ coverage html                   # to get annotated HTML
 > For BitBucket I used Bitbucket v5.13.1. not support Bitbucket cloud for now.
 
 ### Q2: Are there any major changes?
-> From v0.2.0 (3/9/2021), convert get JIra API data from dict to object, no longer compatible with past old versions.
+> From [0.2.0](https://pypi.org/project/atlassian-api-py/0.2.0/) - Mar 9, 2021, convert get JIra API data from dict to object, no longer compatible with past old versions.
 
