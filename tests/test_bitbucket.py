@@ -110,3 +110,7 @@ class TestBitbucket(unittest.TestCase):
         history = self.git.get_file_change_history(
             'MVAS', 'uvuddb', 'release/12.1.1.HF6.PE', 'src/uv/uvsrc/port.note', limit=0)
         self.assertEqual(len(history), 1)
+
+    def test_get_file_content(self):
+        file_content = self.git.get_file_content('MVAS', 'uvuddb', 'release/12.1.1.HF6.PE', '.gitignore')
+        self.assertIn('# windows ignorance files', file_content)

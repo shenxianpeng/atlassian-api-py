@@ -106,6 +106,7 @@ To track some `minor` and `micro` changes.
 <details>
 <summary>📋 Click to expand changelog</summary>
 
+* [0.3.3](https://pypi.org/project/atlassian-api-py/0.3.3/) - June 4, 2021 - Support bitbucket `get_file_content`. 
 * [0.3.0](https://pypi.org/project/atlassian-api-py/0.3.0/) - May 9, 2021 - Fixed bitbucket and test_bitbucket issues.
 * [0.2.7](https://pypi.org/project/atlassian-api-py/0.2.7/) - Apr 20, 2021 - Support create task with components.
 * [0.2.5](https://pypi.org/project/atlassian-api-py/0.2.5/) - Apr 20, 2021 - Support update_issue_component.

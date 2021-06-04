@@ -225,3 +225,8 @@ class Bitbucket(AtlassianAPI):
         if limit is not None:
             params['limit'] = limit
         return self._get_paged(url, params=params)
+
+    def get_file_content(self, project_key, repo_key, branch_name, file_path):
+        """Get file content from a specific branch"""
+        url = '/projects/{}/repos/{}/raw/{}?at={}'.format(project_key, repo_key, file_path, branch_name)
+        return self.get(url)
