@@ -104,7 +104,7 @@ coverage html                   # to get annotated HTML
 To track some `minor` and `micro` changes.
 
 <details>
-<summary>📋 Click to expand changelog</summary>
+<summary> Click to expand changelog</summary>
 
 * [0.3.3](https://pypi.org/project/atlassian-api-py/0.3.3/) - June 4, 2021 - Support bitbucket `get_file_content`. 
 * [0.3.0](https://pypi.org/project/atlassian-api-py/0.3.0/) - May 9, 2021 - Fixed bitbucket and test_bitbucket issues.
