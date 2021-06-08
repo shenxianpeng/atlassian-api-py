@@ -133,6 +133,16 @@ class Jira(AtlassianAPI):
 
         return self.post(url, json=json)
 
+    def update_custom_field(self, issue_key, field_id, field_key, field_value):
+        url = '/rest/api/2/issue/{}'.format(issue_key)
+        json = {
+           "fields": {
+                field_id: {field_key: field_value},    # customfield_11386 is Owner is my Jira project.
+            }
+        }
+
+        return self.put(url, json=json)
+
     def assign_issue(self, issue_key, assignee=None):
         url = '/rest/api/2/issue/{0}/assignee'.format(issue_key)
         if assignee is None:
