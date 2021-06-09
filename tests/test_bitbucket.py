@@ -45,14 +45,13 @@ class TestBitbucket(unittest.TestCase):
     def test_create_delete_branch(self):
         # Create branch failed because of When performing a ref operation, the author must have an e-mail address.
         self.git.create_branch('MVAS', 'uvuddb', 'feature/create_branch_with_rest_api', 'da7696ceacaff')
-        branch_names = self.git.get_repo_branch_names('MVAS', 'uvuddb')
+        branch_names = self.git.get_repo_branch('MVAS', 'uvuddb')
         self.assertNotIn('feature/create_branch_with_rest_api', branch_names)
         self.git.delete_branch('MVAS', 'uvuddb', 'feature/create_branch_with_rest_api', 'da7696ceacaff')
         self.assertNotIn('feature/create_branch_with_rest_api', branch_names)
 
     def test_get_merged_branch(self):
         merged_branches = self.git.get_merged_branch('MVAS', 'uvuddb')
-        print(merged_branches)
         self.assertIn('hotfix/12.1.1.HF6', merged_branches)
 
     def test_get_branch_commits(self):
@@ -120,3 +119,12 @@ class TestBitbucket(unittest.TestCase):
         build_status = self.git.get_build_status(commit_id)
         for value in build_status.values:
             self.assertEqual(value.state, 'SUCCESSFUL')
+
+    def test_update_build_status(self):
+        commit_id = '41ae2835480751157ce4979b533d21e5ecd4fbf4'
+        build_status = self.git.get_build_status(commit_id)
+        for value in build_status.values:
+            data_key = value.key
+            build_name = value.name
+            build_url = value.url
+            self.git.update_build_status(commit_id, 'SUCCESSFUL', data_key, build_name, build_url, 'Change with API.')

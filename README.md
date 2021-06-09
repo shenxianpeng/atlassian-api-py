@@ -104,9 +104,11 @@ coverage html                   # to get annotated HTML
 To track some `minor` and `micro` changes.
 
 <details>
+
 <summary> Click to expand changelog</summary>
 
-* [0.3.6](https://pypi.org/project/atlassian-api-py/0.3.6/) - June 9, 2021 - Support `update_custom_field` in Bitbucket.
+* [0.3.7](https://pypi.org/project/atlassian-api-py/0.3.7/) - June 9, 2021 - Support `update_build_status` in Bitbucket.
+* [0.3.6](https://pypi.org/project/atlassian-api-py/0.3.6/) - June 9, 2021 - Support `get_build_status` in Bitbucket.
 * [0.3.5](https://pypi.org/project/atlassian-api-py/0.3.5/) - June 8, 2021 - Support `update_custom_field` in Jira .
 * [0.3.3](https://pypi.org/project/atlassian-api-py/0.3.3/) - June 4, 2021 - Support `get_file_content` in Bitbucket . 
 * [0.3.0](https://pypi.org/project/atlassian-api-py/0.3.0/) - May 9, 2021 - Fixed Bitbucket and test_bitbucket issues.

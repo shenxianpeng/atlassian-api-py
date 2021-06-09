@@ -234,3 +234,20 @@ class Bitbucket(AtlassianAPI):
     def get_build_status(self, commit_id):
         url = '/rest/build-status/latest/commits/{}'.format(commit_id)
         return self.get(url) or {}
+
+    def update_build_status(self, commit_id,
+                            build_state,
+                            data_key,
+                            build_name,
+                            build_url,
+                            description="ManuallyCheckBuildPass"):
+
+        url = '/rest/build-status/latest/commits/{}'.format(commit_id)
+        json = {
+            "state": build_state,
+            "key": data_key,
+            "name": build_name,
+            "url": build_url,
+            "description": description
+        }
+        self.post(url, json=json)
