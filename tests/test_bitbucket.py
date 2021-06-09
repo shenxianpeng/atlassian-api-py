@@ -114,3 +114,9 @@ class TestBitbucket(unittest.TestCase):
     def test_get_file_content(self):
         file_content = self.git.get_file_content('MVAS', 'uvuddb', 'release/12.1.1.HF6.PE', '.gitignore')
         self.assertIn('# windows ignorance files', file_content)
+
+    def test_get_build_status(self):
+        commit_id = 'd15ee9187b975704fed60e8c2f2a59894a60702b'
+        build_status = self.git.get_build_status(commit_id)
+        for value in build_status.values:
+            self.assertEqual(value.state, 'SUCCESSFUL')

@@ -106,12 +106,13 @@ To track some `minor` and `micro` changes.
 <details>
 <summary> Click to expand changelog</summary>
 
-* [0.3.5](https://pypi.org/project/atlassian-api-py/0.3.5/) - June 8, 2021 - Support Jira `update_custom_field`. 
-* [0.3.3](https://pypi.org/project/atlassian-api-py/0.3.3/) - June 4, 2021 - Support bitbucket `get_file_content`. 
-* [0.3.0](https://pypi.org/project/atlassian-api-py/0.3.0/) - May 9, 2021 - Fixed bitbucket and test_bitbucket issues.
-* [0.2.7](https://pypi.org/project/atlassian-api-py/0.2.7/) - Apr 20, 2021 - Support create task with components.
-* [0.2.5](https://pypi.org/project/atlassian-api-py/0.2.5/) - Apr 20, 2021 - Support update_issue_component.
-* [0.2.4](https://pypi.org/project/atlassian-api-py/0.2.4/) - Mar 28, 2021 - Added create_task into Jira and refactor code.
+* [0.3.6](https://pypi.org/project/atlassian-api-py/0.3.6/) - June 9, 2021 - Support `update_custom_field` in Bitbucket.
+* [0.3.5](https://pypi.org/project/atlassian-api-py/0.3.5/) - June 8, 2021 - Support `update_custom_field` in Jira .
+* [0.3.3](https://pypi.org/project/atlassian-api-py/0.3.3/) - June 4, 2021 - Support `get_file_content` in Bitbucket . 
+* [0.3.0](https://pypi.org/project/atlassian-api-py/0.3.0/) - May 9, 2021 - Fixed Bitbucket and test_bitbucket issues.
+* [0.2.7](https://pypi.org/project/atlassian-api-py/0.2.7/) - Apr 20, 2021 - Support create task with components in Jira.
+* [0.2.5](https://pypi.org/project/atlassian-api-py/0.2.5/) - Apr 20, 2021 - Support `update_issue_component` in Jira .
+* [0.2.4](https://pypi.org/project/atlassian-api-py/0.2.4/) - Mar 28, 2021 - Added create_task and refactor code for Jira.
 * [0.2.0](https://pypi.org/project/atlassian-api-py/0.2.0/) - Mar 9, 2021 - Convert API return from JSON data into Python object.
 
 </details>

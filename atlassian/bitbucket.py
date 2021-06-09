@@ -230,3 +230,7 @@ class Bitbucket(AtlassianAPI):
         """Get file content from a specific branch"""
         url = '/projects/{}/repos/{}/raw/{}?at={}'.format(project_key, repo_key, file_path, branch_name)
         return self.get(url)
+
+    def get_build_status(self, commit_id):
+        url = '/rest/build-status/latest/commits/{}'.format(commit_id)
+        return self.get(url) or {}
