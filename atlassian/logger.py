@@ -4,7 +4,7 @@ import os
 from logging.handlers import RotatingFileHandler
 
 FORMATTER = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-LOG_FILE = 'logs/atlassian-api.log'
+LOG_FILE = 'logs/atlassian-api-py.log'
 
 
 def get_console_handler():
