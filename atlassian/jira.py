@@ -15,7 +15,7 @@ class Jira(AtlassianAPI):
         return self.get(url) or {}
 
     def update_issue_label(self, issue_key, add_labels=None, remove_labels=None):
-        url = '/rest/api/2/issue/{0}'.format(issue_key)
+        url = '/rest/api/2/issue/{}'.format(issue_key)
         add_labels_list = []
         remove_labels_list = []
         if add_labels is not None:
@@ -133,13 +133,19 @@ class Jira(AtlassianAPI):
 
         return self.post(url, json=json)
 
-    def update_custom_field(self, issue_key, field_id, field_key, field_value):
+    def update_custom_field(self, issue_key, field_id, *field_args):
+        """
+        In my Jira project:
+        customfield_10985 is solution field which field_args length is 1
+        customfield_11386 is owner field which field_args length is 2
+        """
         url = '/rest/api/2/issue/{}'.format(issue_key)
-        json = {
-           "fields": {
-                field_id: {field_key: field_value},    # customfield_11386 is Owner is my Jira project.
-            }
-        }
+        if len(field_args) == 1:
+            json = {"fields": {field_id: field_args[0]}}
+        elif len(field_args) == 2:
+            json = {"fields": {field_id: {field_args[0]: field_args[1]}}}
+        else:
+            raise AttributeError("Not support field_args length > 2")
 
         return self.put(url, json=json)
 

@@ -40,13 +40,19 @@ class TestJira(unittest.TestCase):
         self.jira.update_issue_component(issue_key='MVQA-900', add_components=components)
         self.jira.update_issue_component(issue_key='MVQA-900', remove_components=components)
 
-    def test_update_custom_field(self):
+    def test_update_custom_field_owner(self):
+        """Update Jira project owner"""
         field_id = 'customfield_11386'
         field_key = 'name'
-        field_value = 'shan'
-        self.jira.update_custom_field('LINF-269', field_id, field_key, field_value)
-        issue = self.jira.issue('LINF-269')
-        self.assertEqual(issue.fields.customfield_11386.name, 'shan')
+        field_value = 'xshen'
+        self.jira.update_custom_field('LINF-4', field_id, field_key, field_value)
+        issue = self.jira.issue('LINF-4')
+        self.assertEqual(issue.fields.customfield_11386.name, 'xshen')
+
+    def test_update_custom_field_solution(self):
+        field_id = 'customfield_10985'
+        field_value = 'Update Solution - 3'
+        self.jira.update_custom_field('UNV-31074', field_id, field_value)
 
     def test_update_issue_description(self):
         self.jira.update_issue_description('MVQA-900', 'update description')
