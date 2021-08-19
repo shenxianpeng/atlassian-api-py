@@ -53,8 +53,10 @@ def build_package():
     if is_build in ('y', "Y"):
         try:
             print("starting remove dist build folders\n")
-            shutil.rmtree('dist')
-            shutil.rmtree('build')
+            if os.path.exists('dist'):
+                shutil.rmtree('dist')
+            if os.path.exists('build'):
+                shutil.rmtree('build')
         except OSError as e:
             print("[x]: remote %s - %s failed." % (e.filename, e.strerror))
             exit(1)
