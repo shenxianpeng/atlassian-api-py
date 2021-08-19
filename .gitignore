@@ -3,6 +3,7 @@ atlassian/__pycache__/
 build/
 dist/
 logs/
+venv/
 atlassian_api_py.egg-info/
 /atlassian/logs/atlassian-api.log
 /tests/logs/atlassian-api.log
