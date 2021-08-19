@@ -81,9 +81,9 @@ class TestJira(unittest.TestCase):
         issue = self.jira.issue('LINF-4')
         self.assertEqual('Open', issue.fields.status.name)
 
-    def test_search_issue_with_sql(self):
-        sql = 'project = MVQA ORDER BY priority DESC, updated DESC'
-        result = self.jira.search_issue_with_sql(sql, max_result=2000)
+    def test_search_issue_with_jql(self):
+        jql = 'project = MVQA ORDER BY priority DESC, updated DESC'
+        result = self.jira.search_issue_with_jql(jql, max_result=2000)
         self.assertEqual(len(result['issues']), 1000)
 
     def test_get_project_components(self):

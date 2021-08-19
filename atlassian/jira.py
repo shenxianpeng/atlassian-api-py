@@ -173,8 +173,8 @@ class Jira(AtlassianAPI):
         }
         return self.post(url, json=json)
 
-    # FIXME currently search with sql only support maxResults is 1000.
-    def search_issue_with_sql(self, jql, max_result=25):
+    # FIXME currently search with jql only support maxResults is 1000.
+    def search_issue_with_jql(self, jql, max_result=25):
         url = '/rest/api/2/search'
         json = {
             "jql": jql,

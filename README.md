@@ -106,16 +106,17 @@ To track some `minor` and `micro` changes.
 <details>
 
 <summary> Click to expand changelog</summary>
-
-* [0.3.7](https://pypi.org/project/atlassian-api-py/0.3.7/) - June 9, 2021 - Support `update_build_status` in Bitbucket.
-* [0.3.6](https://pypi.org/project/atlassian-api-py/0.3.6/) - June 9, 2021 - Support `get_build_status` in Bitbucket.
-* [0.3.5](https://pypi.org/project/atlassian-api-py/0.3.5/) - June 8, 2021 - Support `update_custom_field` in Jira .
-* [0.3.3](https://pypi.org/project/atlassian-api-py/0.3.3/) - June 4, 2021 - Support `get_file_content` in Bitbucket . 
+* [0.3.9](https://pypi.org/project/atlassian-api-py/0.3.9/) - Aug 19, 2021 - Changed `search_issue_with_sql` to `search_issue_with_jql`.
+* [0.3.8](https://pypi.org/project/atlassian-api-py/0.3.8/) - Aug 19, 2021 - Changed `update_custom_field` to support pass 3 or 4 params in Jira.
+* [0.3.7](https://pypi.org/project/atlassian-api-py/0.3.7/) - June 9, 2021 - Added `update_build_status` in Bitbucket.
+* [0.3.6](https://pypi.org/project/atlassian-api-py/0.3.6/) - June 9, 2021 - Added `get_build_status` in Bitbucket.
+* [0.3.5](https://pypi.org/project/atlassian-api-py/0.3.5/) - June 8, 2021 - Added `update_custom_field` in Jira .
+* [0.3.3](https://pypi.org/project/atlassian-api-py/0.3.3/) - June 4, 2021 - Added `get_file_content` in Bitbucket . 
 * [0.3.0](https://pypi.org/project/atlassian-api-py/0.3.0/) - May 9, 2021 - Fixed Bitbucket and test_bitbucket issues.
-* [0.2.7](https://pypi.org/project/atlassian-api-py/0.2.7/) - Apr 20, 2021 - Support create task with components in Jira.
-* [0.2.5](https://pypi.org/project/atlassian-api-py/0.2.5/) - Apr 20, 2021 - Support `update_issue_component` in Jira .
+* [0.2.7](https://pypi.org/project/atlassian-api-py/0.2.7/) - Apr 20, 2021 - Added create task with components in Jira.
+* [0.2.5](https://pypi.org/project/atlassian-api-py/0.2.5/) - Apr 20, 2021 - Added `update_issue_component` in Jira .
 * [0.2.4](https://pypi.org/project/atlassian-api-py/0.2.4/) - Mar 28, 2021 - Added create_task and refactor code for Jira.
-* [0.2.0](https://pypi.org/project/atlassian-api-py/0.2.0/) - Mar 9, 2021 - Convert API return from JSON data into Python object.
+* [0.2.0](https://pypi.org/project/atlassian-api-py/0.2.0/) - Mar 9, 2021 - Changed API return from JSON data to Python object.
 
 </details>
 
