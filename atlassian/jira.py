@@ -11,11 +11,11 @@ class Jira(AtlassianAPI):
     """
 
     def issue(self, issue_key):
-        url = "/rest/api/2/issue/{issue_key}".format(issue_key=issue_key)
+        url = "/rest/api/2/issue/{key}".format(key=issue_key)
         return self.get(url) or {}
 
     def update_issue_label(self, issue_key, add_labels=None, remove_labels=None):
-        url = '/rest/api/2/issue/{}'.format(issue_key)
+        url = '/rest/api/2/issue/{key}'.format(key=issue_key)
         add_labels_list = []
         remove_labels_list = []
         if add_labels is not None:
@@ -37,7 +37,7 @@ class Jira(AtlassianAPI):
         return self.put(url, json=label_data)
 
     def update_issue_component(self, issue_key, add_components=None, remove_components=None):
-        url = '/rest/api/2/issue/{0}'.format(issue_key)
+        url = '/rest/api/2/issue/{key}'.format(key=issue_key)
         add_component_list = []
         remove_component_list = []
         if add_components is not None:
@@ -58,17 +58,17 @@ class Jira(AtlassianAPI):
         return self.put(url, json=component_data)
 
     def update_issue_description(self, issue_key, new_description):
-        url = '/rest/api/2/issue/{0}'.format(issue_key)
+        url = '/rest/api/2/issue/{key}'.format(key=issue_key)
         json = {"fields": {"description": new_description}}
         return self.put(url, json=json)
 
     def add_issue_comment(self, issue_key, content=None):
-        url = "/rest/api/2/issue/{issue_key}/comment".format(issue_key=issue_key)
+        url = "/rest/api/2/issue/{key}/comment".format(key=issue_key)
         json = {"body": content}
         return self.post(url, json=json) or {}
 
     def delete_issue_comment(self, issue_key, comment_id):
-        url = "/rest/api/2/issue/{issue_key}/comment/{comment_id}".format(issue_key=issue_key, comment_id=comment_id)
+        url = "/rest/api/2/issue/{key}/comment/{id}".format(key=issue_key, id=comment_id)
         return self.delete(url) or None
 
     def link_issue_as(self, type_name=None, inward_issue=None, outward_issue=None):
@@ -89,7 +89,7 @@ class Jira(AtlassianAPI):
         return self.post(url, json=json)
 
     def delete_issue_link(self, link_id):
-        url = '/rest/api/2/issueLink/{link_id}'.format(link_id=link_id)
+        url = '/rest/api/2/issueLink/{id}'.format(id=link_id)
         return self.delete(url) or {}
 
     def create_task(self, project_key=None, summary=None, assignee=None, owner=None, labels=None, components=None,
@@ -139,7 +139,7 @@ class Jira(AtlassianAPI):
         customfield_10985 is solution field which field_args length is 1
         customfield_11386 is owner field which field_args length is 2
         """
-        url = '/rest/api/2/issue/{}'.format(issue_key)
+        url = '/rest/api/2/issue/{key}'.format(key=issue_key)
         if len(field_args) == 1:
             json = {"fields": {field_id: field_args[0]}}
         elif len(field_args) == 2:
@@ -150,14 +150,14 @@ class Jira(AtlassianAPI):
         return self.put(url, json=json)
 
     def assign_issue(self, issue_key, assignee=None):
-        url = '/rest/api/2/issue/{0}/assignee'.format(issue_key)
+        url = '/rest/api/2/issue/{key}/assignee'.format(key=issue_key)
         if assignee is None:
             assignee = -1
         json = {"name": assignee}
         return self.put(url, json=json) or {}
 
     def add_issue_watcher(self, issue_key, watcher):
-        url = '/rest/api/2/issue/{0}/watchers'.format(issue_key)
+        url = '/rest/api/2/issue/{key}/watchers'.format(key=issue_key)
         return self.post(url, json=watcher)
 
     def issue_transition(self, issue_key, transition_id=None):
@@ -165,7 +165,7 @@ class Jira(AtlassianAPI):
         Chose transition Button then right click on the view elements. for example:
         I find Close button's elements is id="action_id_51", so the close transition_id = 51.
         I find Open button's elements is id="action_id_61", so the open transition_id = 61."""
-        url = '/rest/api/2/issue/{0}/transitions'.format(issue_key)
+        url = '/rest/api/2/issue/{key}/transitions'.format(key=issue_key)
         json = {
             "transition": {
                 "id": transition_id
@@ -190,9 +190,9 @@ class Jira(AtlassianAPI):
         return self.post(url, json=json) or {}
 
     def get_project_components(self, project_id):
-        url = '/rest/api/2/project/{}/components'.format(project_id)
+        url = '/rest/api/2/project/{id}/components'.format(id=project_id)
         return self.get(url) or {}
 
     def user(self, username):
-        url = '/rest/api/2/user?username={0}'.format(username)
+        url = '/rest/api/2/user?username={name}'.format(name=username)
         return self.get(url) or {}
