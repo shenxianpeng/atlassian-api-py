@@ -107,7 +107,7 @@ To track some `minor` and `micro` changes.
 
 <summary> Click to expand changelog</summary>
 
-* [0.3.10](https://pypi.org/project/atlassian-api-py/0.3.10/) - Aug 25, 2021 - Added `get_pull_request_comments` in Bitbucket.
+* [0.3.11](https://pypi.org/project/atlassian-api-py/0.3.11/) - Aug 25, 2021 - Added `get_pull_request_comments` in Bitbucket.
 * [0.3.9](https://pypi.org/project/atlassian-api-py/0.3.9/) - Aug 19, 2021 - Changed `search_issue_with_sql` to `search_issue_with_jql`.
 * [0.3.8](https://pypi.org/project/atlassian-api-py/0.3.8/) - Aug 19, 2021 - Changed `update_custom_field` to support pass 3 or 4 params in Jira.
 * [0.3.7](https://pypi.org/project/atlassian-api-py/0.3.7/) - June 9, 2021 - Added `update_build_status` in Bitbucket.
