@@ -174,6 +174,11 @@ class Bitbucket(AtlassianAPI):
         url = '/rest/api/latest/projects/{}/repos/{}/pull-requests/{}/commits'.format(project_key, repo_key, pr_id)
         return self.get(url)
 
+    def get_pull_request_comments(self, project_key, repo_key, pr_id):
+        """A specific pull request comments"""
+        url = '/rest/ui/latest/projects/{}/repos/{}/pull-requests/{}/comments'.format(project_key, repo_key, pr_id)
+        return self.get(url)
+
     def get_pull_request_activities(self, project_key, repo_slug, pr_id, start=0, limit=None):
         """A specific pull request activities"""
         url = '/rest/api/latest/projects/{}/repos/{}/pull-requests/{}/activities'.format(project_key, repo_slug, pr_id)

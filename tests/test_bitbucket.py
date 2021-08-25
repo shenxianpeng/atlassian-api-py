@@ -93,6 +93,16 @@ class TestBitbucket(unittest.TestCase):
         self.assertEqual(pr_diff.fromHash, 'dad7e0380d6e665bfda907da8eec38e383994224')
         self.assertEqual(pr_diff.toHash, 'e2e805087195616f43b1458472c6ecbf5264b180')
 
+    def test_get_pull_request_commits(self):
+        commits = self.git.get_pull_request_commits('MVAS', 'uvuddb', 671)
+        for value in commits.values:
+            self.assertEqual(value.authorTimestamp, 1607484771000)
+
+    def test_get_pull_request_comments(self):
+        comments = self.git.get_pull_request_comments('MVAS', 'uvuddb', 697)
+        for comment in comments.values:
+            self.assertIn('Quality Gate looks good', comment.text)
+
     def test_add_delete_comment_to_pull_request(self):
         # self.git.add_comment_to_pull_request('MVAS', 'uvuddb', 585, 'Add comment by rest api.')
         comment_values = self.git.get_pull_request_activities('MVAS', 'uvuddb', 585)
