@@ -103,6 +103,20 @@ class TestBitbucket(unittest.TestCase):
         for comment in comments.values:
             self.assertIn('Quality Gate looks good', comment.text)
 
+    def test_get_pull_request_activities(self):
+        activity_values = self.git.get_pull_request_activities('MVAS', 'uvuddb', '898')
+        self.assertGreaterEqual(len(activity_values), 5)
+        for value in activity_values:
+            if value.id == '1434234':
+                self.assertEqual(value.action, 'MERGED')
+
+    def test_get_pull_request_merge(self):
+        merge_data = self.git.get_pull_request_merge('MVAS', 'uvuddb', '898')
+        try:
+            self.assertEqual(merge_data.canMerge, False)
+        except AttributeError:
+            self.assertTrue(merge_data.errors, 'has error attribute')
+
     def test_add_delete_comment_to_pull_request(self):
         # self.git.add_comment_to_pull_request('MVAS', 'uvuddb', 585, 'Add comment by rest api.')
         comment_values = self.git.get_pull_request_activities('MVAS', 'uvuddb', 585)
@@ -138,3 +152,4 @@ class TestBitbucket(unittest.TestCase):
             build_name = value.name
             build_url = value.url
             self.git.update_build_status(commit_id, 'SUCCESSFUL', data_key, build_name, build_url, 'Change with API.')
+

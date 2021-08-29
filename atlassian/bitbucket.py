@@ -189,6 +189,11 @@ class Bitbucket(AtlassianAPI):
             params['limit'] = limit
         return self._get_paged(url, params=params)
 
+    def get_pull_request_merge(self, project_key, repo_key, pr_id):
+        """Get the specific Pull Request merge information"""
+        url = '/rest/api/latest/projects/{}/repos/{}/pull-requests/{}/merge'.format(project_key, repo_key, pr_id)
+        return self.get(url) or {}
+
     def get_branch_committer_info(self, project_key, repo_key, branch_name, start=0, limit=None):
         commits = self.get_branch_commits(project_key, repo_key, branch_name, start=start, limit=limit)
         committer = []
@@ -256,3 +261,4 @@ class Bitbucket(AtlassianAPI):
             "description": description
         }
         self.post(url, json=json)
+
