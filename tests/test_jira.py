@@ -100,3 +100,10 @@ class TestJira(unittest.TestCase):
     def test_user_active(self):
         username = self.jira.user('bklein')
         self.assertEqual(username.active, False)
+
+    def test_get_dev_status(self):
+        issue = self.jira.issue('MVQA-827')
+        issue_id = issue.id
+        print(issue_id)
+        dev_status = self.jira.dev_status(issue_id)
+        self.assertEqual(dev_status.detail[0].repositories[0].name, 'u2cicd')

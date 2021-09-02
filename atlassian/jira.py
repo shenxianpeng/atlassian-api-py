@@ -196,3 +196,8 @@ class Jira(AtlassianAPI):
     def user(self, username):
         url = '/rest/api/2/user?username={name}'.format(name=username)
         return self.get(url) or {}
+
+    def get_dev_status(self, issue_id, app_type='stash', data_type='repository'):
+        url = '/rest/dev-status/1.0/issue/detail?issueId={0}&applicationType={1}&dataType={2}'\
+            .format(issue_id, app_type, data_type)
+        return self.get(url) or {}

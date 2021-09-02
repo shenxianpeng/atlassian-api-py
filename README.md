@@ -101,12 +101,9 @@ coverage html                   # to get annotated HTML
 
 ## Changelog
 
-To track some `minor` and `micro` changes.
+Track some `minor` and `micro` changes.
 
-<details>
-
-<summary> Click to expand changelog</summary>
-
+* [0.3.12](https://pypi.org/project/atlassian-api-py/0.3.12/) - Sep 2, 2021 - Added `get_dev_status` in Jira.
 * [0.3.11](https://pypi.org/project/atlassian-api-py/0.3.11/) - Aug 25, 2021 - Added `get_pull_request_comments` in Bitbucket.
 * [0.3.9](https://pypi.org/project/atlassian-api-py/0.3.9/) - Aug 19, 2021 - Changed `search_issue_with_sql` to `search_issue_with_jql`.
 * [0.3.8](https://pypi.org/project/atlassian-api-py/0.3.8/) - Aug 19, 2021 - Changed `update_custom_field` to support pass 3 or 4 params in Jira.
@@ -119,8 +116,6 @@ To track some `minor` and `micro` changes.
 * [0.2.5](https://pypi.org/project/atlassian-api-py/0.2.5/) - Apr 20, 2021 - Added `update_issue_component` in Jira .
 * [0.2.4](https://pypi.org/project/atlassian-api-py/0.2.4/) - Mar 28, 2021 - Added create_task and refactor code for Jira.
 * [0.2.0](https://pypi.org/project/atlassian-api-py/0.2.0/) - Mar 9, 2021 - Changed API return from JSON data to Python object.
-
-</details>
 
 ## FAQ
 
