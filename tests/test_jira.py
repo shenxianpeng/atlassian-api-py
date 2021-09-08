@@ -73,6 +73,17 @@ class TestJira(unittest.TestCase):
             if comment.body == 'Add comment by REST API.':
                 self.jira.delete_issue_comment('MVQA-900', comment.id)
 
+    @unittest.skip  # skip this one as it will create jira issue
+    def test_create_issue(self):
+        data = {
+            "project": {"key": "MVQA"},
+            "assignee": {"name": "xshen"},
+            "issuetype": {"name": "Task"},
+            "summary": "Test create issue",
+            "description": "test rest api"
+        }
+        self.jira.create_issue(fields=data)
+
     def test_issue_transition(self):
         self.jira.issue_transition('LINF-4', transition_id=51)  # Close issue
         issue = self.jira.issue('LINF-4')
@@ -104,6 +115,5 @@ class TestJira(unittest.TestCase):
     def test_get_dev_status(self):
         issue = self.jira.issue('MVQA-827')
         issue_id = issue.id
-        print(issue_id)
-        dev_status = self.jira.dev_status(issue_id)
+        dev_status = self.jira.get_dev_status(issue_id)
         self.assertEqual(dev_status.detail[0].repositories[0].name, 'u2cicd')

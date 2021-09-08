@@ -92,6 +92,39 @@ class Jira(AtlassianAPI):
         url = '/rest/api/2/issueLink/{id}'.format(id=link_id)
         return self.delete(url) or {}
 
+    def create_issue(self, fields, update=None):
+        """
+        Creates an issue or a sub-task from a JSON representation
+        :param fields: JSON data
+                mandatory keys are issuetype, summary and project
+        :param update: JSON data
+                Use it to link issues or update worklog
+        :return:
+            example:
+                fields = dict(summary='Into The Night',
+                              project = dict(key='APA'),
+                              issuetype = dict(name='Story')
+                              )
+                update = dict(issuelinks={
+                    "add": {
+                        "type": {
+                            "name": "Child-Issue"
+                            },
+                        "inwardIssue": {
+                            "key": "ISSUE-KEY"
+                            }
+                        }
+                    }
+                )
+                jira.create_issue(fields=fields, update=update)
+        """
+        url = '/rest/api/2/issue'
+        data = {"fields": fields}
+        if update:
+            data["update"] = update
+        return self.post(url, json=data)
+
+    # TODO: replace by create_issue, will remove it in the future
     def create_task(self, project_key=None, summary=None, assignee=None, owner=None, labels=None, components=None,
                     issue_type=10):
         url = '/rest/api/2/issue'
@@ -110,6 +143,7 @@ class Jira(AtlassianAPI):
 
         return self.post(url, json=json)
 
+    # TODO: replace by create_issue, will remove it in the future
     def create_sub_task(self, project_key=None, parent_issue_key=None, summary=None, fix_version=None, assignee=None,
                         description=None, labels=None, team=None, issue_type=20):
         url = '/rest/api/2/issue'
