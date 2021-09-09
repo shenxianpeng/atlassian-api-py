@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from .logger import get_logger
 
 logger = get_logger(__name__)
+logger.disabled = True
 
 
 class AtlassianAPI:
