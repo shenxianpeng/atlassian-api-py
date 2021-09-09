@@ -1,6 +1,5 @@
 import logging
 import sys
-import os
 from logging.handlers import RotatingFileHandler
 
 FORMATTER = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -32,8 +31,7 @@ def get_logger(name):
     logger.setLevel(logging.DEBUG)
 
     # comment out this code if needs to print log in console.
-    # logger.addHandler(get_console_handler())
-    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+    # os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
     logger.addHandler(get_console_handler())
 
     logger.propagate = False
