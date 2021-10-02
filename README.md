@@ -12,30 +12,30 @@ This API package was created to bring ease of implementation for integration wit
 
 ## QuickStart
 
+### Establish connection 
+
+Connect with username and password
 ```python
 >>> from atlassian import Jira
-
 >>> jira = Jira(url='https://jira.company.com', username="username", password="password")
->>> issue = jira.issue('TEST-1')
->>> print(issue.fields.status.name)
-Triage
->>> print(issue.fields.description)
-this is a demo jira ticket
->>> print(issue.fields.status.name)
-Triage
->>> print(issue.fields.issuetype.name)
-Bug
 ```
 
-Save your username and password in a configuration file `config.ini`, for example:
+Or connect with token
+```python
+>>> from atlassian import Jira
+>>> jira = Jira(url='https://jira.company.com', token="yourToken")
+```
+
+Or write your credentials in a configuration file `config.ini`, and get the credential though the configuration file.
 
 ```markdown
 [jira]
 url = https://jira.company.com
 username = username
 password = password
+# Or
+token = yourToken
 ```
-Then get the credential information though the configuration file `config.ini`
 
 ```python
 >>> import configparser
@@ -45,8 +45,14 @@ Then get the credential information though the configuration file `config.ini`
 >>> jira_url = config['jira']['url']
 >>> jira_usr = config['jira']['username']
 >>> jira_psw = config['jira']['password']
+>>> jira_token = config['jira']['token']
+```
 
->>> jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
+### Get fields
+
+Next, you can get the issue's fields as follow:
+
+```python
 >>> issue = jira.issue('TEST-1')
 >>> print(issue.fields.status.name)
 Triage
@@ -102,6 +108,7 @@ coverage html                   # to get annotated HTML
 ## Changelog
 
 Track some `minor` and `micro` changes.
+* [0.3.17](https://pypi.org/project/atlassian-api-py/0.3.17/) - Oct 2, 2021 - Support establish connection with token and update README.md.
 * [0.3.15](https://pypi.org/project/atlassian-api-py/0.3.15/) - Sep 9, 2021 - Fixed permission issue temporarily by changing file_handler to console_handler.
 * [0.3.14](https://pypi.org/project/atlassian-api-py/0.3.14/) - Sep 9, 2021 - Fixed Permission denied: 'logs' issue.
 * [0.3.13](https://pypi.org/project/atlassian-api-py/0.3.13/) - Sep 8, 2021 - Added `create_issue` in Jira.

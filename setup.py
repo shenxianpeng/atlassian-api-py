@@ -15,7 +15,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     # url='https://github.com/shenxianpeng/atlassian-api-py',
-    author='Xianpeng Shen',
+    author='Peter Shen',
     author_email='xianpeng.shen@gmail.com',
     keywords=['atlassian', 'jira', 'bitbucket', 'rest', 'api'],
     python_requires='>=3',

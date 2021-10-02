@@ -10,7 +10,15 @@ logger.disabled = True
 class AtlassianAPI:
     default_headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
-    def __init__(self, url, username=None, password=None, timeout=60, session=None):
+    def __init__(
+            self,
+            url,
+            username=None,
+            password=None,
+            timeout=60,
+            session=None,
+            token=None
+    ):
         self.url = url.strip("/")
         self.username = username
         self.password = password
@@ -24,6 +32,8 @@ class AtlassianAPI:
                 self._create_basic_session(username, password)
             except Exception as e:
                 logger.error(e)
+        elif token is not None:
+            self._create_token_session(token)
 
     def __enter__(self):
         return self
@@ -33,6 +43,18 @@ class AtlassianAPI:
 
     def _create_basic_session(self, username, password):
         self._session.auth = (username, password)
+
+    def _create_token_session(self, token):
+        self._update_header("Authorization", "Bearer {token}".format(token=token))
+
+    def _update_header(self, key, value):
+        """
+        Update header for exist session
+        :param key:
+        :param value:
+        :return:
+        """
+        self._session.headers.update({key: value})
 
     @staticmethod
     def _response_handler(response):

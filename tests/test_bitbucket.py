@@ -6,14 +6,13 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 git_url = config['bitbucket']['url']
-git_usr = config['bitbucket']['username']
-git_psw = config['bitbucket']['password']
+token = config['bitbucket']['token']
 
 
 class TestBitbucket(unittest.TestCase):
 
     def setUp(self):
-        self.git = Bitbucket(url=git_url, username=git_usr, password=git_psw)
+        self.git = Bitbucket(url=git_url, token=token)
 
     def test_get_project_repo(self):
         repos = self.git.get_project_repo('MVAS')
@@ -152,4 +151,3 @@ class TestBitbucket(unittest.TestCase):
             build_name = value.name
             build_url = value.url
             self.git.update_build_status(commit_id, 'SUCCESSFUL', data_key, build_name, build_url, 'Change with API.')
-
