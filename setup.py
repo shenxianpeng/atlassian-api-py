@@ -11,7 +11,7 @@ with open("atlassian/_version.py") as fp:
 setuptools.setup(
     name='atlassian-api-py',
     version=version['__version__'],
-    description='Atlassian REST API Python Wrapper.',
+    description='Python Wrapper for Atlassian REST API',
     long_description=long_description,
     long_description_content_type="text/markdown",
     # url='https://github.com/shenxianpeng/atlassian-api-py',

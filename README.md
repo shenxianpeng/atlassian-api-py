@@ -1,4 +1,4 @@
-# Atlassian REST API Python Wrapper
+# Python Wrapper for Atlassian REST API
 
 [![PyPI](https://img.shields.io/pypi/v/atlassian-api-py)](https://pypi.org/project/atlassian-api-py/)
 [![CodeFactor](https://www.codefactor.io/repository/github/shenxianpeng/atlassian-api-py/badge/master?s=3f5b565625069f5c5ab303a02b120197cd3abdde)](https://www.codefactor.io/repository/github/shenxianpeng/atlassian-api-py/overview/master)
@@ -6,11 +6,21 @@
 
 ## What is this?
 
-This package is a wrapper of Atlassian Rest APIs written in Python, currently it supports Atlassian products: JIRA and Bitbucket.
+This is a package wrapper of Atlassian REST API written in Python, currently, it only supports JIRA and Bitbucket.
 
-This API package was created to bring ease of implementation for integration with JIRA and Bitbucket.
+This package was created to simplify the implementation of integration with JIRA and Bitbucket.
 
 ## QuickStart
+
+## Install from PyPI
+
+```bash
+# install
+$ pip install atlassian-api-py
+
+# upgrade to latest
+$ pip install atlassian-api-py --upgrade
+```
 
 ### Establish connection 
 
@@ -76,16 +86,6 @@ xpshen
 >>> print(issue.fields.summary)
 Jira REST API Unit Test Example
 >>> ...
-```
-
-## Install from PyPI
-
-```bash
-# install
-$ pip install atlassian-api-py
-
-# upgrade to latest
-$ pip install atlassian-api-py --upgrade
 ```
 
 ## Unittest and Coverage
