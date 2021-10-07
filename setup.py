@@ -37,7 +37,7 @@ setuptools.setup(
         'Natural Language :: English',
         'Natural Language :: Chinese (Simplified)',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
         'Topic :: Utilities',
         'Topic :: Internet',
         'Topic :: Internet :: WWW/HTTP',
