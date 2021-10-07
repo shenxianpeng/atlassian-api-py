@@ -108,6 +108,7 @@ coverage html                   # to get annotated HTML
 ## Changelog
 
 Track some `minor` and `micro` changes.
+* [0.3.18](https://pypi.org/project/atlassian-api-py/0.3.18/) - Oct 7, 2021 - Fixed issues in bitbucket and test_bitbucket and refactor.
 * [0.3.17](https://pypi.org/project/atlassian-api-py/0.3.17/) - Oct 2, 2021 - Support establish connection with token and update README.md.
 * [0.3.15](https://pypi.org/project/atlassian-api-py/0.3.15/) - Sep 9, 2021 - Fixed permission issue temporarily by changing file_handler to console_handler.
 * [0.3.14](https://pypi.org/project/atlassian-api-py/0.3.14/) - Sep 9, 2021 - Fixed Permission denied: 'logs' issue.

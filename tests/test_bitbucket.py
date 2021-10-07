@@ -87,20 +87,10 @@ class TestBitbucket(unittest.TestCase):
         for pr_id in pr_ids:
             self.assertGreaterEqual(pr_id, 671)
 
-    def test_get_the_pull_request_diff(self):
+    def test_get_pull_request_diff(self):
         pr_diff = self.git.get_pull_request_diff('MVAS', 'uvuddb', 671)
-        self.assertEqual(pr_diff.fromHash, 'dad7e0380d6e665bfda907da8eec38e383994224')
-        self.assertEqual(pr_diff.toHash, 'e2e805087195616f43b1458472c6ecbf5264b180')
-
-    def test_get_pull_request_commits(self):
-        commits = self.git.get_pull_request_commits('MVAS', 'uvuddb', 671)
-        for value in commits.values:
-            self.assertEqual(value.authorTimestamp, 1607484771000)
-
-    def test_get_pull_request_comments(self):
-        comments = self.git.get_pull_request_comments('MVAS', 'uvuddb', 697)
-        for comment in comments.values:
-            self.assertIn('Quality Gate looks good', comment.text)
+        self.assertEqual(pr_diff.fromHash, 'b5e732313c7293d9dc8662e800057fb90068e46a')
+        self.assertEqual(pr_diff.toHash, '6e3606a9d1643efd09dc815b82c54bdbd338c720')
 
     def test_get_pull_request_activities(self):
         activity_values = self.git.get_pull_request_activities('MVAS', 'uvuddb', '898')
@@ -116,17 +106,27 @@ class TestBitbucket(unittest.TestCase):
         except AttributeError:
             self.assertTrue(merge_data.errors, 'has error attribute')
 
-    def test_add_delete_comment_to_pull_request(self):
-        # self.git.add_comment_to_pull_request('MVAS', 'uvuddb', 585, 'Add comment by rest api.')
-        comment_values = self.git.get_pull_request_activities('MVAS', 'uvuddb', 585)
-        comments = []
-        for comment_value in comment_values:
-            try:
-                comments.append(comment_value.comment.text)
-            except AttributeError:
-                pass
-        self.assertIn('Add comment by rest api.', comments)
-        self.git.remove_comment_from_pull_request('MVAS', 'uvuddb', 585, 'Add comment by rest api.')
+    def test_get_pull_request_commits(self):
+        commits = self.git.get_pull_request_commits('MVAS', 'uvuddb', 671)
+        for value in commits.values:
+            self.assertEqual(value.authorTimestamp, 1607484771000)
+
+    def test_add_pull_request_comment(self):
+        self.git.add_pull_request_comment('MVAS', 'uvuddb', 585, "test")
+
+    def test_get_pull_request_comments(self):
+        texts = ''
+        comments = self.git.get_pull_request_comments('MVAS', 'uvuddb', 585)
+        for comment in comments.values:
+            text = comment.text
+            texts += text
+        self.assertIn('Add comment by rest api', texts)
+
+    def test_update_pull_request_comment(self):
+        self.git.update_pull_request_comment('MVAS', 'uvuddb', 585, "test", 'update to test')
+
+    def test_delete_pull_request_comment(self):
+        self.git.delete_pull_request_comment('MVAS', 'uvuddb', 585, "update to test")
 
     def test_get_file_change_history(self):
         history = self.git.get_file_change_history(

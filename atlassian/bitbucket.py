@@ -27,7 +27,7 @@ class Bitbucket(AtlassianAPI):
 
     def get_project_repo(self, project_key, start=0, limit=None):
         """Get a specific project repository"""
-        url = '/rest/api/latest/projects/{}/repos/'.format(project_key)
+        url = f'/rest/api/latest/projects/{project_key}/repos/'
         params = {}
         if start:
             params["start"] = start
@@ -45,11 +45,11 @@ class Bitbucket(AtlassianAPI):
 
     def get_repo_info(self, project_key, repo_key):
         """Get repository information"""
-        url = '/rest/api/latest/projects/{}/repos/{}'.format(project_key, repo_key)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}'
         return self.get(url)
 
     def get_repo_branch(self, project_key, repo_key, start=0, limit=None):
-        url = '/rest/api/latest/projects/{}/repos/{}/branches'.format(project_key, repo_key)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/branches'
         params = {}
         if start:
             params["start"] = start
@@ -58,23 +58,22 @@ class Bitbucket(AtlassianAPI):
         return self._get_paged(url, params=params)
 
     def create_branch(self, project_key, repo_key, branch_name, start_point):
-        """Create a branch"""
-        """Using service account to create branch failed because of
-        this issue https://jira.atlassian.com/browse/BSERV-9340"""
-        url = '/rest/branch-utils/1.0/projects/{}/repos/{}/branches'.format(project_key, repo_key)
+        """Create a branch
+        Using service account to create branch failed because of issue https://jira.atlassian.com/browse/BSERV-9340
+        """
+        url = f'/rest/branch-utils/1.0/projects/{project_key}/repos/{repo_key}/branches'
         json = {"name": branch_name, "startPoint": start_point}
         return self.post(url, json=json)
 
     def delete_branch(self, project_key, repo_key, branch_name, end_point):
         """Delete a branch"""
-        url = '/rest/branch-utils/latest/projects/{}/repos/{}/branches'.format(project_key, repo_key)
+        url = f'/rest/branch-utils/latest/projects/{project_key}/repos/{repo_key}/branches'
         json = {"name": branch_name, "endPoint": end_point}
         return self.delete(url, json=json)
 
     def get_merged_branch(self, project_key, repo_key, start=0, limit=None):
         """Get merged branch names"""
-        url = '/rest/api/latest/projects/{}/repos/{}/branches?base=refs/heads/master&details=true'.\
-            format(project_key, repo_key)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/branches?base=refs/heads/master&details=true'
         params = {}
         if start:
             params["start"] = start
@@ -103,7 +102,7 @@ class Bitbucket(AtlassianAPI):
 
     def get_branch_commits(self, project_key, repo_key, branch_name, start=0, limit=None):
         """Get a specific branch commits"""
-        url = '/rest/api/latest/projects/{}/repos/{}/commits/?until={}'.format(project_key, repo_key, branch_name)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/commits/?until={branch_name}'
         params = {}
         if start:
             params["start"] = start
@@ -116,7 +115,7 @@ class Bitbucket(AtlassianAPI):
         Get ALL pull requests.
         By default: pr_state is ALL, other states are PEN, MERGED, DECLINED
         """
-        url = '/rest/api/latest/projects/{}/repos/{}/pull-requests?state={}'.format(project_key, repo_key, pr_state)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/pull-requests?state={pr_state}'
         params = {}
         if start:
             params["start"] = start
@@ -131,7 +130,7 @@ class Bitbucket(AtlassianAPI):
             for pr in prs:
                 if pr.id == int(pr_id):
                     return pr.toRef.displayId
-            return None
+        return None
 
     def get_pull_request_source_branch_name(self, project_key, repo_key, pr_id, limit=0):
         while True:
@@ -140,7 +139,7 @@ class Bitbucket(AtlassianAPI):
             for pr in prs:
                 if pr.id == int(pr_id):
                     return pr.fromRef.displayId
-            return None
+        return None
 
     def get_pull_request_relate_jira_key(self, project_key, repo_key, pr_id):
         """Get the pull request relate Jira ticket key"""
@@ -161,27 +160,22 @@ class Bitbucket(AtlassianAPI):
 
     def get_pull_request_overview(self, project_key, repo_key, pr_id):
         """A specific pull request overview"""
-        url = '/rest/api/latest/projects/{}/repos/{}/pull-requests/{}'.format(project_key, repo_key, pr_id)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/pull-requests/{pr_id}'
         return self.get(url)
 
     def get_pull_request_diff(self, project_key, repo_key, pr_id):
         """A specific pull request diff"""
-        url = '/rest/api/latest/projects/{}/repos/{}/pull-requests/{}/diff'.format(project_key, repo_key, pr_id)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/pull-requests/{pr_id}/diff'
         return self.get(url)
 
     def get_pull_request_commits(self, project_key, repo_key, pr_id):
         """A specific pull request commits"""
-        url = '/rest/api/latest/projects/{}/repos/{}/pull-requests/{}/commits'.format(project_key, repo_key, pr_id)
-        return self.get(url)
-
-    def get_pull_request_comments(self, project_key, repo_key, pr_id):
-        """A specific pull request comments"""
-        url = '/rest/ui/latest/projects/{}/repos/{}/pull-requests/{}/comments'.format(project_key, repo_key, pr_id)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/pull-requests/{pr_id}/commits'
         return self.get(url)
 
     def get_pull_request_activities(self, project_key, repo_slug, pr_id, start=0, limit=None):
         """A specific pull request activities"""
-        url = '/rest/api/latest/projects/{}/repos/{}/pull-requests/{}/activities'.format(project_key, repo_slug, pr_id)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/activities'
         params = {}
         if start:
             params["start"] = start
@@ -191,7 +185,7 @@ class Bitbucket(AtlassianAPI):
 
     def get_pull_request_merge(self, project_key, repo_key, pr_id):
         """Get the specific Pull Request merge information"""
-        url = '/rest/api/latest/projects/{}/repos/{}/pull-requests/{}/merge'.format(project_key, repo_key, pr_id)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/pull-requests/{pr_id}/merge'
         return self.get(url) or {}
 
     def get_branch_committer_info(self, project_key, repo_key, branch_name, start=0, limit=None):
@@ -201,34 +195,64 @@ class Bitbucket(AtlassianAPI):
             committer.append(commit.committer)
         return committer
 
-    def add_comment_to_pull_request(self, project_key, repo_slug, pr_id, comment):
+    def get_pull_request_comments(self, project_key, repo_key, pr_id):
+        """Get a specific pull request all comments"""
+        url = f'/rest/ui/latest/projects/{project_key}/repos/{repo_key}/pull-requests/{pr_id}/comments'
+        return self.get(url)
+
+    def add_pull_request_comment(self, project_key, repo_slug, pr_id, comment):
         """Add comment to a specific pull request"""
-        url = '/rest/api/latest/projects/{}/repos/{}/pull-requests/{}/comments?' \
-              'diffType=EFFECTIVE&markup=true&avatarSize=64'.format(project_key, repo_slug, pr_id)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments'
         json = {"text": comment}
         return self.post(url, json=json)
 
-    # TODO not work
-    def remove_comment_from_pull_request(self, project_key, repo_slug, pr_id, comment):
-        """Delete comment from a specific pull request"""
-        comment_values = self.get_pull_request_activities(project_key, repo_slug, pr_id)
-        commit_id = None
-        for comment_value in comment_values:
+    def update_pull_request_comment(self, project_key, repo_slug, pr_id, old_comment, new_comment):
+        """Update a specific comment of a pull request"""
+        activities = self.get_pull_request_activities(project_key, repo_slug, pr_id)
+        comment_id = version = severity = state = None
+        for activity in activities:
             try:
-                if comment == comment_value.comment.text:
-                    commit_id = comment_value.comment.id
+                if old_comment in activity.comment.text:
+                    comment_id = activity.comment.id
+                    version = activity.comment.version
+                    severity = activity.comment.severity
+                    state = activity.comment.state
                     break
-            except AttributeError:
-                pass
-        if commit_id:
-            url = '/rest/api/latest/projects/{}/repos/{}/pull-requests/{}/comments/{}?VERSION'.format(
-                project_key, repo_slug, pr_id, commit_id)
-            return self.delete(url) or {}
+            except AttributeError as e:
+                logger.error(e)
+        if not comment_id:
+            return
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{comment_id}'
+        json = {
+            "version": version,
+            "text": new_comment,
+            "severity": severity,
+            "state": state
+        }
+        return self.put(url, json=json)
+
+    def delete_pull_request_comment(self, project_key, repo_slug, pr_id, comment):
+        """Delete comment from a specific pull request"""
+        activities = self.get_pull_request_activities(project_key, repo_slug, pr_id)
+        comment_id = version = None
+        for activity in activities:
+            try:
+                if comment == activity.comment.text:
+                    comment_id = activity.comment.id
+                    version = activity.comment.version
+                    break
+            except AttributeError as e:
+                logger.error(e)
+        if not comment_id:
+            return
+        url = f'/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{comment_id}' \
+              f'?version={version}'
+        return self.delete(url) or {}
 
     def get_file_change_history(self, project_key, repo_key, branch_name, file_path, start=0, limit=None):
         """Get a specific file change histories"""
-        url = '/rest/api/latest/projects/{}/repos/{}/commits?followRenames=true&path={}&' \
-              'until=refs%2Fheads%2F{}&start=0&avatarSize=32'.format(project_key, repo_key, file_path, branch_name)
+        url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/commits?followRenames=true&path={file_path}&' \
+              f'until=refs%2Fheads%2F{branch_name}&start=0&avatarSize=32'
         params = {}
         if start:
             params["start"] = start
@@ -238,11 +262,11 @@ class Bitbucket(AtlassianAPI):
 
     def get_file_content(self, project_key, repo_key, branch_name, file_path):
         """Get file content from a specific branch"""
-        url = '/projects/{}/repos/{}/raw/{}?at={}'.format(project_key, repo_key, file_path, branch_name)
+        url = f'/projects/{project_key}/repos/{repo_key}/raw/{file_path}?at={branch_name}'
         return self.get(url)
 
     def get_build_status(self, commit_id):
-        url = '/rest/build-status/latest/commits/{}'.format(commit_id)
+        url = f'/rest/build-status/latest/commits/{commit_id}'
         return self.get(url) or {}
 
     def update_build_status(self, commit_id,
@@ -252,7 +276,7 @@ class Bitbucket(AtlassianAPI):
                             build_url,
                             description="ManuallyCheckBuildPass"):
 
-        url = '/rest/build-status/latest/commits/{}'.format(commit_id)
+        url = f'/rest/build-status/latest/commits/{commit_id}'
         json = {
             "state": build_state,
             "key": data_key,
@@ -261,4 +285,3 @@ class Bitbucket(AtlassianAPI):
             "description": description
         }
         self.post(url, json=json)
-
