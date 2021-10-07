@@ -151,3 +151,9 @@ class TestBitbucket(unittest.TestCase):
             build_name = value.name
             build_url = value.url
             self.git.update_build_status(commit_id, 'SUCCESSFUL', data_key, build_name, build_url, 'Change with API.')
+
+    def test_get_user(self):
+        user = self.git.get_user('xshen')
+        self.assertEqual("xshen@rocketsoftware.com", user.emailAddress)
+        self.assertEqual("Xianpeng Shen", user.displayName)
+        self.assertEqual("NORMAL", user.type)

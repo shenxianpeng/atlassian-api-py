@@ -19,7 +19,7 @@ setuptools.setup(
     author_email='xianpeng.shen@gmail.com',
     keywords=['atlassian', 'jira', 'bitbucket', 'rest', 'api'],
     python_requires='>=3',
-    license='Apache License 2.0',
+    license='MIT License',
     packages=setuptools.find_packages(exclude=["tests"]),
     project_urls={
         'Download': 'https://pypi.org/project/atlassian-api-py/#files',
@@ -35,7 +35,6 @@ setuptools.setup(
         'Intended Audience :: System Administrators',
         'Intended Audience :: Information Technology',
         'Natural Language :: English',
-        'Natural Language :: Chinese (Simplified)',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3.6',
         'Topic :: Utilities',

@@ -285,3 +285,7 @@ class Bitbucket(AtlassianAPI):
             "description": description
         }
         self.post(url, json=json)
+
+    def get_user(self, user_slug):
+        url = f'/rest/api/latest/users/{user_slug}'
+        return self.get(url)
