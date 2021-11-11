@@ -11,11 +11,16 @@ class Jira(AtlassianAPI):
     """
 
     def issue(self, issue_key):
-        url = "/rest/api/2/issue/{key}".format(key=issue_key)
+        url = f"/rest/api/2/issue/{issue_key}"
+        return self.get(url) or {}
+
+    def issue_changelog(self, issue_key):
+        # https://jira.atlassian.com/browse/JRASERVER-27692
+        url = f"/rest/api/2/issue/{issue_key}?expand=changelog&fields=summary"
         return self.get(url) or {}
 
     def update_issue_label(self, issue_key, add_labels=None, remove_labels=None):
-        url = '/rest/api/2/issue/{key}'.format(key=issue_key)
+        url = f'/rest/api/2/issue/{issue_key}'
         add_labels_list = []
         remove_labels_list = []
         if add_labels is not None:
@@ -37,7 +42,7 @@ class Jira(AtlassianAPI):
         return self.put(url, json=label_data)
 
     def update_issue_component(self, issue_key, add_components=None, remove_components=None):
-        url = '/rest/api/2/issue/{key}'.format(key=issue_key)
+        url = f'/rest/api/2/issue/{issue_key}'
         add_component_list = []
         remove_component_list = []
         if add_components is not None:
@@ -58,17 +63,17 @@ class Jira(AtlassianAPI):
         return self.put(url, json=component_data)
 
     def update_issue_description(self, issue_key, new_description):
-        url = '/rest/api/2/issue/{key}'.format(key=issue_key)
+        url = f'/rest/api/2/issue/{issue_key}'
         json = {"fields": {"description": new_description}}
         return self.put(url, json=json)
 
     def add_issue_comment(self, issue_key, content=None):
-        url = "/rest/api/2/issue/{key}/comment".format(key=issue_key)
+        url = f"/rest/api/2/issue/{issue_key}/comment"
         json = {"body": content}
         return self.post(url, json=json) or {}
 
     def delete_issue_comment(self, issue_key, comment_id):
-        url = "/rest/api/2/issue/{key}/comment/{id}".format(key=issue_key, id=comment_id)
+        url = f"/rest/api/2/issue/{issue_key}/comment/{comment_id}"
         return self.delete(url) or None
 
     def link_issue_as(self, type_name=None, inward_issue=None, outward_issue=None):
@@ -89,7 +94,7 @@ class Jira(AtlassianAPI):
         return self.post(url, json=json)
 
     def delete_issue_link(self, link_id):
-        url = '/rest/api/2/issueLink/{id}'.format(id=link_id)
+        url = f'/rest/api/2/issueLink/{link_id}'
         return self.delete(url) or {}
 
     def create_issue(self, fields, update=None):
@@ -173,7 +178,7 @@ class Jira(AtlassianAPI):
         customfield_10985 is solution field which field_args length is 1
         customfield_11386 is owner field which field_args length is 2
         """
-        url = '/rest/api/2/issue/{key}'.format(key=issue_key)
+        url = f'/rest/api/2/issue/{issue_key}'
         if len(field_args) == 1:
             json = {"fields": {field_id: field_args[0]}}
         elif len(field_args) == 2:
@@ -184,14 +189,14 @@ class Jira(AtlassianAPI):
         return self.put(url, json=json)
 
     def assign_issue(self, issue_key, assignee=None):
-        url = '/rest/api/2/issue/{key}/assignee'.format(key=issue_key)
+        url = f'/rest/api/2/issue/{issue_key}/assignee'
         if assignee is None:
             assignee = -1
         json = {"name": assignee}
         return self.put(url, json=json) or {}
 
     def add_issue_watcher(self, issue_key, watcher):
-        url = '/rest/api/2/issue/{key}/watchers'.format(key=issue_key)
+        url = f'/rest/api/2/issue/{issue_key}/watchers'
         return self.post(url, json=watcher)
 
     def issue_transition(self, issue_key, transition_id=None):
@@ -231,14 +236,13 @@ class Jira(AtlassianAPI):
         return self.post(url, json=json) or {}
 
     def get_project_components(self, project_id):
-        url = '/rest/api/2/project/{id}/components'.format(id=project_id)
+        url = f'/rest/api/2/project/{project_id}/components'
         return self.get(url) or {}
 
     def user(self, username):
-        url = '/rest/api/2/user?username={name}'.format(name=username)
+        url = f'/rest/api/2/user?username={username}'
         return self.get(url) or {}
 
     def get_dev_status(self, issue_id, app_type='stash', data_type='repository'):
-        url = '/rest/dev-status/1.0/issue/detail?issueId={0}&applicationType={1}&dataType={2}'\
-            .format(issue_id, app_type, data_type)
+        url = f'/rest/dev-status/1.0/issue/detail?issueId={issue_id}&applicationType={app_type}&dataType={data_type}'
         return self.get(url) or {}

@@ -28,6 +28,11 @@ class TestJira(unittest.TestCase):
         self.assertEqual(self.issue.fields.components[0].name, 'Test automation')
         self.assertGreaterEqual(len(self.issue.fields.attachment), 2)
 
+    def test_issue_changelog(self):
+        result = self.jira.issue_changelog('MVQA-900')
+        histories = result.changelog.histories
+        self.assertGreaterEqual(len(histories), 93)
+
     def test_update_issue_label(self):
         labels = ['AddLabel', 'Test']
         self.jira.update_issue_label(issue_key='MVQA-900', add_labels=labels)
