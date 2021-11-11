@@ -207,6 +207,13 @@ class Jira(AtlassianAPI):
         }
         return self.post(url, json=json)
 
+    def get_transitions(self, issue_id):
+        """ Get a list of the transitions possible for this issue by the current user.
+        :param issue_id: issue_id or key
+        """
+        url = f'/rest/api/2/issue/{issue_id}/transitions'
+        return self.get(url) or {}
+
     # FIXME currently search with jql only support maxResults is 1000.
     def search_issue_with_jql(self, jql, max_result=25):
         url = '/rest/api/2/search'

@@ -92,6 +92,15 @@ class TestJira(unittest.TestCase):
         issue = self.jira.issue('LINF-4')
         self.assertEqual('Open', issue.fields.status.name)
 
+    def test_get_transitions(self):
+        result = self.jira.get_transitions('MVQA-900')
+        transitions = result.transitions
+        transition_names = []
+        for transition in transitions:
+            name = transition.name
+            transition_names.append(name)
+        self.assertIn("Accept to Backlog", transition_names)
+
     def test_search_issue_with_jql(self):
         jql = 'project = MVQA ORDER BY priority DESC, updated DESC'
         result = self.jira.search_issue_with_jql(jql, max_result=2000)
