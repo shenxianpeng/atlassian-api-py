@@ -45,6 +45,10 @@ class TestJira(unittest.TestCase):
         self.jira.update_issue_component(issue_key='MVQA-900', add_components=components)
         self.jira.update_issue_component(issue_key='MVQA-900', remove_components=components)
 
+    def test_update_field(self):
+        self.jira.update_field('MVQA-900', 'fixVersions', add='2019', remove='2016Q2')
+        self.jira.update_field('MVQA-900', 'versions', add='2019', remove='2016Q2')
+
     def test_update_custom_field_owner(self):
         """Update Jira project owner"""
         field_id = 'customfield_11386'

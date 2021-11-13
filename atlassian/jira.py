@@ -67,6 +67,17 @@ class Jira(AtlassianAPI):
         json = {"fields": {"description": new_description}}
         return self.put(url, json=json)
 
+    def update_field(self, issue_key, field_name, add=None, remove=None):
+        """Update issue field."""
+        url = f"/rest/api/2/issue/{issue_key}"
+        element = []
+        if add:
+            element.append({"add": {"name": add}})
+        if remove:
+            element.append({"remove": {"name": remove}})
+        json = {"update": {field_name: element}}
+        return self.put(url, json=json)
+
     def add_issue_comment(self, issue_key, content=None):
         url = f"/rest/api/2/issue/{issue_key}/comment"
         json = {"body": content}

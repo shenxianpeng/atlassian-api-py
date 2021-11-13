@@ -108,6 +108,7 @@ coverage html                   # to get annotated HTML
 ## Changelog
 
 Track some `minor` and `micro` changes.
+* [0.3.22](https://pypi.org/project/atlassian-api-py/0.3.22/) - Nov 13, 2021 - Added `update_field` in Jira.
 * [0.3.21](https://pypi.org/project/atlassian-api-py/0.3.21/) - Nov 11, 2021 - Added `issue_changelog` in Jira.
 * [0.3.20](https://pypi.org/project/atlassian-api-py/0.3.20/) - Nov 11, 2021 - Added `get_transitions` in Jira.
 * [0.3.19](https://pypi.org/project/atlassian-api-py/0.3.19/) - Oct 7, 2021 - Added `get_user` in Bitbucket.
