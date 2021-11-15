@@ -26,6 +26,4 @@ jobs:
       - name: run pylint
         continue-on-error: true
         run: |
-          pylint atlassian/**
-          pylint tests/**
-          pylint setup.py
+          pylint tests/ atlassian/ setup.py release.py
