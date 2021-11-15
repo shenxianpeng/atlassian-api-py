@@ -1,5 +1,4 @@
-"""
-HTTP Response Codes:
+""" HTTP Response Codes:
 https://developer.atlassian.com/server/confluence/http-response-code-definitions/
 """
 _ERROR_CODE_MESSAGE = {
@@ -48,7 +47,6 @@ _ERROR_CODE_MESSAGE = {
 
 
 class APIError(Exception):
-
     def __init__(self, code=None, message=None):
         self.code = code
         if message:
