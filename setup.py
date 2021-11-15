@@ -1,3 +1,4 @@
+"""Python Wrapper for Atlassian REST API"""
 import setuptools
 
 
