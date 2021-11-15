@@ -11,15 +11,18 @@ class Jira(AtlassianAPI):
     """
 
     def issue(self, issue_key):
+        """Get issue fileds"""
         url = f"/rest/api/2/issue/{issue_key}"
         return self.get(url) or {}
 
     def issue_changelog(self, issue_key):
+        """Get issue changelog"""
         # https://jira.atlassian.com/browse/JRASERVER-27692
         url = f"/rest/api/2/issue/{issue_key}?expand=changelog&fields=summary"
         return self.get(url) or {}
 
     def update_issue_label(self, issue_key, add_labels=None, remove_labels=None):
+        """Update issue label"""
         url = f'/rest/api/2/issue/{issue_key}'
         add_labels_list = []
         remove_labels_list = []
@@ -42,6 +45,7 @@ class Jira(AtlassianAPI):
         return self.put(url, json=label_data)
 
     def update_issue_component(self, issue_key, add_components=None, remove_components=None):
+        """Update issue components"""
         url = f'/rest/api/2/issue/{issue_key}'
         add_component_list = []
         remove_component_list = []
@@ -63,12 +67,13 @@ class Jira(AtlassianAPI):
         return self.put(url, json=component_data)
 
     def update_issue_description(self, issue_key, new_description):
+        """Update issue description"""
         url = f'/rest/api/2/issue/{issue_key}'
         json = {"fields": {"description": new_description}}
         return self.put(url, json=json)
 
     def update_field(self, issue_key, field_name, add=None, remove=None):
-        """Update issue field."""
+        """Update issue field"""
         url = f"/rest/api/2/issue/{issue_key}"
         element = []
         if add:
@@ -79,11 +84,13 @@ class Jira(AtlassianAPI):
         return self.put(url, json=json)
 
     def add_issue_comment(self, issue_key, content=None):
+        """Add comment to issue"""
         url = f"/rest/api/2/issue/{issue_key}/comment"
         json = {"body": content}
         return self.post(url, json=json) or {}
 
     def delete_issue_comment(self, issue_key, comment_id):
+        """Delete comment from issue"""
         url = f"/rest/api/2/issue/{issue_key}/comment/{comment_id}"
         return self.delete(url) or None
 
@@ -105,6 +112,7 @@ class Jira(AtlassianAPI):
         return self.post(url, json=json)
 
     def delete_issue_link(self, link_id):
+        """Delete link from issue"""
         url = f'/rest/api/2/issueLink/{link_id}'
         return self.delete(url) or {}
 
@@ -143,6 +151,7 @@ class Jira(AtlassianAPI):
     # TODO: replace by create_issue, will remove it in the future
     def create_task(self, project_key=None, summary=None, assignee=None, owner=None, labels=None, components=None,
                     issue_type=10):
+        """Create task issue"""
         url = '/rest/api/2/issue'
         json = {
             "fields": {
@@ -162,6 +171,7 @@ class Jira(AtlassianAPI):
     # TODO: replace by create_issue, will remove it in the future
     def create_sub_task(self, project_key=None, parent_issue_key=None, summary=None, fix_version=None, assignee=None,
                         description=None, labels=None, team=None, issue_type=20):
+        """Create sub task issue"""
         url = '/rest/api/2/issue'
         json = {
             "fields": {
@@ -184,8 +194,7 @@ class Jira(AtlassianAPI):
         return self.post(url, json=json)
 
     def update_custom_field(self, issue_key, field_id, *field_args):
-        """
-        In my Jira project:
+        """Update custom field. in my Jira project
         customfield_10985 is solution field which field_args length is 1
         customfield_11386 is owner field which field_args length is 2
         """
@@ -200,6 +209,7 @@ class Jira(AtlassianAPI):
         return self.put(url, json=json)
 
     def assign_issue(self, issue_key, assignee=None):
+        """Assign issue to someone"""
         url = f'/rest/api/2/issue/{issue_key}/assignee'
         if assignee is None:
             assignee = -1
@@ -207,6 +217,7 @@ class Jira(AtlassianAPI):
         return self.put(url, json=json) or {}
 
     def add_issue_watcher(self, issue_key, watcher):
+        """Add someone as watcher"""
         url = f'/rest/api/2/issue/{issue_key}/watchers'
         return self.post(url, json=watcher)
 
@@ -224,14 +235,13 @@ class Jira(AtlassianAPI):
         return self.post(url, json=json)
 
     def get_transitions(self, issue_id):
-        """ Get a list of the transitions possible for this issue by the current user.
-        :param issue_id: issue_id or key
-        """
+        """ Get a list of the transitions possible for this issue by the current user"""
         url = f'/rest/api/2/issue/{issue_id}/transitions'
         return self.get(url) or {}
 
     # FIXME currently search with jql only support maxResults is 1000.
     def search_issue_with_jql(self, jql, max_result=25):
+        """Search issue with JQL"""
         url = '/rest/api/2/search'
         json = {
             "jql": jql,
@@ -247,13 +257,16 @@ class Jira(AtlassianAPI):
         return self.post(url, json=json) or {}
 
     def get_project_components(self, project_id):
+        """Get project components"""
         url = f'/rest/api/2/project/{project_id}/components'
         return self.get(url) or {}
 
     def user(self, username):
+        """Get user information"""
         url = f'/rest/api/2/user?username={username}'
         return self.get(url) or {}
 
     def get_dev_status(self, issue_id, app_type='stash', data_type='repository'):
+        """Get dev status"""
         url = f'/rest/dev-status/1.0/issue/detail?issueId={issue_id}&applicationType={app_type}&dataType={data_type}'
         return self.get(url) or {}

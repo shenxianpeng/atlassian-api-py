@@ -9,6 +9,7 @@ class Bitbucket(AtlassianAPI):
     """https://docs.atlassian.com/bitbucket-server/rest/7.12.1/bitbucket-rest.html"""
 
     def _get_paged(self, url, params):
+        """Get more pages"""
         response = self.get(url, params=params)
         if response.values:
             values = response.values
@@ -49,6 +50,7 @@ class Bitbucket(AtlassianAPI):
         return self.get(url)
 
     def get_repo_branch(self, project_key, repo_key, start=0, limit=None):
+        """Get repository branch"""
         url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/branches'
         params = {}
         if start:
@@ -72,7 +74,7 @@ class Bitbucket(AtlassianAPI):
         return self.delete(url, json=json)
 
     def get_merged_branch(self, project_key, repo_key, start=0, limit=None):
-        """Get merged branch names"""
+        """Get the merged branch names"""
         url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/branches?base=refs/heads/master&details=true'
         params = {}
         if start:
@@ -111,8 +113,7 @@ class Bitbucket(AtlassianAPI):
         return self._get_paged(url, params=params)
 
     def get_pull_request(self, project_key, repo_key, pr_state="ALL", start=0, limit=None):
-        """
-        Get ALL pull requests.
+        """Get ALL pull requests.
         By default: pr_state is ALL, other states are PEN, MERGED, DECLINED
         """
         url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/pull-requests?state={pr_state}'
@@ -124,6 +125,7 @@ class Bitbucket(AtlassianAPI):
         return self._get_paged(url, params=params)
 
     def get_pull_request_destination_branch_name(self, project_key, repo_key, pr_id, limit=0):
+        """Get a pull request destination branch name"""
         while True:
             limit += 25
             prs = self.get_pull_request(project_key, repo_key, limit=limit)
@@ -133,6 +135,7 @@ class Bitbucket(AtlassianAPI):
         return None
 
     def get_pull_request_source_branch_name(self, project_key, repo_key, pr_id, limit=0):
+        """Get a pull request source branch name"""
         while True:
             limit += 25
             prs = self.get_pull_request(project_key, repo_key, limit=limit)
@@ -142,7 +145,7 @@ class Bitbucket(AtlassianAPI):
         return None
 
     def get_pull_request_relate_jira_key(self, project_key, repo_key, pr_id):
-        """Get the pull request relate Jira ticket key"""
+        """Get a pull request relate Jira ticket key"""
         source_branch_name = self.get_pull_request_source_branch_name(project_key, repo_key, pr_id)
         try:
             jira_key = re.search(r'[A-Z]+-[0-9]+', source_branch_name).group()
@@ -151,7 +154,7 @@ class Bitbucket(AtlassianAPI):
             logger.error(e)
 
     def get_pull_request_id(self, project_key, repo_key, pr_state="OPEN", start=0, limit=None):
-        """By default: pr_state is OPEN, other states are ALL, MERGED, DECLINED"""
+        """Get a specific pull request ID. By default: pr_state is OPEN, other states are ALL, MERGED, DECLINED"""
         prs = self.get_pull_request(project_key, repo_key, pr_state=pr_state, start=start, limit=limit)
         pr_id = []
         for pr in prs:
@@ -159,22 +162,22 @@ class Bitbucket(AtlassianAPI):
         return pr_id
 
     def get_pull_request_overview(self, project_key, repo_key, pr_id):
-        """A specific pull request overview"""
+        """Get a specific pull request overview"""
         url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/pull-requests/{pr_id}'
         return self.get(url)
 
     def get_pull_request_diff(self, project_key, repo_key, pr_id):
-        """A specific pull request diff"""
+        """Get a specific pull request diff"""
         url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/pull-requests/{pr_id}/diff'
         return self.get(url)
 
     def get_pull_request_commits(self, project_key, repo_key, pr_id):
-        """A specific pull request commits"""
+        """Get a specific pull request commits"""
         url = f'/rest/api/latest/projects/{project_key}/repos/{repo_key}/pull-requests/{pr_id}/commits'
         return self.get(url)
 
     def get_pull_request_activities(self, project_key, repo_slug, pr_id, start=0, limit=None):
-        """A specific pull request activities"""
+        """Get a specific pull request activities information"""
         url = f'/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/activities'
         params = {}
         if start:
@@ -189,6 +192,7 @@ class Bitbucket(AtlassianAPI):
         return self.get(url) or {}
 
     def get_branch_committer_info(self, project_key, repo_key, branch_name, start=0, limit=None):
+        """Get branch committer information"""
         commits = self.get_branch_commits(project_key, repo_key, branch_name, start=start, limit=limit)
         committer = []
         for commit in commits:
@@ -266,16 +270,12 @@ class Bitbucket(AtlassianAPI):
         return self.get(url)
 
     def get_build_status(self, commit_id):
+        """Get bulid status"""
         url = f'/rest/build-status/latest/commits/{commit_id}'
         return self.get(url) or {}
 
-    def update_build_status(self, commit_id,
-                            build_state,
-                            data_key,
-                            build_name,
-                            build_url,
-                            description="ManuallyCheckBuildPass"):
-
+    def update_build_status(self, commit_id, build_state, data_key, build_name, build_url,  description="ManuallyCheckBuildPass"):
+        """Update bulid status"""
         url = f'/rest/build-status/latest/commits/{commit_id}'
         json = {
             "state": build_state,
@@ -287,5 +287,6 @@ class Bitbucket(AtlassianAPI):
         self.post(url, json=json)
 
     def get_user(self, user_slug):
+        """Get user information"""
         url = f'/rest/api/latest/users/{user_slug}'
         return self.get(url)
