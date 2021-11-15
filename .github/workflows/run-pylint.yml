@@ -10,6 +10,7 @@ on:
     paths:
       - "**.py"
       - .pylintrc
+  workflow_dispatch:
 
 jobs:
   using-pylint:
