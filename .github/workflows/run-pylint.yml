@@ -1,4 +1,4 @@
-name: "Check python code"
+name: "Check Python Code"
 
 on:
   push:
@@ -24,6 +24,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pylint
       - name: run pylint
+        continue-on-error: true
         run: |
           pylint atlassian/**
           pylint tests/**
