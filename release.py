@@ -119,9 +119,7 @@ def check_git_tag(curr_version):
     is_tag = input("ready to create tag?(Y/N): ")
     if is_tag in ("y", "Y"):
         os.system(f"git tag -d v{curr_version}")
-        os.system(
-            f'git tag -a v{curr_version} -m "Tag release version {curr_version}"'
-        )
+        os.system(f'git tag -a v{curr_version} -m "Tag release version {curr_version}"')
         os.system("git push --tags origin")
     else:
         print("[x] skip create tag\n")

@@ -78,9 +78,7 @@ class AtlassianAPI:
             timeout=self.timeout,
         )
         response.encoding = "utf-8"
-        logger.debug(
-            f"HTTP: {method} -> {response.status_code} {response.reason}"
-        )
+        logger.debug(f"HTTP: {method} -> {response.status_code} {response.reason}")
         return response
 
     def get(self, path, data=None, params=None):

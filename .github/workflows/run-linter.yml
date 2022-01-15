@@ -1,4 +1,4 @@
-name: "Check Python Code"
+name: "Python Code Format"
 
 on:
   push:
@@ -20,10 +20,18 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: 3.7
-      - name: Install pylint and action deps
+
+      - name: Install and run pylint
         run: |
           python3 -m pip install --upgrade pylint
       - name: run pylint
         continue-on-error: true
         run: |
           pylint tests/ atlassian/ setup.py release.py
+
+      - name: Install and run black
+      - uses: psf/black@stable
+        with:
+          options: "--check --verbose"
+          src: "."
+          version: "21.5b1"
