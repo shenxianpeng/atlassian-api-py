@@ -11,13 +11,7 @@ class AtlassianAPI:
     default_headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
     def __init__(
-            self,
-            url,
-            username=None,
-            password=None,
-            timeout=60,
-            session=None,
-            token=None
+        self, url, username=None, password=None, timeout=60, session=None, token=None
     ):
         self.url = url.strip("/")
         self.username = username
@@ -70,7 +64,7 @@ class AtlassianAPI:
     def close(self):
         return self._session.close()
 
-    def request(self, method='GET', path='', data=None, json=None, params=None):
+    def request(self, method="GET", path="", data=None, json=None, params=None):
         if path:
             url = self.url + path
         else:
@@ -81,9 +75,12 @@ class AtlassianAPI:
             data=data,
             json=json,
             params=params,
-            timeout=self.timeout)
-        response.encoding = 'utf-8'
-        logger.debug("HTTP: {0} -> {1} {2}".format(method, response.status_code, response.reason))
+            timeout=self.timeout,
+        )
+        response.encoding = "utf-8"
+        logger.debug(
+            f"HTTP: {method} -> {response.status_code} {response.reason}"
+        )
         return response
 
     def get(self, path, data=None, params=None):

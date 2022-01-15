@@ -22,15 +22,17 @@ $ pip install atlassian-api-py
 $ pip install atlassian-api-py --upgrade
 ```
 
-### Establish connection 
+### Establish connection
 
 Connect with username and password
+
 ```python
 >>> from atlassian import Jira
 >>> jira = Jira(url='https://jira.company.com', username="username", password="password")
 ```
 
 Or connect with token
+
 ```python
 >>> from atlassian import Jira
 >>> jira = Jira(url='https://jira.company.com', token="yourToken")
@@ -90,12 +92,13 @@ Jira REST API Unit Test Example
 
 ## Unittest and Coverage
 
-Run unittest 
+Run unittest
 
 ```bash
 cd tests
 python -m unittest
 ```
+
 Run coverage
 
 ```bash
@@ -108,6 +111,8 @@ coverage html                   # to get annotated HTML
 ## Changelog
 
 Track some `minor` and `micro` changes.
+
+* [0.3.23](https://pypi.org/project/atlassian-api-py/0.3.23/) - Jan 15, 2022 - Changed code formats with black
 * [0.3.22](https://pypi.org/project/atlassian-api-py/0.3.22/) - Nov 13, 2021 - Added `update_field` in Jira.
 * [0.3.21](https://pypi.org/project/atlassian-api-py/0.3.21/) - Nov 11, 2021 - Added `issue_changelog` in Jira.
 * [0.3.20](https://pypi.org/project/atlassian-api-py/0.3.20/) - Nov 11, 2021 - Added `get_transitions` in Jira.
@@ -124,7 +129,7 @@ Track some `minor` and `micro` changes.
 * [0.3.7](https://pypi.org/project/atlassian-api-py/0.3.7/) - June 9, 2021 - Added `update_build_status` in Bitbucket.
 * [0.3.6](https://pypi.org/project/atlassian-api-py/0.3.6/) - June 9, 2021 - Added `get_build_status` in Bitbucket.
 * [0.3.5](https://pypi.org/project/atlassian-api-py/0.3.5/) - June 8, 2021 - Added `update_custom_field` in Jira .
-* [0.3.3](https://pypi.org/project/atlassian-api-py/0.3.3/) - June 4, 2021 - Added `get_file_content` in Bitbucket . 
+* [0.3.3](https://pypi.org/project/atlassian-api-py/0.3.3/) - June 4, 2021 - Added `get_file_content` in Bitbucket.
 * [0.3.0](https://pypi.org/project/atlassian-api-py/0.3.0/) - May 9, 2021 - Fixed Bitbucket and test_bitbucket issues.
 * [0.2.7](https://pypi.org/project/atlassian-api-py/0.2.7/) - Apr 20, 2021 - Added create task with components in Jira.
 * [0.2.5](https://pypi.org/project/atlassian-api-py/0.2.5/) - Apr 20, 2021 - Added `update_issue_component` in Jira .
@@ -134,10 +139,11 @@ Track some `minor` and `micro` changes.
 ## FAQ
 
 ### Q1: Which Jira/BitBucket version I used to develop?
+
 > For Jira I used Jira v8.5.9 and Jira Cloud.
 >
 > For BitBucket I used Bitbucket v5.13.1. not support Bitbucket cloud for now.
 
 ### Q2: Are there any major changes?
-> From [0.2.0](https://pypi.org/project/atlassian-api-py/0.2.0/) - Mar 9, 2021, convert get JIra API data from dict to object, no longer compatible with past old versions.
 
+> From [0.2.0](https://pypi.org/project/atlassian-api-py/0.2.0/) - Mar 9, 2021, convert get JIra API data from dict to object, no longer compatible with past old versions.
