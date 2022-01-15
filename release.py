@@ -53,7 +53,7 @@ def git_push(new_version):
 
 
 def build_package():
-    is_build = input("ready to build? (Y/N)")
+    is_build = input("ready to build? (y/N)")
     if is_build in ("y", "Y"):
         try:
             print("starting remove dist build folders\n")
@@ -108,7 +108,7 @@ def check_bump_version():
 
 
 def check_git_push(curr_version):
-    is_push = input("commit and push _version.py to remote?(Y/N) ")
+    is_push = input("commit and push _version.py to remote?(y/N) ")
     if is_push in ("y", "Y"):
         git_push(curr_version)
     else:
@@ -129,7 +129,7 @@ def check_git_tag(curr_version):
 
 def check_twine_upload(wheel_file):
     if wheel_file:
-        is_upload = input(f"\nready to upload {wheel_file} to PyPI?(Y/N) ")
+        is_upload = input(f"\nready to upload {wheel_file} to PyPI?(y/N) ")
         if is_upload in ("y", "Y"):
             upload_to_pypi()
         else:
