@@ -13,14 +13,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  using-pylint:
+  run-linter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: 3.7
-
       - name: Install and run pylint
         run: |
           python3 -m pip install --upgrade pylint
@@ -28,9 +27,8 @@ jobs:
         continue-on-error: true
         run: |
           pylint tests/ atlassian/ setup.py release.py
-
       - name: Install and run black
-      - uses: psf/black@stable
+        uses: psf/black@stable
         with:
           options: "--check --verbose"
           src: "."
