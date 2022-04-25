@@ -257,17 +257,45 @@ class Jira(AtlassianAPI):
         url = f"/rest/api/2/issue/{issue_id}/transitions"
         return self.get(url) or {}
 
-    # FIXME currently search with jql only support maxResults is 1000.
-    def search_issue_with_jql(self, jql, max_result=25):
-        """Search issue with JQL"""
-        url = "/rest/api/2/search"
+    def search_issue_with_jql(self, jql, max_result=1000):
+        url = '/rest/api/2/search'
+        start_at = 0
+        issues = []
         json = {
             "jql": jql,
-            "startAt": 0,
+            "startAt": start_at,
             "maxResults": max_result,
-            "fields": ["summary", "status", "issuetype", "fixVersions"],
+            "fields": [
+                "summary",
+                "status",
+                "issuetype",
+                "fixVersions"
+            ]
         }
-        return self.post(url, json=json) or {}
+        response = self.post(url, json=json) or {}
+        total = response['total']
+        max_results = response['maxResults']
+        for issue in response['issues']:
+            issues.append(issue)
+
+        while total > max_results:
+            start_at = start_at + max_results
+            json = {
+                "jql": jql,
+                "startAt": start_at,
+                "maxResults": max_result,
+                "fields": [
+                    "summary",
+                    "status",
+                    "issuetype",
+                    "fixVersions"
+                ]
+            }
+            response = self.post(url, json=json) or {}
+            total = total - max_results
+            for issue in response['issues']:
+                issues.append(issue)
+        return issues
 
     def get_project_components(self, project_id):
         """Get project components"""
