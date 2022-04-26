@@ -80,7 +80,7 @@ push-tag: tag ## Push git tag to remote
 	@git push origin v$(VERSION)
 	@echo "== Push tag Succeeded ✅"
 
-release: build check_wheel pypi push-tag ## Release incudes build, pypi, push-tag
+release: clean build check_wheel pypi push-tag ## Release incudes build, pypi, push-tag
 	@echo "== Start to make $(PKG_NAME) release"
 	@echo "== Release Succeeded ✅"
 
