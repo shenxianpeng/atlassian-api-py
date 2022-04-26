@@ -258,24 +258,19 @@ class Jira(AtlassianAPI):
         return self.get(url) or {}
 
     def search_issue_with_jql(self, jql, max_result=1000):
-        url = '/rest/api/2/search'
+        url = "/rest/api/2/search"
         start_at = 0
         issues = []
         json = {
             "jql": jql,
             "startAt": start_at,
             "maxResults": max_result,
-            "fields": [
-                "summary",
-                "status",
-                "issuetype",
-                "fixVersions"
-            ]
+            "fields": ["summary", "status", "issuetype", "fixVersions"],
         }
         response = self.post(url, json=json) or {}
-        total = response['total']
-        max_results = response['maxResults']
-        for issue in response['issues']:
+        total = response["total"]
+        max_results = response["maxResults"]
+        for issue in response["issues"]:
             issues.append(issue)
 
         while total > max_results:
@@ -284,16 +279,11 @@ class Jira(AtlassianAPI):
                 "jql": jql,
                 "startAt": start_at,
                 "maxResults": max_result,
-                "fields": [
-                    "summary",
-                    "status",
-                    "issuetype",
-                    "fixVersions"
-                ]
+                "fields": ["summary", "status", "issuetype", "fixVersions"],
             }
             response = self.post(url, json=json) or {}
             total = total - max_results
-            for issue in response['issues']:
+            for issue in response["issues"]:
                 issues.append(issue)
         return issues
 

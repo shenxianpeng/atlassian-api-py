@@ -5,13 +5,9 @@ import setuptools
 with open("README.md", "r") as file:
     long_description = file.read()
 
-version = {}
-with open("atlassian/_version.py") as fp:
-    exec(fp.read(), version)
-
 setuptools.setup(
     name="atlassian-api-py",
-    version=version["__version__"],
+    version='0.4.0',
     description="Python Wrapper for Atlassian REST API",
     long_description=long_description,
     long_description_content_type="text/markdown",
