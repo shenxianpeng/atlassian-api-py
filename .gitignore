@@ -1,4 +1,5 @@
-.idea
+.idea/
+.vscode/
 atlassian/__pycache__/
 build/
 dist/
