@@ -14,8 +14,10 @@ class TestConfluence(unittest.TestCase):
     """Confluence Test Cases"""
     def setUp(self):
         """Set connection with Confluence"""
+        print("hello from wiki")
         self.wiki = Confluence(url=wiki_url, username=wiki_usr, password=wiki_psw)
+        print("hello from wiki")
 
-    def test_content(self) -> None:
-        content = self.wiki.get_content
-        print(content)
+    def test_get_content(self):
+        content = self.wiki.get_content()
+        print("hello from wiki")

@@ -3,6 +3,7 @@ from atlassian.logger import get_logger
 
 logger = get_logger(__name__)
 
+
 class Confluence(AtlassianAPI):
     """
     Confluence API Reference
@@ -13,17 +14,17 @@ class Confluence(AtlassianAPI):
         url = f"/rest/api/content"
         return self.get(url) or {}
 
-    def create_content():
+    def create_content(self):
         pass
 
-    def update_content():
+    def update_content(self):
         pass
 
-    def delete_content():
+    def delete_content(self):
         pass
 
-    def get_content_by_id():
+    def get_content_by_id(self):
         pass
 
-    def get_content_history():
+    def get_content_history(self):
         pass

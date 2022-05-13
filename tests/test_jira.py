@@ -7,7 +7,7 @@ config.read("config.ini")
 
 jira_url = config["jira"]["url"]
 jira_usr = config["jira"]["username"]
-password = config["jira"]["password"]
+jira_psw = config["jira"]["password"]
 
 
 class TestJira(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestJira(unittest.TestCase):
 
     def setUp(self):
         """Set connect with Jira instance"""
-        self.jira = Jira(url=jira_url, username=jira_usr, password=password)
+        self.jira = Jira(url=jira_url, username=jira_usr, password=jira_psw)
         self.issue = self.jira.issue("MVQA-900")
 
     def test_issue(self):
