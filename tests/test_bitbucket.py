@@ -1,9 +1,9 @@
 import unittest
 from atlassian import Bitbucket
 
-git_url = os.getenv('BITBUCKET_URL')
-git_usr = os.getenv('BITBUCKET_USR')
-git_psw = os.getenv('BITBUCKET_PSW')
+git_url = os.getenv("BITBUCKET_URL")
+git_usr = os.getenv("BITBUCKET_USR")
+git_psw = os.getenv("BITBUCKET_PSW")
 
 
 class TestBitbucket(unittest.TestCase):

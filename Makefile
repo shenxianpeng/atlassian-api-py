@@ -95,4 +95,4 @@ coverage: ## Run code coverage
 	@coverage report -m
 	@echo "== get annotated HTML"
 	@coverage html
-	@echo "== Run code coverage succeeded ✅" 
+	@echo "== Run code coverage succeeded ✅"
