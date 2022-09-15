@@ -15,3 +15,5 @@ tests/__pycache__
 /tests/htmlcov
 tests/config.ini
 /.coverage
+
+__pycache__

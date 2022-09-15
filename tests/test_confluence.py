@@ -1,13 +1,9 @@
 import unittest
-import configparser
 from atlassian import Confluence
 
-config = configparser.RawConfigParser()
-config.read("tests/config.ini")
-
-wiki_url = config["confluence"]["url"]
-wiki_usr = config["confluence"]["username"]
-wiki_psw = config["confluence"]["password"]
+wiki_url = os.getenv('CONFLUENCE_URL')
+wiki_usr = os.getenv('CONFLUENCE_USR')
+wiki_psw = os.getenv('CONFLUENCE_PSW')
 
 
 class TestConfluence(unittest.TestCase):
@@ -24,7 +20,11 @@ class TestConfluence(unittest.TestCase):
 
     def test_operate_content(self):
         # test create_content
-        response = self.wiki.create_content(title="My Test Page", space_key="~xshen", body_value="<p>This is a new page</p>")
+        response = self.wiki.create_content(
+            title="My Test Page", 
+            ancestors_id='368913434',
+            space_key="~blwmv",
+            body_value="<p>This is a new page</p>")
         assert(response['status'], "current")
 
         # test update_content

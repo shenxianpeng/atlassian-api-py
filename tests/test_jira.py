@@ -1,13 +1,9 @@
 import unittest
-import configparser
 from atlassian import Jira
 
-config = configparser.RawConfigParser()
-config.read("config.ini")
-
-jira_url = config["jira"]["url"]
-jira_usr = config["jira"]["username"]
-jira_psw = config["jira"]["password"]
+jira_url = os.getenv('JIRA_URL')
+jira_usr = os.getenv('JIRA_USR')
+jira_psw = os.getenv('JIRA_PSW')
 
 
 class TestJira(unittest.TestCase):
