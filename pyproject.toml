@@ -14,7 +14,9 @@ authors = [
 dependencies = [
     "requests"
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.8"
+dynamic = ["version"]
+
 classifiers = [
     # https://pypi.org/pypi?%3Aaction=list_classifiers
     "Development Status :: 2 - Pre-Alpha",
@@ -23,26 +25,23 @@ classifiers = [
     "Intended Audience :: Information Technology",
     "Natural Language :: English",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.8",
     "Topic :: Utilities",
     "Topic :: Internet",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
-dynamic = ["version"]
 
 [project.urls]
 # source =  "https://github.com/shenxianpeng/atlassian-api-py"
 # tracker = "https://github.com/shenxianpeng/atlassian-api-py/issues"
 download = "https://pypi.org/project/atlassian-api-py/#files"
 
-# ... other project metadata fields as specified in:
-#     https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
 
 [tool.setuptools]
 zip-safe = false
-packages = ["atlassian_api_py"]
+packages = ["atlassian"]
 
 [tool.setuptools_scm]
 # It would be nice to include the commit hash in the version, but that

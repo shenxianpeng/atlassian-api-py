@@ -9,7 +9,7 @@
 # 6. Create tag and push to remote.       run `make push-tag`    #
 ##################################################################
 PKG_NAME = atlassian_api_py
-VERSION ?= $(shell grep version setup.py | cut -d "=" -f2 | cut -d "," -f1)
+VERSION ?= $(shell ls dist/atlassian_api_py* | cut -d - -f 2)
 UNAME := $(shell uname)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD  2>&1)
 
@@ -27,8 +27,9 @@ help: ## Makefile help
 install: ## Install deps for development
 	pip install -U pip pre-commit
 	pip install -r requirements-dev.txt
-	pip install -e .
+	mypy --install-types
 	pre-commit install
+	pip install -e .
 
 check_wheel:
 	@ls dist/$(PKG_NAME)-$(VERSION)-py3-none-any.whl
