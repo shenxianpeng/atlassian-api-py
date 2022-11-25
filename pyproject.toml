@@ -9,7 +9,8 @@ readme = "README.md"
 keywords = ["atlassian", "jira", "bitbucket", "confluence", "rest", "api"]
 license = {text = "MIT License"}
 authors = [
-    { name = "Peter Shen", email = "xianpeng.shen@gmail.com" },
+    {name = "Peter Shen"},
+    {email = "xianpeng.shen@gmail.com"},
 ]
 dependencies = [
     "requests"
