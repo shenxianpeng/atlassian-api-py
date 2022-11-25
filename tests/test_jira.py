@@ -1,9 +1,9 @@
 import unittest
 from atlassian import Jira
 
-jira_url = os.getenv('JIRA_URL')
-jira_usr = os.getenv('JIRA_USR')
-jira_psw = os.getenv('JIRA_PSW')
+jira_url = os.getenv("JIRA_URL")
+jira_usr = os.getenv("JIRA_USR")
+jira_psw = os.getenv("JIRA_PSW")
 
 
 class TestJira(unittest.TestCase):
