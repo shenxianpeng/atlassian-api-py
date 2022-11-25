@@ -15,14 +15,3 @@ repos:
     rev: '22.6.0'
     hooks:
       - id: black
-  # - repo: local
-  #   # this is a "local" hook to run mypy (see https://pre-commit.com/#repository-local-hooks)
-  #   # because the mypy project doesn't seem to be compatible with pre-commit hooks
-  #   hooks:
-  #     - id: mypy
-  #       name: mypy
-  #       description: type checking with mypy tool
-  #       language: python
-  #       types: [python]
-  #       entry: mypy
-  #       exclude: "^(docs/|setup.py$)"

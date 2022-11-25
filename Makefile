@@ -8,7 +8,7 @@
 # 5. Upload to pypi for release.          run `make pypi`        #
 # 6. Create tag and push to remote.       run `make push-tag`    #
 ##################################################################
-PKG_NAME ?= atlassian_api_py
+PKG_NAME = atlassian_api_py
 VERSION ?= $(shell grep version setup.py | cut -d "=" -f2 | cut -d "," -f1)
 UNAME := $(shell uname)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD  2>&1)
@@ -24,8 +24,13 @@ endif
 help: ## Makefile help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
+install: ## Install deps for development
+	pip install -U pip pre-commit
+	pip install -r requirements-dev.txt
+	pip install -e .
+	pre-commit install
+
 check_wheel:
-	@echo "Check wheel file"
 	@ls dist/$(PKG_NAME)-$(VERSION)-py3-none-any.whl
 
 check_branch:
@@ -33,36 +38,24 @@ ifneq ($(BRANCH),master)
 	@echo "Please release from master branch. exit."
 	@exit 1
 endif
-	@echo "== Check branch passed ✅"
 
-build: clean ## Make package
-	@echo "== Start to build $(PKG_NAME) package"
-	@$(PYTHON) setup.py bdist_wheel # add sdist if need
-	@echo "== Build succeeded ✅"
+build: clean ## Make wheel package
+	@$(PYTHON) -m pip wheel -w dist --no-deps .
 
-install: build ## Install package
-	@echo "== Start to install $(PKG_NAME) package"
+install-whl: build ## Install wheel package
 	@$(PIP) install dist/$(PKG_NAME)-$(VERSION)-py3-none-any.whl
-	@echo "== Install succeeded ✅"
 
 clean: ## Cleanup generate files
 	@rm -rf dist build $(PKG_NAME)*
-	@echo "== Clean generate files succeeded ✅"
 
-lint: ## Lint python code
-	@black .
-	@echo "== Lint code succeeded ✅"
-
-pypi: build ## Upload to pypi
+pypi: build ## Upload to offical pypi
 	@echo "== Start to upload $(PKG_NAME) to https://pypi.org/"
 	@rm ~/.pypirc 2>/dev/null || true
 	@twine upload dist/*
-	@echo "== Upload PyPI succeeded ✅"
 
 test-pypi: build ## Upload to test-pypi
 	@echo "== Start to upload $(PKG_NAME) to https://test.pypi.org/"
 	@twine upload --repository testpypi dist/*
-	@echo "== Upload Test PyPI succeeded ✅"
 
 tag: ## Create git tag on local
 	@echo "== Start to make $(PKG_NAME) tag v$(VERSION)"
@@ -71,28 +64,25 @@ tag: ## Create git tag on local
 	@echo
 	@echo List all tags
 	@git tag -l -n --sort=-creatordate
-	@echo "== Create tag succeeded ✅"
 
 push-tag: tag ## Push git tag to remote
 	@echo "== Start to push $(PKG_NAME) tag v$(VERSION) to origin"
 	@git push origin v$(VERSION)
-	@echo "== Push tag succeeded ✅"
-
-release: clean build check_wheel pypi push-tag ## Release incudes build, pypi, push-tag
-	@echo "== Start to make $(PKG_NAME) release"
-	@echo "== Release succeeded ✅"
 
 test: ## Run tests
-	@echo "== Start run tests"
 	@cd tests && $(PYTHON) -m unittest
-	@echo "== Run tests succeeded ✅"
+	@cd ..
 
 coverage: ## Run code coverage
-	@echo "== Start run code coverage"
 	@cd tests
 	@coverage run -m unittest
 	@echo "== Report on the results"
 	@coverage report -m
 	@echo "== get annotated HTML"
 	@coverage html
-	@echo "== Run code coverage succeeded ✅"
+	@cd ..
+
+mypy: ## Check typing
+	mypy atlassian
+
+release: clean build check_wheel check_branch pypi push-tag ## Release incudes build, pypi, push-tag
