@@ -111,8 +111,7 @@ coverage html                   # to get annotated HTML
 ## Changelog
 
 Track some `minor` and `micro` changes.
-
-* [0.3.25](https://pypi.org/project/atlassian-api-py/0.3.25/) - Apr 26, 2022 - Code format and add `Makefile` for build and test.
+* [0.4.0](https://pypi.org/project/atlassian-api-py/0.4.0/) - Apr 26, 2022 - Code format and add `Makefile` for build and test.
 * [0.3.24](https://pypi.org/project/atlassian-api-py/0.3.24/) - Apr 25, 2022 - Support search_issue_with_jql to get more than 1000 results.
 * [0.3.23](https://pypi.org/project/atlassian-api-py/0.3.23/) - Jan 15, 2022 - Changed code formats with black
 * [0.3.22](https://pypi.org/project/atlassian-api-py/0.3.22/) - Nov 13, 2021 - Added `update_field` in Jira.

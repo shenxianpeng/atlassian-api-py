@@ -25,11 +25,9 @@ help: ## Makefile help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 install: ## Install deps for development
-	pip install -U pip pre-commit
-	pip install -r requirements-dev.txt
-	mypy --install-types
+	$(PIP) install -r requirements-dev.txt
+	$(PIP) install -e .
 	pre-commit install
-	pip install -e .
 
 check_wheel:
 	@ls dist/$(PKG_NAME)-$(VERSION)-py3-none-any.whl
