@@ -1,12 +1,9 @@
 import unittest
-import configparser
 from atlassian import Bitbucket
 
-config = configparser.ConfigParser()
-config.read("config.ini")
-
-git_url = config["bitbucket"]["url"]
-token = config["bitbucket"]["token"]
+git_url = os.getenv("BITBUCKET_URL")
+git_usr = os.getenv("BITBUCKET_USR")
+git_psw = os.getenv("BITBUCKET_PSW")
 
 
 class TestBitbucket(unittest.TestCase):
@@ -14,7 +11,7 @@ class TestBitbucket(unittest.TestCase):
 
     def setUp(self):
         """Set connection with Bitbucket"""
-        self.git = Bitbucket(url=git_url, token=token)
+        self.git = Bitbucket(url=git_url, username=git_usr, password=git_psw)
 
     def test_get_project_repo(self):
         """Test to get project repository"""

@@ -13,17 +13,20 @@ class TestConfluence:
 
     def test_get_content(self, confluence):
         confluence.get_content()
-        confluence.get.assert_called_with('/rest/api/content')
+        confluence.get.assert_called_with("/rest/api/content")
 
     def test_get_content_by_id(self, confluence):
         confluence.get_content_by_id(123)
-        confluence.get.assert_called_with('/rest/api/content/123')
+        confluence.get.assert_called_with("/rest/api/content/123")
 
     def test_create_content(self, confluence):
-        confluence.create_content('Test Page', 'TEST_SPACE')
-        confluence.post.assert_called_with('/rest/api/content', json={
-            "type": "page",
-            "status": "current",
-            "title": "Test Page",
-            "space":{"key":"TEST_SPACE"},
-        })
+        confluence.create_content("Test Page", "TEST_SPACE")
+        confluence.post.assert_called_with(
+            "/rest/api/content",
+            json={
+                "type": "page",
+                "status": "current",
+                "title": "Test Page",
+                "space": {"key": "TEST_SPACE"},
+            },
+        )

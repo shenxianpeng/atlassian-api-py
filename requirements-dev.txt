@@ -1,3 +1,6 @@
 coverage
+mypy
 pre-commit
 pytest
+requests
+twine
