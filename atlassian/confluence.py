@@ -34,7 +34,7 @@ class Confluence(AtlassianAPI):
             json = {
                 "type": f"{type}",
                 "title": f"{title}",
-                "ancestors": [{"id": f"{ancestors_id}"}],
+                "ancestors": [{"id": ancestors_id}],
                 "space": {"key": f"{space_key}"},
                 "body": {
                     "storage": {"value": f"{body_value}", "representation": "storage"}
