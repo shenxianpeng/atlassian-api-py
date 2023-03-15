@@ -13,17 +13,29 @@ class Confluence(AtlassianAPI):
         url = f"/rest/api/content"
         return self.get(url) or {}
 
-    def create_content():
+    def get_content_by_id(self, id):
+        """Get content"""
+        url = f"/rest/api/content/{id}"
+        return self.get(url) or {}
+
+    def create_content(self, title, space_key):
+        """Create content"""
+        url = f"/rest/api/content"
+        body = {
+            "type": "page",
+            "status": "current",
+            "title": f"{title}",
+            "space":{"key":f"{space_key}"},
+        }
+        return self.post(url, json=body) or {}
+
+
+    def update_content(self):
         pass
 
-    def update_content():
+    def delete_content(self):
         pass
 
-    def delete_content():
-        pass
 
-    def get_content_by_id():
-        pass
-
-    def get_content_history():
+    def get_content_history(self):
         pass

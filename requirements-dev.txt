@@ -1,2 +1,3 @@
-black
-twine
+coverage
+pre-commit
+pytest

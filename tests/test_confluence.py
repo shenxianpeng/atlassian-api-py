@@ -1,21 +1,29 @@
-import unittest
-import configparser
-from atlassian import Confluence
-
-config = configparser.ConfigParser()
-config.read("config.ini")
-
-wiki_url = config["confluence"]["url"]
-wiki_usr = config["confluence"]["username"]
-wiki_psw = config["confluence"]["password"]
+import pytest
+from unittest.mock import MagicMock
+from atlassian.confluence import Confluence
 
 
-class TestConfluence(unittest.TestCase):
-    """Confluence Test Cases"""
-    def setUp(self):
-        """Set connection with Confluence"""
-        self.wiki = Confluence(url=wiki_url, username=wiki_usr, password=wiki_psw)
+class TestConfluence:
+    @pytest.fixture
+    def confluence(self):
+        confluence = Confluence(url="https://fake_url")
+        confluence.get = MagicMock()
+        confluence.post = MagicMock()
+        return confluence
 
-    def test_content(self) -> None:
-        content = self.wiki.get_content
-        print(content)
+    def test_get_content(self, confluence):
+        confluence.get_content()
+        confluence.get.assert_called_with('/rest/api/content')
+
+    def test_get_content_by_id(self, confluence):
+        confluence.get_content_by_id(123)
+        confluence.get.assert_called_with('/rest/api/content/123')
+
+    def test_create_content(self, confluence):
+        confluence.create_content('Test Page', 'TEST_SPACE')
+        confluence.post.assert_called_with('/rest/api/content', json={
+            "type": "page",
+            "status": "current",
+            "title": "Test Page",
+            "space":{"key":"TEST_SPACE"},
+        })
