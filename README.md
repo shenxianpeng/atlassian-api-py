@@ -108,10 +108,6 @@ coverage report -m              # to report on the results
 coverage html                   # to get annotated HTML
 ```
 
-## Changelog
-
-See [CHANGELOG](CHANGELOG.md)
-
 ## FAQ
 
 ### Q1: Which Jira/BitBucket version I used to develop?
