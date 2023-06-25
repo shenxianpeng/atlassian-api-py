@@ -258,7 +258,7 @@ class Jira(AtlassianAPI):
         url = f"/rest/api/2/issue/{issue_id}/transitions"
         return self.get(url) or {}
 
-    def search_issue_with_jql(self, jql, max_result=1000):
+    def search_issue_with_jql(self, jql, max_result=1000) -> list:
         url = "/rest/api/2/search"
         start_at = 0
         issues = []
@@ -269,7 +269,10 @@ class Jira(AtlassianAPI):
             "fields": ["summary", "status", "issuetype", "fixVersions"],
         }
         response = self.post(url, json=json) or {}
-        total = response["total"]
+        try:
+            total = response["total"]
+        except KeyError:
+            return issues
         max_results = response["maxResults"]
         for issue in response["issues"]:
             issues.append(issue)
