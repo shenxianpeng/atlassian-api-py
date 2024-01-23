@@ -24,4 +24,8 @@ jobs:
         uses: commit-check/commit-check-action@v1
         with:
           message: true
+          branch: false
+          author-name: false
+          author-email: false
+          commit-signoff: false
           job-summary: true
