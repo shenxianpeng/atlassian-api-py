@@ -1,0 +1,34 @@
+name: Main
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run pre-commit
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: |
+          make install
+          pre-commit run --all-files
+      - name: Commit check
+        uses: commit-check/commit-check-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          message: true
+          branch: false
+          author-name: false
+          author-email: false
+          commit-signoff: false
+          job-summary: true
+          pr-comments: ${{ github.event_name == 'pull_request' }}
