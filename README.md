@@ -1,7 +1,7 @@
 # Python Wrapper for Atlassian REST API
 
 [![PyPI](https://img.shields.io/pypi/v/atlassian-api-py)](https://pypi.org/project/atlassian-api-py/)
-[![CodeFactor](https://www.codefactor.io/repository/github/shenxianpeng/atlassian-api-py/badge/main?s=3f5b565625069f5c5ab303a02b120197cd3abdde)](https://www.codefactor.io/repository/github/shenxianpeng/atlassian-api-py/overview/main)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=shenxianpeng_atlassian-api-py&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=shenxianpeng_atlassian-api-py)
 ![PyPI - Downloads](https://img.shields.io/pypi/dw/atlassian-api-py)
 [![commit-check](https://img.shields.io/badge/commit--check-enabled-brightgreen?logo=Git&logoColor=white)](https://github.com/commit-check/commit-check)
 
