@@ -1,6 +1,7 @@
 """ HTTP Response Codes:
 https://developer.atlassian.com/server/confluence/http-response-code-definitions/
 """
+
 _ERROR_CODE_MESSAGE = {
     -1: "Unknown Error Code",
     100: "Continue",

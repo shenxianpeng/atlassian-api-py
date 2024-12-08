@@ -1,45 +1,50 @@
 # Python Wrapper for Atlassian REST API
 
 [![PyPI](https://img.shields.io/pypi/v/atlassian-api-py)](https://pypi.org/project/atlassian-api-py/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/atlassian-api-py?style=flat-square)](https://pypi.org/project/atlassian-api-py)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=shenxianpeng_atlassian-api-py&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=shenxianpeng_atlassian-api-py)
 ![PyPI - Downloads](https://img.shields.io/pypi/dw/atlassian-api-py)
 [![commit-check](https://img.shields.io/badge/commit--check-enabled-brightgreen?logo=Git&logoColor=white)](https://github.com/commit-check/commit-check)
 
-## What is this?
+## Overview
 
-This is a package wrapper of Atlassian REST API written in Python, currently, it supports JIRA and Bitbucket.
+This package is a Python wrapper for the Atlassian REST API, currently supporting JIRA and Bitbucket. It simplifies the implementation of integration with these tools.
 
-This package was created to simplify the implementation of integration with JIRA and Bitbucket.
+## Installation
 
-## QuickStart
-
-## Install from PyPI
+To install the package, run the following command:
 
 ```bash
-# install
 $ pip install atlassian-api-py
+```
 
-# upgrade to latest
+To upgrade to the latest version, use:
+
+```bash
 $ pip install atlassian-api-py --upgrade
 ```
 
-### Establish connection
+**Establish connection**
 
-Connect with username and password
+You can connect to JIRA using a username and password or a token.
+
+Using Username and Password
 
 ```python
 >>> from atlassian import Jira
 >>> jira = Jira(url='https://jira.company.com', username="username", password="password")
 ```
 
-Or connect with token
+Using a Token
 
 ```python
 >>> from atlassian import Jira
 >>> jira = Jira(url='https://jira.company.com', token="yourToken")
 ```
 
-Or write your credentials in a configuration file `config.ini`, and get the credential though the configuration file.
+Using a Configuration File
+
+Alternatively, you can store your credentials in a `config.ini` file:
 
 ```markdown
 [jira]
@@ -49,6 +54,8 @@ password = password
 # Or
 token = yourToken
 ```
+
+Then, you can use the configuration file to establish a connection:
 
 ```python
 >>> import configparser
@@ -61,7 +68,7 @@ token = yourToken
 >>> jira_token = config['jira']['token']
 ```
 
-### Get fields
+### Getting issue fields
 
 Next, you can get the issue's fields as follow:
 
@@ -77,7 +84,7 @@ Triage
 Bug
 ```
 
-### More fields
+### Getting issue more fields
 
 ```python
 >>> print(issue.id)
@@ -91,20 +98,6 @@ Jira REST API Unit Test Example
 >>> ...
 ```
 
-## Unittest and Coverage
+## License
 
-Run unittest
-
-```bash
-cd tests
-python -m unittest
-```
-
-Run coverage
-
-```bash
-cd tests
-coverage run -m unittest
-coverage report -m              # to report on the results
-coverage html                   # to get annotated HTML
-```
+This project is released under the [MIT License](LICENSE).
