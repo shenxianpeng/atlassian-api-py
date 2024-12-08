@@ -39,7 +39,7 @@ def test(session):
 def coverage(session):
     session.install(".")
     session.install("-r", "requirements-dev.txt")
-    session.run("cd", "tests", extenal=True)
+    session.run("cd", "tests", external=True)
     session.run("coverage", "run", "-m", "unittest")
     session.run("coverage", "report", "-m")
     session.run("coverage", "html")
