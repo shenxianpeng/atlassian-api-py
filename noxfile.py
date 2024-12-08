@@ -9,6 +9,11 @@ nox.options.error_on_missing_interpreters = False
 def lint(session):
     session.install("-r", "requirements-dev.txt")
     session.run("pre-commit", "run", "--all-files")
+
+
+@nox.session
+def mypy(session):
+    session.install("-r", "requirements-dev.txt")
     session.run("mypy", "atlassian")
 
 
