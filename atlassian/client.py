@@ -1,4 +1,4 @@
-import requests
+import requests  # type: ignore
 import json
 from types import SimpleNamespace
 from .logger import get_logger

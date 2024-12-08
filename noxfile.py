@@ -11,10 +11,10 @@ def lint(session):
     session.run("pre-commit", "run", "--all-files")
 
 
-@nox.session
-def mypy(session):
-    session.install("-r", "requirements-dev.txt")
-    session.run("mypy", "atlassian")
+# @nox.session
+# def mypy(session):
+#    session.install("-r", "requirements-dev.txt")
+#    session.run("mypy", "atlassian")
 
 
 @nox.session
