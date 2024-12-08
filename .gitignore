@@ -14,6 +14,8 @@ atlassian-api-py-release.log
 tests/__pycache__
 /tests/htmlcov
 tests/config.ini
-/.coverage
+.coverage
+.nox
+.tox
 
 __pycache__

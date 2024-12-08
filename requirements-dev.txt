@@ -1,5 +1,6 @@
 coverage
 mypy
+nox
 pre-commit
 pytest
 requests
