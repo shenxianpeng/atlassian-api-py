@@ -261,7 +261,7 @@ class Jira(AtlassianAPI):
     def search_issue_with_jql(self, jql, max_result=1000) -> list:
         url = "/rest/api/2/search"
         start_at = 0
-        issues = []
+        issues: list[str] = []
         json = {
             "jql": jql,
             "startAt": start_at,
