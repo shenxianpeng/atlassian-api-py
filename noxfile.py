@@ -1,5 +1,6 @@
 import nox
 import glob
+import os
 
 nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_missing_interpreters = False
@@ -29,12 +30,12 @@ def test(session):
     session.run("pytest")
 
 
-# @nox.session()
-# def coverage(session):
-#     if os.getenv("GITHUB_ACTIONS") == "true":
-#         nox.skip("Skipping this session because it failed on GitHub Actions.")
-#     session.install(".")
-#     session.install("-r", "requirements-dev.txt")
-#     session.run("coverage", "run", "-m", "unittest")
-#     session.run("coverage", "report", "-m")
-#     session.run("coverage", "html")
+@nox.session()
+def coverage(session):
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        nox.skip("Skipping this session because it failed on GitHub Actions.")
+    session.install(".")
+    session.install("-r", "requirements-dev.txt")
+    session.run("coverage", "run", "-m", "unittest")
+    session.run("coverage", "report", "-m")
+    session.run("coverage", "html")
