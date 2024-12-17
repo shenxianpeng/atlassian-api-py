@@ -1,6 +1,5 @@
 import nox
 import glob
-import os
 
 nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_missing_interpreters = False
@@ -30,10 +29,8 @@ def test(session):
     session.run("pytest")
 
 
-@nox.session()
+@nox.session(python=["3.10"])  # only run on 3.10
 def coverage(session):
-    if os.getenv("GITHUB_ACTIONS") == "true":
-        nox.skip("Skipping this session because it failed on GitHub Actions.")
     session.install(".")
     session.install("-r", "requirements-dev.txt")
     session.run("coverage", "run", "-m", "unittest")
