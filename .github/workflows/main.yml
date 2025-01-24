@@ -52,3 +52,15 @@ jobs:
           pip install nox
       - name: Test with nox
         run: nox
+
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-data-${{ runner.os }}
+          path: .coverage*
+          include-hidden-files: true
+
+  coverage-report:
+    needs: [test]
+    uses: shenxianpeng/.github/.github/workflows/py-coverage.yml@main
+    secrets: inherit

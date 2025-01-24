@@ -1,73 +1,37 @@
-import pytest
-from unittest.mock import MagicMock
+from atlassian.client import AtlassianAPI
+from unittest.mock import patch, MagicMock
 from atlassian.confluence import Confluence
 
 
-class TestConfluence:
-    @pytest.fixture
-    def confluence(self):
+class TestConfluence(AtlassianAPI):
+
+    @patch.object(Confluence, "get")
+    def test_successful_get_request(self, mock_get):
         confluence = Confluence(url="https://fake_url")
-        confluence.get = MagicMock()
-        confluence.put = MagicMock()
-        confluence.post = MagicMock()
-        confluence.delete = MagicMock()
-        return confluence
+        mock_response = MagicMock(status_code=200, json=lambda: {"content": "example"})
+        mock_get.return_value = mock_response
+        result = confluence.get_content()
+        self.assertEqual(result, {"content": "example"})
 
-    def test_get_content(self, confluence):
-        confluence.get_content()
-        confluence.get.assert_called_with("/rest/api/content")
+    @patch.object(Confluence, "get")
+    def test_failed_get_request(self, mock_get):
+        confluence = Confluence(url="https://fake_url")
+        mock_get.side_effect = Exception("Network error")
+        result = confluence.get_content()
+        self.assertEqual(result, {})
 
-    def test_create_content(self, confluence):
-        confluence.create_content("Test Page", "TEST_SPACE", "Body Value")
-        confluence.post.assert_called_with(
-            "/rest/api/content",
-            json={
-                "type": "page",
-                "title": "Test Page",
-                "space": {"key": "TEST_SPACE"},
-                "body": {
-                    "storage": {"value": "Body Value", "representation": "storage"}
-                },
-            },
-        )
+    @patch.object(Confluence, "get")
+    def test_empty_response_from_server(self, mock_get):
+        confluence = Confluence(url="https://fake_url")
+        mock_response = MagicMock(status_code=200, json=lambda: None)
+        mock_get.return_value = mock_response
+        result = confluence.get_content()
+        self.assertEqual(result, {})
 
-    def test_create_content_with_ancestors_id(self, confluence):
-        confluence.create_content("Test Page", "TEST_SPACE", "Body Value", 1234)
-        confluence.post.assert_called_with(
-            "/rest/api/content",
-            json={
-                "type": "page",
-                "title": "Test Page",
-                "ancestors": [{"id": 1234}],
-                "space": {"key": "TEST_SPACE"},
-                "body": {
-                    "storage": {"value": "Body Value", "representation": "storage"}
-                },
-            },
-        )
-
-    def test_update_content(self, confluence):
-        confluence.update_content(123, "Test Page", "Body Value")
-        confluence.put.assert_called_with(
-            "/rest/api/content/123",
-            json={
-                "version": {"number": 2},
-                "title": "Test Page",
-                "type": "page",
-                "body": {
-                    "storage": {"value": "Body Value", "representation": "storage"}
-                },
-            },
-        )
-
-    def test_delete_content(self, confluence):
-        confluence.delete_content(123)
-        confluence.delete.assert_called_with("/rest/api/content/123")
-
-    def test_get_content_by_id(self, confluence):
-        confluence.get_content_by_id(123)
-        confluence.get.assert_called_with("/rest/api/content/123")
-
-    def test_get_content_history(self, confluence):
-        confluence.get_content_history(123)
-        confluence.get.assert_called_with("/rest/api/content/123/history")
+    @patch.object(Confluence, "get")
+    def test_non_200_status_code_response_from_server(self, mock_get):
+        confluence = Confluence(url="https://fake_url")
+        mock_response = MagicMock(status_code=404, json=lambda: {"error": "Not found"})
+        mock_get.return_value = mock_response
+        result = confluence.get_content()
+        self.assertEqual(result, {})

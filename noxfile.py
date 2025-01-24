@@ -36,3 +36,10 @@ def coverage(session):
     session.run("coverage", "run", "-m", "unittest")
     session.run("coverage", "report", "-m")
     session.run("coverage", "html")
+
+
+# generate a coverage report
+@nox.session()
+def cov_report(session):
+    session.install("-r", "requirements-dev.txt")
+    session.run("pytest", "--cov-branch", "--cov-report=xml")
