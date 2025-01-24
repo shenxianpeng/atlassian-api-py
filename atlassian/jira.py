@@ -277,7 +277,7 @@ class Jira(AtlassianAPI):
         for issue in response["issues"]:
             issues.append(issue)
 
-        while total > max_results:
+        while int(total) > int(max_results):
             start_at = start_at + max_results
             json = {
                 "jql": jql,
