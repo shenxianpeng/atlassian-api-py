@@ -53,10 +53,14 @@ jobs:
       - name: Test with nox
         run: nox
 
-      - name: Generate coverage report
-        run: nox -s cov_report
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          slug: shenxianpeng/atlassian-api-py
+          name: coverage-data-${{ runner.os }}
+          path: .coverage*
+          include-hidden-files: true
+
+  coverage-report:
+    needs: [test]
+    uses: shenxianpeng/.github/.github/workflows/py-coverage.yml@main
+    secrets: inherit
