@@ -3,5 +3,6 @@ mypy
 nox
 pre-commit
 pytest
+pytest-cov
 requests
 twine

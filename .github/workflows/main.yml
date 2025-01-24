@@ -52,3 +52,11 @@ jobs:
           pip install nox
       - name: Test with nox
         run: nox
+
+      - name: Generate coverage report
+        run: nox -s cov_report
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: shenxianpeng/atlassian-api-py
