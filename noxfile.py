@@ -36,3 +36,18 @@ def coverage(session):
     session.run("coverage", "run", "-m", "unittest")
     session.run("coverage", "report", "-m")
     session.run("coverage", "html")
+
+@nox.session
+def docs(session: nox.Session) -> None:
+    """Build docs"""
+    session.install("--upgrade", "pip")
+    session.install("-r", "docs/requirements.txt")
+    session.run("sphinx-build", "-b", "html", "docs", "docs/build/html")
+    session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
+
+
+@nox.session(name="docs-live")
+def docs_live(session: nox.Session) -> None:
+    session.install("-r", "docs/requirements.txt", "sphinx-autobuild")
+    session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
+    session.run("sphinx-autobuild", "docs", "docs/build/html", external=True)

@@ -99,13 +99,16 @@ class Jira(AtlassianAPI):
         return self.delete(url) or None
 
     def link_issue_as(self, type_name=None, inward_issue=None, outward_issue=None):
-        """
-        Link issue as depends_upon, is_blocked_by, etc.
+        """ Link issue as depends_upon, is_blocked_by, etc.
+
+        Args:
+            type_name: Dependence, Blocking
+            inward_issue:
+            outward_issue:
+        
+        Returns:
+
         Example: jira.link_issue_as(type_name='Dependence', inward_issue="TEST-1", outward_issue='TEST-2')
-        :param type_name: Dependence, Blocking
-        :param inward_issue:
-        :param outward_issue:
-        :return:
         """
         url = "/rest/api/2/issueLink"
         json = {
@@ -121,13 +124,14 @@ class Jira(AtlassianAPI):
         return self.delete(url) or {}
 
     def create_issue(self, fields, update=None):
-        """
-        Creates an issue or a sub-task from a JSON representation
-        :param fields: JSON data
-                mandatory keys are issuetype, summary and project
-        :param update: JSON data
-                Use it to link issues or update worklog
-        :return:
+        """Creates an issue or a sub-task from a JSON representation
+
+        Args:
+
+            fields: JSON data. mandatory keys are issuetype, summary and project
+            update: Use it to link issues or update worklog
+
+        Returns:
             example:
                 fields = dict(summary='Into The Night',
                               project = dict(key='APA'),
@@ -239,7 +243,8 @@ class Jira(AtlassianAPI):
         return self.put(url, json=json) or {}
 
     def add_issue_watcher(self, issue_key, watcher):
-        """Add someone as watcher"""
+        """Add someone as watcher
+        """
         url = f"/rest/api/2/issue/{issue_key}/watchers"
         return self.post(url, json=watcher)
 

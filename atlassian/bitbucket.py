@@ -60,8 +60,7 @@ class Bitbucket(AtlassianAPI):
         return self._get_paged(url, params=params)
 
     def create_branch(self, project_key, repo_slug, branch_name, start_point):
-        """Create a branch
-        Using service account to create branch failed because of issue https://jira.atlassian.com/browse/BSERV-9340
+        """Create a branch Using service account to create branch failed because of issue https://jira.atlassian.com/browse/BSERV-9340
         """
         url = (
             f"/rest/branch-utils/1.0/projects/{project_key}/repos/{repo_slug}/branches"
@@ -232,7 +231,8 @@ class Bitbucket(AtlassianAPI):
         return self.get(url)
 
     def add_pull_request_comment(self, project_key, repo_slug, pr_id, comment):
-        """Add comment to a specific pull request"""
+        """Add comment to a specific pull request
+        """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments"
         payload = {"text": comment}
         return self.post(url, json=payload)
