@@ -37,10 +37,12 @@ def coverage(session):
     session.run("coverage", "report", "-m")
     session.run("coverage", "html")
 
+
 @nox.session
 def docs(session: nox.Session) -> None:
     """Build docs"""
     session.install("--upgrade", "pip")
+    session.install(".")
     session.install("-r", "docs/requirements.txt")
     session.run("sphinx-build", "-b", "html", "docs", "docs/build/html")
     session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
