@@ -1,11 +1,13 @@
 # Changelog
 
+Starting from `0.5.0`, please refer to [GitHub release](https://github.com/shenxianpeng/atlassian-api-py/releases) to view release note.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-* [0.5.0](https://pypi.org/project/atlassian-api-py/0.5.0/) - Apr 10, 2023 - **Starting from `0.5.0`, please see release notes [Here](https://github.com/shenxianpeng/atlassian-api-py/releases) and this file will not be updated anymore.**
+* [0.5.0](https://pypi.org/project/atlassian-api-py/0.5.0/) - Apr 10, 2023
 * [0.4.0](https://pypi.org/project/atlassian-api-py/0.4.0/) - Apr 26, 2022 - Code format and add `Makefile` for build and test.
 * [0.3.24](https://pypi.org/project/atlassian-api-py/0.3.24/) - Apr 25, 2022 - Support search_issue_with_jql to get more than 1000 results.
 * [0.3.23](https://pypi.org/project/atlassian-api-py/0.3.23/) - Jan 15, 2022 - Changed code formats with black

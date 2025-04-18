@@ -103,4 +103,4 @@ Jira REST API Unit Test Example
 
 ## License
 
-This project is released under the [MIT License](LICENSE).
+This project is released under the MIT License.

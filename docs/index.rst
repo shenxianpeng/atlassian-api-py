@@ -15,6 +15,11 @@ Welcome to Atlassian REST API's documentation!
 
    modules
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Changelog:
+
+   changelog
 
 Indices and tables
 ==================
