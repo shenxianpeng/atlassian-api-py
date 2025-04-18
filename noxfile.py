@@ -46,7 +46,7 @@ def coverage(session):
     session.run("coverage", "html")
 
 
-@nox.session
+@nox.session(python=["3.9", "3.10", "3.11", "3.12"]) # 3.13 removed imghdr module
 def docs(session: nox.Session) -> None:
     """Build the documentation."""
     session.install("--upgrade", "pip")
