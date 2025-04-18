@@ -6,11 +6,27 @@
 Welcome to Atlassian REST API's documentation!
 ==============================================
 
+.. include:: ../README.rst
+   :start-after: start-overview
+   :end-before: end-overview
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Getting Started:
+
+   getting-started
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference:
 
    modules
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Changelog:
+
+   changelog
 
 
 Indices and tables
@@ -19,3 +35,7 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. include:: ../README.rst
+   :start-after: start-license
+   :end-before: end-license
