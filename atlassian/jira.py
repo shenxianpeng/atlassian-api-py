@@ -250,7 +250,25 @@ class Jira(AtlassianAPI):
         components=None,
         issue_type=10,
     ):
-        """Create task issue"""
+        """
+        Create task issue
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param summary: The summary of the issue.
+        :type summary: str
+        :param assignee: The assignee of the issue.
+        :type assignee: str
+        :param owner: The owner of the issue.
+        :type owner: str
+        :param labels: A list of labels for the issue.
+        :type labels: list[str], optional
+        :param components: A list of components for the issue.
+        :type components: list[str], optional
+        :param issue_type: The issue type ID (default is 10).
+        :type issue_type: int, optional
+        :return: The response from the API.
+        :rtype: dict
+        """
         url = "/rest/api/2/issue"
         json = {
             "fields": {
@@ -280,7 +298,28 @@ class Jira(AtlassianAPI):
         team=None,
         issue_type=20,
     ):
-        """Create sub task issue"""
+        """
+        Create sub task issue"
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param parent_issue_key: The key of the parent issue.
+        :type parent_issue_key: str
+        :param summary: The summary of the issue.
+        :type summary: str
+        :param fix_version: The fix version of the issue.
+        :type fix_version: str
+        :param assignee: The assignee of the issue.
+        :type assignee: str
+        :param description: The description of the issue.
+        :type description: str
+        :param labels: A list of labels for the issue.
+        :type labels: list[str], optional
+        :param team: The team of the issue.
+        :type team: str, optional
+        :param issue_type: The issue type ID (default is 20).
+        :type issue_type: int, optional
+        :return: The response from the API.
+        :rtype: dict"""
         url = "/rest/api/2/issue"
         json = {
             "fields": {
@@ -318,7 +357,15 @@ class Jira(AtlassianAPI):
         return self.put(url, json=json)
 
     def assign_issue(self, issue_key, assignee=None):
-        """Assign issue to someone"""
+        """
+        Assign issue to someone
+        :param issue_key: The key of the issue to assign.
+        :type issue_key: str
+        :param assignee: The assignee of the issue.
+        :type assignee: str, optional
+        :return: The response from the API.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_key}/assignee"
         if assignee is None:
             assignee = -1
@@ -326,7 +373,15 @@ class Jira(AtlassianAPI):
         return self.put(url, json=json) or {}
 
     def add_issue_watcher(self, issue_key, watcher):
-        """Add someone as watcher"""
+        """
+        Add someone as watcher
+        :param issue_key: The key of the issue to add a watcher to.
+        :type issue_key: str
+        :param watcher: The username of the watcher.
+        :type watcher: str
+        :return: The response from the API.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_key}/watchers"
         return self.post(url, json=watcher)
 
@@ -335,17 +390,39 @@ class Jira(AtlassianAPI):
         Chose transition Button then right click on the view elements. for example:
         I find Close button's elements is id="action_id_51", so the close transition_id = 51.
         I find Open button's elements is id="action_id_61", so the open transition_id = 61.
+
+        :param issue_key: The key of the issue to transition.
+        :type issue_key: str
+        :param transition_id: The ID of the transition to perform.
+        :type transition_id: str, optional
+        :return: The response from the API.
+        :rtype: dict
         """
         url = "/rest/api/2/issue/{key}/transitions".format(key=issue_key)
         json = {"transition": {"id": transition_id}}
         return self.post(url, json=json)
 
     def get_transitions(self, issue_id):
-        """Get a list of the transitions possible for this issue by the current user"""
+        """
+        Get a list of the transitions possible for this issue by the current user
+        :param issue_id: The ID of the issue to get transitions for.
+        :type issue_id: str
+        :return: A dictionary containing the transitions.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_id}/transitions"
         return self.get(url) or {}
 
     def search_issue_with_jql(self, jql, max_result=1000) -> list:
+        """
+        Search issues using JQL (JIRA Query Language).
+        :param jql: The JQL query string.
+        :type jql: str
+        :param max_result: The maximum number of results to return (default is 1000).
+        :type max_result: int, optional
+        :return: A list of issues matching the JQL query.
+        :rtype: list
+        """
         url = "/rest/api/2/search"
         start_at = 0
         issues: list[str] = []
@@ -379,16 +456,38 @@ class Jira(AtlassianAPI):
         return issues
 
     def get_project_components(self, project_id):
-        """Get project components"""
+        """
+        Get project components
+        :param project_id: The ID of the project to get components for.
+        :type project_id: str
+        :return: A dictionary containing the project components.
+        :rtype: dict
+        """
         url = f"/rest/api/2/project/{project_id}/components"
         return self.get(url) or {}
 
     def user(self, username):
-        """Get user information"""
+        """
+        Get user information by username.
+        :param username: The username of the user to retrieve.
+        :type username: str
+        :return: A dictionary containing user information.
+        :rtype: dict
+        """
         url = f"/rest/api/2/user?username={username}"
         return self.get(url) or {}
 
     def get_dev_status(self, issue_id, app_type="stash", data_type="repository"):
-        """Get dev status"""
+        """
+        Get development status for an issue.
+        :param issue_id: The ID of the issue to get development status for.
+        :type issue_id: str
+        :param app_type: The type of application (default is "stash").
+        :type app_type: str, optional
+        :param data_type: The type of data (default is "repository").
+        :type data_type: str, optional
+        :return: A dictionary containing the development status.
+        :rtype: dict
+        """
         url = f"/rest/dev-status/1.0/issue/detail?issueId={issue_id}&applicationType={app_type}&dataType={data_type}"
         return self.get(url) or {}
