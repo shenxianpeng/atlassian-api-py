@@ -32,7 +32,7 @@ Python Wrapper for Atlassian REST API
 Overview
 --------
 
-This package is a Python wrapper for the Atlassian REST API, with current support for JIRA, Bitbucket and Confluence APIs.
+This package is a Python wrapper for the Atlassian REST API, which supports JIRA, Bitbucket, and Confluence.
 
 It is intended to simplify the process of integrating these tools into your applications.
 
