@@ -3,33 +3,38 @@ Python Wrapper for Atlassian REST API
 
 .. start-overview
 
-.. image:: https://img.shields.io/pypi/v/atlassian-api-py
+.. |pypi-version| image:: https://img.shields.io/pypi/v/atlassian-api-py
    :target: https://pypi.org/project/atlassian-api-py/
    :alt: PyPI
 
-.. image:: https://readthedocs.org/projects/atlassian-api-py/badge/?version=latest
+.. |docs-badge| image:: https://readthedocs.org/projects/atlassian-api-py/badge/?version=latest
    :target: https://atlassian-api-py.readthedocs.io/
    :alt: Documentation
 
-.. image:: https://img.shields.io/pypi/pyversions/atlassian-api-py?style=flat-square
+.. |python-version| image:: https://img.shields.io/pypi/pyversions/atlassian-api-py?style=flat-square
    :target: https://pypi.org/project/atlassian-api-py
    :alt: PyPI - Python Version
 
-.. image:: https://sonarcloud.io/api/project_badges/measure?project=shenxianpeng_atlassian-api-py&metric=alert_status
+.. |sonar-badge| image:: https://sonarcloud.io/api/project_badges/measure?project=shenxianpeng_atlassian-api-py&metric=alert_status
    :target: https://sonarcloud.io/summary/new_code?id=shenxianpeng_atlassian-api-py
    :alt: Quality Gate Status
 
-.. image:: https://img.shields.io/pypi/dw/atlassian-api-py
+.. |downloads-badge| image:: https://img.shields.io/pypi/dw/atlassian-api-py
    :alt: PyPI - Downloads
 
-.. image:: https://img.shields.io/badge/commit--check-enabled-brightgreen?logo=Git&logoColor=white
+.. |commit-check-badge| image:: https://img.shields.io/badge/commit--check-enabled-brightgreen?logo=Git&logoColor=white
    :target: https://github.com/commit-check/commit-check
    :alt: Commit Check
+
+
+|pypi-version| |docs-badge| |python-version| |commit-check-badge|
 
 Overview
 --------
 
-This package is a Python wrapper for the Atlassian REST API, currently supporting JIRA and Bitbucket. It simplifies the implementation of integration with these tools.
+This package is a Python wrapper for the Atlassian REST API, with current support for JIRA, Bitbucket and Confluence APIs.
+
+It is intended to simplify the process of integrating these tools into your applications.
 
 📘 Documentation: `atlassian-api-py.readthedocs.io <https://atlassian-api-py.readthedocs.io/>`_
 
