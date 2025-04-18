@@ -4,9 +4,10 @@ Atlassian API Library
 This module provides access to the main classes for interacting with Atlassian products.
 
 Available classes:
-- Jira: For interacting with Jira APIs.
-- Bitbucket: For interacting with Bitbucket APIs.
-- Confluence: For interacting with Confluence APIs.
+
+* Jira: For interacting with Jira APIs.
+* Bitbucket: For interacting with Bitbucket APIs.
+* Confluence: For interacting with Confluence APIs.
 
 .. note::
     Import these classes directly from this module for convenience.
