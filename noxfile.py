@@ -41,7 +41,7 @@ def coverage(session):
     """Run test coverage analysis."""
     session.install(".")
     session.install("-r", "requirements-dev.txt")
-    session.run("coverage", "run", "-m", "unittest")
+    session.run("coverage", "run", "-m", "pytest")
     session.run("coverage", "report", "-m")
     session.run("coverage", "html")
 
