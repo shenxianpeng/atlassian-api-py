@@ -1,5 +1,6 @@
 import nox
 import glob
+import sys
 
 # Global Nox options
 nox.options.reuse_existing_virtualenvs = True
@@ -36,7 +37,7 @@ def test(session):
     session.run("pytest")
 
 
-@nox.session(python=["3.12"])
+@nox.session
 def coverage(session):
     """Run test coverage analysis."""
     session.install(".")
@@ -46,17 +47,21 @@ def coverage(session):
     session.run("coverage", "html")
 
 
-@nox.session(python=["3.12"])  # 3.13 does not support since imghdr module was removed
+@nox.session
 def docs(session: nox.Session) -> None:
     """Build the documentation."""
+    if sys.version_info == (3, 13):
+        session.skip("Skipping docs session on Python 3.13+")
     session.install("-r", "docs/requirements.txt")
     session.run("sphinx-build", "-b", "html", "docs", "docs/build/html")
     session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
 
 
-@nox.session(name="docs-live", python=["3.12"], default=False)
+@nox.session(name="docs-live", default=False)
 def docs_live(session: nox.Session) -> None:
     """Serve documentation with live reload."""
+    if sys.version_info == (3, 13):
+        session.skip("Skipping docs session on Python 3.13+")
     session.install("-r", "docs/requirements.txt", "sphinx-autobuild")
     session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
     session.run("sphinx-autobuild", "docs", "docs/build/html", external=True)
