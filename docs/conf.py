@@ -7,7 +7,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
+
+sys.path.insert(0, os.path.abspath("."))
 
 project = "Atlassian REST API"
 copyright = "2021, Xianpeng Shen"
@@ -27,6 +28,6 @@ templates_path = ["_templates"]
 html_theme = "sphinx_rtd_theme"
 
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".md": "markdown",
 }
