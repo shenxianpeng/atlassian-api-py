@@ -36,7 +36,7 @@ def test(session):
     session.run("pytest")
 
 
-@nox.session(python=["3.10"])
+@nox.session(python=["3.12"])
 def coverage(session):
     """Run test coverage analysis."""
     session.install(".")
@@ -46,17 +46,15 @@ def coverage(session):
     session.run("coverage", "html")
 
 
-@nox.session(python=["3.9", "3.10", "3.11", "3.12"]) # 3.13 removed imghdr module
+@nox.session(python=["3.12"])  # 3.13 does not support since imghdr module was removed
 def docs(session: nox.Session) -> None:
     """Build the documentation."""
-    session.install("--upgrade", "pip")
-    session.install(".")
     session.install("-r", "docs/requirements.txt")
     session.run("sphinx-build", "-b", "html", "docs", "docs/build/html")
     session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
 
 
-@nox.session(name="docs-live", default=False)
+@nox.session(name="docs-live", python=["3.12"], default=False)
 def docs_live(session: nox.Session) -> None:
     """Serve documentation with live reload."""
     session.install("-r", "docs/requirements.txt", "sphinx-autobuild")

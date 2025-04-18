@@ -1,6 +1,7 @@
 # Python Wrapper for Atlassian REST API
 
 [![PyPI](https://img.shields.io/pypi/v/atlassian-api-py)](https://pypi.org/project/atlassian-api-py/)
+[![Documentation](https://readthedocs.org/projects/atlassian-api-py/badge/?version=latest)](https://atlassian-api-py.readthedocs.io/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/atlassian-api-py?style=flat-square)](https://pypi.org/project/atlassian-api-py)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=shenxianpeng_atlassian-api-py&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=shenxianpeng_atlassian-api-py)
 ![PyPI - Downloads](https://img.shields.io/pypi/dw/atlassian-api-py)
@@ -9,6 +10,8 @@
 ## Overview
 
 This package is a Python wrapper for the Atlassian REST API, currently supporting JIRA and Bitbucket. It simplifies the implementation of integration with these tools.
+
+📘 Documentation: [atlassian-api-py.readthedocs.io](https://atlassian-api-py.readthedocs.io/)
 
 ## Installation
 
