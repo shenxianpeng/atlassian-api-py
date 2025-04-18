@@ -7,22 +7,48 @@ logger = get_logger(__name__)
 class Jira(AtlassianAPI):
     """
     JIRA API Reference
-    https://docs.atlassian.com/software/jira/docs/api/REST/7.6.1/
+
+    .. seealso::
+        `JIRA REST API Documentation <https://docs.atlassian.com/software/jira/docs/api/REST/7.6.1/>`_
     """
 
     def issue(self, issue_key):
-        """Get issue fileds"""
+        """
+        Get issue fields.
+
+        :param issue_key: The key of the issue to retrieve.
+        :type issue_key: str
+        :return: A dictionary containing issue fields.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_key}"
         return self.get(url) or {}
 
     def issue_changelog(self, issue_key):
-        """Get issue changelog"""
-        # https://jira.atlassian.com/browse/JRASERVER-27692
+        """
+        Get issue changelog.
+
+        :param issue_key: The key of the issue to retrieve the changelog for.
+        :type issue_key: str
+        :return: A dictionary containing the issue changelog.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_key}?expand=changelog&fields=summary"
         return self.get(url) or {}
 
     def update_issue_label(self, issue_key, add_labels=None, remove_labels=None):
-        """Update issue label"""
+        """
+        Update issue labels.
+
+        :param issue_key: The key of the issue to update.
+        :type issue_key: str
+        :param add_labels: A list of labels to add.
+        :type add_labels: list[str], optional
+        :param remove_labels: A list of labels to remove.
+        :type remove_labels: list[str], optional
+        :return: The response from the API.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_key}"
         add_labels_list = []
         remove_labels_list = []
@@ -47,7 +73,18 @@ class Jira(AtlassianAPI):
     def update_issue_component(
         self, issue_key, add_components=None, remove_components=None
     ):
-        """Update issue components"""
+        """
+        Update issue components.
+
+        :param issue_key: The key of the issue to update.
+        :type issue_key: str
+        :param add_components: A list of components to add.
+        :type add_components: list[str], optional
+        :param remove_components: A list of components to remove.
+        :type remove_components: list[str], optional
+        :return: The response from the API.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_key}"
         add_component_list = []
         remove_component_list = []
@@ -71,13 +108,35 @@ class Jira(AtlassianAPI):
         return self.put(url, json=component_data)
 
     def update_issue_description(self, issue_key, new_description):
-        """Update issue description"""
+        """
+        Update issue description.
+
+        :param issue_key: The key of the issue to update.
+        :type issue_key: str
+        :param new_description: The new description for the issue.
+        :type new_description: str
+        :return: The response from the API.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_key}"
         json = {"fields": {"description": new_description}}
         return self.put(url, json=json)
 
     def update_field(self, issue_key, field_name, add=None, remove=None):
-        """Update issue field"""
+        """
+        Update a specific field of an issue.
+
+        :param issue_key: The key of the issue to update.
+        :type issue_key: str
+        :param field_name: The name of the field to update.
+        :type field_name: str
+        :param add: The value to add to the field.
+        :type add: str, optional
+        :param remove: The value to remove from the field.
+        :type remove: str, optional
+        :return: The response from the API.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_key}"
         element = []
         if add:
@@ -88,24 +147,51 @@ class Jira(AtlassianAPI):
         return self.put(url, json=json)
 
     def add_issue_comment(self, issue_key, content=None):
-        """Add comment to issue"""
+        """
+        Add a comment to an issue.
+
+        :param issue_key: The key of the issue to add a comment to.
+        :type issue_key: str
+        :param content: The content of the comment.
+        :type content: str, optional
+
+        :return: The response from the API.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_key}/comment"
         json = {"body": content}
         return self.post(url, json=json) or {}
 
     def delete_issue_comment(self, issue_key, comment_id):
-        """Delete comment from issue"""
+        """
+        Delete a comment from an issue.
+
+        :param issue_key: The key of the issue.
+        :type issue_key: str
+        :param comment_id: The ID of the comment to delete.
+        :type comment_id: str
+        :return: The response from the API.
+        :rtype: dict
+        """
         url = f"/rest/api/2/issue/{issue_key}/comment/{comment_id}"
         return self.delete(url) or None
 
     def link_issue_as(self, type_name=None, inward_issue=None, outward_issue=None):
         """
-        Link issue as depends_upon, is_blocked_by, etc.
-        Example: jira.link_issue_as(type_name='Dependence', inward_issue="TEST-1", outward_issue='TEST-2')
-        :param type_name: Dependence, Blocking
-        :param inward_issue:
-        :param outward_issue:
-        :return:
+        Link two issues with a specific relationship.
+
+        :param type_name: The type of the link (e.g., "Dependence", "Blocking").
+        :type type_name: str, optional
+        :param inward_issue: The key of the inward issue.
+        :type inward_issue: str, optional
+        :param outward_issue: The key of the outward issue.
+        :type outward_issue: str, optional
+        :return: The response from the API.
+        :rtype: dict
+
+        .. code-block:: python
+
+            jira.link_issue_as(type_name='Dependence', inward_issue="TEST-1", outward_issue='TEST-2')
         """
         url = "/rest/api/2/issueLink"
         json = {
@@ -121,13 +207,14 @@ class Jira(AtlassianAPI):
         return self.delete(url) or {}
 
     def create_issue(self, fields, update=None):
-        """
-        Creates an issue or a sub-task from a JSON representation
-        :param fields: JSON data
-                mandatory keys are issuetype, summary and project
-        :param update: JSON data
-                Use it to link issues or update worklog
-        :return:
+        """Creates an issue or a sub-task from a JSON representation
+
+        Args:
+
+            fields: JSON data. mandatory keys are issuetype, summary and project
+            update: Use it to link issues or update worklog
+
+        Returns:
             example:
                 fields = dict(summary='Into The Night',
                               project = dict(key='APA'),

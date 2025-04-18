@@ -6,10 +6,24 @@ logger = get_logger(__name__)
 
 
 class Bitbucket(AtlassianAPI):
-    """https://docs.atlassian.com/bitbucket-server/rest/7.12.1/bitbucket-rest.html"""
+    """
+    Bitbucket API Reference
+
+    .. seealso::
+        `Bitbucket REST API Documentation <https://docs.atlassian.com/bitbucket-server/rest/7.12.1/bitbucket-rest.html>`_
+    """
 
     def _get_paged(self, url, params):
-        """Get more pages"""
+        """
+        Retrieve paginated results from the Bitbucket API.
+
+        :param url: The API endpoint URL.
+        :type url: str
+        :param params: Query parameters for pagination.
+        :type params: dict
+        :return: A list of paginated results.
+        :rtype: list
+        """
         response = self.get(url, params=params)
         if response.values:
             values = response.values
@@ -27,7 +41,18 @@ class Bitbucket(AtlassianAPI):
         return values
 
     def get_project_repo(self, project_key, start=0, limit=None):
-        """Get a specific project repository"""
+        """
+        Retrieve repositories for a specific project.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param start: The starting index for pagination (optional).
+        :type start: int, optional
+        :param limit: The maximum number of results to return (optional).
+        :type limit: int, optional
+        :return: A list of repositories in the project.
+        :rtype: list
+        """
         url = f"/rest/api/latest/projects/{project_key}/repos/"
         params = {}
         if start:
@@ -37,7 +62,14 @@ class Bitbucket(AtlassianAPI):
         return self._get_paged(url, params=params)
 
     def get_project_repo_name(self, project_key):
-        """Get repository name"""
+        """
+        Retrieve the names of all repositories in a project.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :return: A list of repository names.
+        :rtype: list
+        """
         values = self.get_project_repo(project_key)
         repo_name = []
         for value in values:
@@ -45,12 +77,34 @@ class Bitbucket(AtlassianAPI):
         return repo_name
 
     def get_repo_info(self, project_key, repo_slug):
-        """Get repository information"""
+        """
+        Retrieve information about a specific repository.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :return: A dictionary containing repository information.
+        :rtype: dict
+        """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}"
         return self.get(url)
 
     def get_repo_branch(self, project_key, repo_slug, start=0, limit=None):
-        """Get repository branch"""
+        """
+        Retrieve branches for a specific repository.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param start: The starting index for pagination (optional).
+        :type start: int, optional
+        :param limit: The maximum number of results to return (optional).
+        :type limit: int, optional
+        :return: A list of branches in the repository.
+        :rtype: list
+        """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/branches"
         params = {}
         if start:
@@ -60,8 +114,19 @@ class Bitbucket(AtlassianAPI):
         return self._get_paged(url, params=params)
 
     def create_branch(self, project_key, repo_slug, branch_name, start_point):
-        """Create a branch
-        Using service account to create branch failed because of issue https://jira.atlassian.com/browse/BSERV-9340
+        """
+        Create a new branch in a repository.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param branch_name: The name of the new branch.
+        :type branch_name: str
+        :param start_point: The starting point for the branch (e.g., a commit hash or branch name).
+        :type start_point: str
+        :return: The response from the API.
+        :rtype: dict
         """
         url = (
             f"/rest/branch-utils/1.0/projects/{project_key}/repos/{repo_slug}/branches"
@@ -70,13 +135,39 @@ class Bitbucket(AtlassianAPI):
         return self.post(url, json=payload)
 
     def delete_branch(self, project_key, repo_slug, branch_name, end_point):
-        """Delete a branch"""
+        """
+        Delete a branch from a repository.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param branch_name: The name of the branch to delete.
+        :type branch_name: str
+        :param end_point: The endpoint for the branch deletion.
+        :type end_point: str
+        :return: The response from the API.
+        :rtype: dict
+        """
         url = f"/rest/branch-utils/latest/projects/{project_key}/repos/{repo_slug}/branches"
         payload = {"name": branch_name, "endPoint": end_point}
         return self.delete(url, json=payload)
 
     def get_merged_branch(self, project_key, repo_slug, start=0, limit=None):
-        """Get the merged branch names"""
+        """
+        Retrieve the names of merged branches in a repository.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param start: The starting index for pagination (optional).
+        :type start: int, optional
+        :param limit: The maximum number of results to return (optional).
+        :type limit: int, optional
+        :return: A list of merged branch names.
+        :rtype: list
+        """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/branches?base=refs/heads/master&details=true"
         params = {}
         if start:
