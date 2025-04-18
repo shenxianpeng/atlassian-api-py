@@ -50,8 +50,8 @@ def coverage(session):
 @nox.session
 def docs(session: nox.Session) -> None:
     """Build the documentation."""
-    if sys.version_info == (3, 13):
-        session.skip("Skipping docs session on Python 3.13+")
+    if sys.version_info.major == 3 and sys.version_info.minor == 13:
+        session.skip("Skipping docs session on Python 3.13")
     session.install("-r", "docs/requirements.txt")
     session.run("sphinx-build", "-b", "html", "docs", "docs/build/html")
     session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
@@ -60,8 +60,8 @@ def docs(session: nox.Session) -> None:
 @nox.session(name="docs-live", default=False)
 def docs_live(session: nox.Session) -> None:
     """Serve documentation with live reload."""
-    if sys.version_info == (3, 13):
-        session.skip("Skipping docs session on Python 3.13+")
+    if sys.version_info.major == 3 and sys.version_info.minor == 13:
+        session.skip("Skipping docs session on Python 3.13")
     session.install("-r", "docs/requirements.txt", "sphinx-autobuild")
     session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
     session.run("sphinx-autobuild", "docs", "docs/build/html", external=True)
