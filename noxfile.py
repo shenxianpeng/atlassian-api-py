@@ -56,7 +56,7 @@ def docs(session: nox.Session) -> None:
     session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
 
 
-@nox.session(name="docs-live")
+@nox.session(name="docs-live", default=False)
 def docs_live(session: nox.Session) -> None:
     """Serve documentation with live reload."""
     session.install("-r", "docs/requirements.txt", "sphinx-autobuild")
