@@ -358,7 +358,7 @@ class Bitbucket(AtlassianAPI):
         return self.get(url)
 
     def get_pull_request_diff(self, project_key, repo_slug, pr_id):
-        """Get a specific pull request diff
+        """Get streams a diff within a pull request.
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -369,6 +369,34 @@ class Bitbucket(AtlassianAPI):
         :rtype: dict
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/diff"
+        return self.get(url)
+    
+    def get_pull_request_raw_diff(self, project_key, repo_slug, pr_id) -> str:
+        """Get streams the raw diff for a pull request.
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :return: A string containing pull request diff information.
+        :rtype: str
+        """
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}.diff"
+        return self.get(url)
+
+    def get_pull_request_patch(self, project_key, repo_slug, pr_id) -> str:
+        """Get streams a patch representing a pull request.
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :return: A string containing pull request diff information.
+        :rtype: str
+        """
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}.patch"
         return self.get(url)
 
     def get_pull_request_commits(self, project_key, repo_slug, pr_id):
