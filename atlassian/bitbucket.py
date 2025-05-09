@@ -370,7 +370,7 @@ class Bitbucket(AtlassianAPI):
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/diff"
         return self.get(url)
-    
+
     def get_pull_request_raw_diff(self, project_key, repo_slug, pr_id) -> str:
         """Get streams the raw diff for a pull request.
         :param project_key: The key of the project.
