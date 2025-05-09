@@ -207,31 +207,14 @@ class Jira(AtlassianAPI):
         return self.delete(url) or {}
 
     def create_issue(self, fields, update=None):
-        """Creates an issue or a sub-task from a JSON representation
+        """
+        Creates an issue or a sub-task from a JSON representation
 
-        Args:
+        :param type_name: JSON data. mandatory keys are issuetype, summary and project update: Use it to link issues or update worklog
+        :type type_name: dict
 
-            fields: JSON data. mandatory keys are issuetype, summary and project
-            update: Use it to link issues or update worklog
-
-        Returns:
-            example:
-                fields = dict(summary='Into The Night',
-                              project = dict(key='APA'),
-                              issuetype = dict(name='Story')
-                              )
-                update = dict(issuelinks={
-                    "add": {
-                        "type": {
-                            "name": "Child-Issue"
-                            },
-                        "inwardIssue": {
-                            "key": "ISSUE-KEY"
-                            }
-                        }
-                    }
-                )
-                jira.create_issue(fields=fields, update=update)
+        :return: The response from the API.
+        :rtype: dict
         """
         url = "/rest/api/2/issue"
         data = {"fields": fields}
