@@ -13,11 +13,6 @@ class AtlassianAPI:
 
     This class provides methods for making HTTP requests (GET, POST, PUT, DELETE)
     and managing authentication sessions.
-
-    Attributes:
-        default_headers (dict): Default headers for HTTP requests.
-
-        .. noindex::
     """
 
     default_headers = {"Content-Type": "application/json", "Accept": "application/json"}
