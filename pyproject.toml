@@ -43,6 +43,10 @@ source =  "https://github.com/shenxianpeng/atlassian-api-py"
 tracker = "https://github.com/shenxianpeng/atlassian-api-py/issues"
 download = "https://pypi.org/project/atlassian-api-py/#files"
 
+[project.optional-dependencies]
+dev = ["nox", "pre-commit", "mypy", "twine"]
+test = ["pytest", "coverage"]
+docs = ["myst-parser", "sphinx", "sphinx_rtd_theme", "sphinx-autobuild"]
 
 [tool.setuptools]
 zip-safe = false
