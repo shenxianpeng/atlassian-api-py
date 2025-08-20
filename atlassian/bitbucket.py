@@ -798,7 +798,7 @@ class Bitbucket(AtlassianAPI):
         :return: The response from the API.
         :rtype: dict
         """
-        url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/reviewers"
+        url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
         payload = {"reviewers": reviewers}
         return self.put(url, json=payload)
 
