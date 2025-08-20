@@ -47,7 +47,7 @@ class TestBitbucket:
             reviewers,
         )
         bitbucket.put.assert_called_with(
-            "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/789/reviewers",
+            "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/789",
             json={"reviewers": reviewers},
         )
 
