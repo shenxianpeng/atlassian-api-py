@@ -208,7 +208,7 @@ class Jira(AtlassianAPI):
 
     def create_issue(self, fields, update=None):
         """
-        Creates an issue or a sub-task from a JSON representation
+        Creates an issue or a sub-task from a JSON representation.
 
         :param type_name: JSON data. mandatory keys are issuetype, summary and project update: Use it to link issues or update worklog
         :type type_name: dict
@@ -234,7 +234,8 @@ class Jira(AtlassianAPI):
         issue_type=10,
     ):
         """
-        Create task issue
+        Create task issue.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param summary: The summary of the issue.
@@ -282,7 +283,8 @@ class Jira(AtlassianAPI):
         issue_type=20,
     ):
         """
-        Create sub task issue"
+        Create sub task issue.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param parent_issue_key: The key of the parent issue.
@@ -325,7 +327,9 @@ class Jira(AtlassianAPI):
         return self.post(url, json=json)
 
     def update_custom_field(self, issue_key, field_id, *field_args):
-        """Update custom field. in my Jira project
+        """
+        Update custom field. in my Jira project.
+
         customfield_10985 is solution field which field_args length is 1
         customfield_11386 is owner field which field_args length is 2
         """
@@ -341,7 +345,8 @@ class Jira(AtlassianAPI):
 
     def assign_issue(self, issue_key, assignee=None):
         """
-        Assign issue to someone
+        Assign issue to someone.
+
         :param issue_key: The key of the issue to assign.
         :type issue_key: str
         :param assignee: The assignee of the issue.
@@ -357,7 +362,8 @@ class Jira(AtlassianAPI):
 
     def add_issue_watcher(self, issue_key, watcher):
         """
-        Add someone as watcher
+        Add someone as watcher.
+
         :param issue_key: The key of the issue to add a watcher to.
         :type issue_key: str
         :param watcher: The username of the watcher.
@@ -387,7 +393,8 @@ class Jira(AtlassianAPI):
 
     def get_transitions(self, issue_id):
         """
-        Get a list of the transitions possible for this issue by the current user
+        Get a list of the transitions possible for this issue by the current user.
+
         :param issue_id: The ID of the issue to get transitions for.
         :type issue_id: str
         :return: A dictionary containing the transitions.
@@ -399,6 +406,7 @@ class Jira(AtlassianAPI):
     def search_issue_with_jql(self, jql, max_result=1000) -> list:
         """
         Search issues using JQL (JIRA Query Language).
+
         :param jql: The JQL query string.
         :type jql: str
         :param max_result: The maximum number of results to return (default is 1000).
@@ -440,7 +448,8 @@ class Jira(AtlassianAPI):
 
     def get_project_components(self, project_id):
         """
-        Get project components
+        Get project components.
+
         :param project_id: The ID of the project to get components for.
         :type project_id: str
         :return: A dictionary containing the project components.
@@ -452,6 +461,7 @@ class Jira(AtlassianAPI):
     def user(self, username):
         """
         Get user information by username.
+
         :param username: The username of the user to retrieve.
         :type username: str
         :return: A dictionary containing user information.
@@ -463,6 +473,7 @@ class Jira(AtlassianAPI):
     def get_dev_status(self, issue_id, app_type="stash", data_type="repository"):
         """
         Get development status for an issue.
+
         :param issue_id: The ID of the issue to get development status for.
         :type issue_id: str
         :param app_type: The type of application (default is "stash").
