@@ -11,6 +11,9 @@ Python Wrapper for Atlassian REST API
    :target: https://atlassian-api-py.readthedocs.io/
    :alt: Documentation
 
+.. |coverage-badge| image:: https://codecov.io/gh/shenxianpeng/atlassian-api-py/graph/badge.svg?token=UE90982FF2
+   :target: https://codecov.io/gh/shenxianpeng/atlassian-api-py
+
 .. |python-version| image:: https://img.shields.io/pypi/pyversions/atlassian-api-py?style=flat-square
    :target: https://pypi.org/project/atlassian-api-py
    :alt: PyPI - Python Version
@@ -27,7 +30,7 @@ Python Wrapper for Atlassian REST API
    :alt: Commit Check
 
 
-|pypi-version| |docs-badge| |python-version| |commit-check-badge|
+|pypi-version| |docs-badge| |coverage-badge| |python-version| |commit-check-badge|
 
 Overview
 --------

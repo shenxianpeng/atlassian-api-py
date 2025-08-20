@@ -44,7 +44,7 @@ def coverage(session):
     session.install(".[test]")
     session.run("coverage", "run", "-m", "pytest")
     session.run("coverage", "report", "-m")
-    session.run("coverage", "html")
+    session.run("coverage", "xml")
 
 
 @nox.session
