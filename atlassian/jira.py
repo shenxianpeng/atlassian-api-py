@@ -330,8 +330,12 @@ class Jira(AtlassianAPI):
         """
         Update custom field. in my Jira project.
 
-        customfield_10985 is solution field which field_args length is 1
-        customfield_11386 is owner field which field_args length is 2
+        :param issue_key: The key of the issue to update.
+        :type issue_key: str
+        :param field_id: The ID of the custom field to update.
+        :type field_id: str
+        :param field_args: The new values for the custom field.
+        :type field_args: tuple
         """
         url = f"/rest/api/2/issue/{issue_key}"
         if len(field_args) == 1:

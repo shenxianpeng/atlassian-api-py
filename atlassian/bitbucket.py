@@ -643,7 +643,8 @@ class Bitbucket(AtlassianAPI):
 
     def get_file_content(self, project_key, repo_slug, branch_name, file_path):
         """
-        Get file content from a specific branch
+        Get file content from a specific branch.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -660,7 +661,8 @@ class Bitbucket(AtlassianAPI):
 
     def get_build_status(self, commit_id):
         """
-        Get build status
+        Get build status.
+
         :param commit_id: The ID of the commit.
         :type commit_id: str
         :return: A dictionary containing build status information.
@@ -679,7 +681,8 @@ class Bitbucket(AtlassianAPI):
         description="ManuallyCheckBuildPass",
     ):
         """
-        Update build status
+        Update build status.
+
         :param commit_id: The ID of the commit.
         :type commit_id: str
         :param build_state: The state of the build.
@@ -705,7 +708,7 @@ class Bitbucket(AtlassianAPI):
 
     def get_user(self, user_slug):
         """
-        Get user information
+        Get user information.
 
         :param user_slug: The slug of the user.
         :type user_slug: str
@@ -719,7 +722,7 @@ class Bitbucket(AtlassianAPI):
         self, project_key, repo_slug, pr_id, user_slug, status="APPROVED"
     ):
         """
-        Review a pull request as the current user
+        Review a pull request as the current user.
 
         :param project_key: The key of the project.
         :type project_key: str
