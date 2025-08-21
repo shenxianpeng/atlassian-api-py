@@ -35,9 +35,9 @@ Python Wrapper for Atlassian REST API
 Overview
 --------
 
-This package is a Python wrapper for the Atlassian REST API, which supports JIRA, Bitbucket, and Confluence.
+A Python wrapper for the Atlassian REST API, supporting JIRA, Bitbucket, and Confluence.
 
-It is intended to simplify the process of integrating these tools into your applications.
+It streamlines integration with Atlassian products.
 
 📘 Documentation: `atlassian-api-py.readthedocs.io <https://atlassian-api-py.readthedocs.io/>`_
 

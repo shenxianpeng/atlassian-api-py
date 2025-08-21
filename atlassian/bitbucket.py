@@ -204,7 +204,8 @@ class Bitbucket(AtlassianAPI):
         self, project_key, repo_slug, branch_name, start=0, limit=None
     ):
         """
-        Get a specific branch commits
+        Get a specific branch commits.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -229,7 +230,9 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request(
         self, project_key, repo_slug, pr_state="ALL", start=0, limit=None
     ):
-        """Get ALL pull requests.
+        """
+        Get ALL pull requests.
+
         By default: pr_state is ALL, other states are PEN, MERGED, DECLINED
         :param project_key: The key of the project.
         :type project_key: str
@@ -256,7 +259,8 @@ class Bitbucket(AtlassianAPI):
         self, project_key, repo_slug, pr_id, limit=0
     ):
         """
-        Get a pull request destination branch name
+        Get a pull request destination branch name.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -277,7 +281,8 @@ class Bitbucket(AtlassianAPI):
         self, project_key, repo_slug, pr_id, limit=0
     ):
         """
-        Get a pull request source branch name
+        Get a pull request source branch name.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -296,7 +301,8 @@ class Bitbucket(AtlassianAPI):
 
     def get_pull_request_jira_key(self, project_key, repo_slug, pr_id):
         """
-        Get a pull request Jira ticket key
+        Get a pull request Jira ticket key.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -320,6 +326,7 @@ class Bitbucket(AtlassianAPI):
     ):
         """
         Get a specific pull request ID.
+
         By default: pr_state is OPEN, other states are ALL, MERGED, DECLINED
         :param project_key: The key of the project.
         :type project_key: str
@@ -344,7 +351,8 @@ class Bitbucket(AtlassianAPI):
 
     def get_pull_request_overview(self, project_key, repo_slug, pr_id):
         """
-        Get a specific pull request overview
+        Get a specific pull request overview.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -358,7 +366,9 @@ class Bitbucket(AtlassianAPI):
         return self.get(url)
 
     def get_pull_request_diff(self, project_key, repo_slug, pr_id):
-        """Get streams a diff within a pull request.
+        """
+        Get streams a diff within a pull request.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -372,7 +382,9 @@ class Bitbucket(AtlassianAPI):
         return self.get(url)
 
     def get_pull_request_raw_diff(self, project_key, repo_slug, pr_id) -> str:
-        """Get streams the raw diff for a pull request.
+        """
+        Get streams the raw diff for a pull request.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -386,7 +398,9 @@ class Bitbucket(AtlassianAPI):
         return self.get(url)
 
     def get_pull_request_patch(self, project_key, repo_slug, pr_id) -> str:
-        """Get streams a patch representing a pull request.
+        """
+        Get streams a patch representing a pull request.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -401,7 +415,8 @@ class Bitbucket(AtlassianAPI):
 
     def get_pull_request_commits(self, project_key, repo_slug, pr_id):
         """
-        Get a specific pull request commits
+        Get a specific pull request commits.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -418,7 +433,8 @@ class Bitbucket(AtlassianAPI):
         self, project_key, repo_slug, pr_id, start=0, limit=None
     ):
         """
-        Get a specific pull request activities information
+        Get a specific pull request activities information.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -442,7 +458,8 @@ class Bitbucket(AtlassianAPI):
 
     def get_pull_request_merge(self, project_key, repo_slug, pr_id):
         """
-        Get the specific Pull Request merge information
+        Get the specific Pull Request merge information.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -459,7 +476,8 @@ class Bitbucket(AtlassianAPI):
         self, project_key, repo_slug, branch_name, start=0, limit=None
     ):
         """
-        Get branch committer information
+        Get branch committer information.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -483,7 +501,8 @@ class Bitbucket(AtlassianAPI):
 
     def get_pull_request_comments(self, project_key, repo_slug, pr_id):
         """
-        Get a specific pull request all comments
+        Get a specific pull request all comments.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -498,7 +517,8 @@ class Bitbucket(AtlassianAPI):
 
     def add_pull_request_comment(self, project_key, repo_slug, pr_id, comment):
         """
-        Add comment to a specific pull request
+        Add comment to a specific pull request.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -518,7 +538,8 @@ class Bitbucket(AtlassianAPI):
         self, project_key, repo_slug, pr_id, old_comment, new_comment
     ):
         """
-        Update a specific comment of a pull request
+        Update a specific comment of a pull request.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -557,7 +578,8 @@ class Bitbucket(AtlassianAPI):
 
     def delete_pull_request_comment(self, project_key, repo_slug, pr_id, comment):
         """
-        Delete comment from a specific pull request
+        Delete comment from a specific pull request.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -591,7 +613,8 @@ class Bitbucket(AtlassianAPI):
         self, project_key, repo_slug, branch_name, file_path, start=0, limit=None
     ):
         """
-        Get a specific file change histories
+        Get a specific file change histories.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -620,7 +643,8 @@ class Bitbucket(AtlassianAPI):
 
     def get_file_content(self, project_key, repo_slug, branch_name, file_path):
         """
-        Get file content from a specific branch
+        Get file content from a specific branch.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -637,7 +661,8 @@ class Bitbucket(AtlassianAPI):
 
     def get_build_status(self, commit_id):
         """
-        Get build status
+        Get build status.
+
         :param commit_id: The ID of the commit.
         :type commit_id: str
         :return: A dictionary containing build status information.
@@ -656,7 +681,8 @@ class Bitbucket(AtlassianAPI):
         description="ManuallyCheckBuildPass",
     ):
         """
-        Update build status
+        Update build status.
+
         :param commit_id: The ID of the commit.
         :type commit_id: str
         :param build_state: The state of the build.
@@ -682,7 +708,8 @@ class Bitbucket(AtlassianAPI):
 
     def get_user(self, user_slug):
         """
-        Get user information
+        Get user information.
+
         :param user_slug: The slug of the user.
         :type user_slug: str
         :return: A dictionary containing user information.
@@ -695,7 +722,8 @@ class Bitbucket(AtlassianAPI):
         self, project_key, repo_slug, pr_id, user_slug, status="APPROVED"
     ):
         """
-        Review a pull request as the current user
+        Review a pull request as the current user.
+
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -712,5 +740,92 @@ class Bitbucket(AtlassianAPI):
         url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/participants/{user_slug}"
         payload = {
             "status": f"{status}",  # status can be UNAPPROVED, NEEDS_WORK, or APPROVED
+        }
+        return self.put(url, json=payload)
+
+    def update_pull_request_description(
+        self, project_key, repo_slug, pr_id, new_description
+    ):
+        """
+        Update the description of a pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param new_description: The new description for the pull request.
+        :type new_description: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
+        url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
+        payload = {"version": pr.version, "description": new_description}
+        return self.put(url, json=payload)
+
+    def update_pull_request_title(self, project_key, repo_slug, pr_id, new_title):
+        """
+        Update the title of a pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param new_title: The new title for the pull request.
+        :type new_title: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
+        url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
+        payload = {"version": pr.version, "title": new_title}
+        return self.put(url, json=payload)
+
+    def update_pull_request_reviewers(self, project_key, repo_slug, pr_id, reviewers):
+        """
+        Update the reviewers of a pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param reviewers: A list of user slugs to add as reviewers.
+        :type reviewers: list
+        :return: The response from the API.
+        :rtype: dict
+        """
+        pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
+        url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
+        payload = {"version": pr.version, "reviewers": reviewers}
+        return self.put(url, json=payload)
+
+    def update_pull_request_destination(
+        self, project_key, repo_slug, pr_id, new_destination
+    ):
+        """
+        Update the destination branch of a pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param new_destination: The new destination branch for the pull request.
+        :type new_destination: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
+        url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
+        payload = {
+            "version": pr.version,
+            "destination": {"branch": {"name": new_destination}},
         }
         return self.put(url, json=payload)
