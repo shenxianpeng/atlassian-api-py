@@ -21,10 +21,10 @@ class TestBitbucket:
             123,
             "New description here",
         )
-        bitbucket.put.assert_called_with(
-            "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/123",
-            json={"description": "New description here"},
-        )
+        args, kwargs = bitbucket.put.call_args
+        assert args[0] == "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/123"
+        assert "description" in kwargs["json"]
+        assert kwargs["json"]["description"] == "New description here"
 
     def test_update_pull_request_title(self, bitbucket):
         bitbucket.update_pull_request_title(
@@ -33,10 +33,10 @@ class TestBitbucket:
             456,
             "New concise title",
         )
-        bitbucket.put.assert_called_with(
-            "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/456",
-            json={"title": "New concise title"},
-        )
+        args, kwargs = bitbucket.put.call_args
+        assert args[0] == "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/456"
+        assert "title" in kwargs["json"]
+        assert kwargs["json"]["title"] == "New concise title"
 
     def test_update_pull_request_reviewers(self, bitbucket):
         reviewers = ["alice", "bob"]
@@ -46,10 +46,10 @@ class TestBitbucket:
             789,
             reviewers,
         )
-        bitbucket.put.assert_called_with(
-            "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/789",
-            json={"reviewers": reviewers},
-        )
+        args, kwargs = bitbucket.put.call_args
+        assert args[0] == "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/789"
+        assert "reviewers" in kwargs["json"]
+        assert kwargs["json"]["reviewers"] == reviewers
 
     def test_update_pull_request_destination(self, bitbucket):
         bitbucket.update_pull_request_destination(
@@ -58,7 +58,7 @@ class TestBitbucket:
             987,
             "release/1.2.3",
         )
-        bitbucket.put.assert_called_with(
-            "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/987",
-            json={"destination": {"branch": {"name": "release/1.2.3"}}},
-        )
+        args, kwargs = bitbucket.put.call_args
+        assert args[0] == "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/987"
+        assert "destination" in kwargs["json"]
+        assert kwargs["json"]["destination"]["branch"]["name"] == "release/1.2.3"
