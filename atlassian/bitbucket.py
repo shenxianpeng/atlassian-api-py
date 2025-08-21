@@ -760,8 +760,12 @@ class Bitbucket(AtlassianAPI):
         :return: The response from the API.
         :rtype: dict
         """
+        pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
         url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
-        payload = {"description": new_description}
+        payload = {
+            "version": pr.version,
+            "description": new_description
+        }
         return self.put(url, json=payload)
 
     def update_pull_request_title(self, project_key, repo_slug, pr_id, new_title):
@@ -779,8 +783,12 @@ class Bitbucket(AtlassianAPI):
         :return: The response from the API.
         :rtype: dict
         """
+        pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
         url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
-        payload = {"title": new_title}
+        payload = {
+            "version": pr.version,
+            "title": new_title
+        }
         return self.put(url, json=payload)
 
     def update_pull_request_reviewers(self, project_key, repo_slug, pr_id, reviewers):
@@ -798,8 +806,12 @@ class Bitbucket(AtlassianAPI):
         :return: The response from the API.
         :rtype: dict
         """
+        pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
         url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
-        payload = {"reviewers": reviewers}
+        payload = {
+            "version": pr.version,
+            "reviewers": reviewers
+        }
         return self.put(url, json=payload)
 
     def update_pull_request_destination(
@@ -819,6 +831,10 @@ class Bitbucket(AtlassianAPI):
         :return: The response from the API.
         :rtype: dict
         """
+        pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
         url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
-        payload = {"destination": {"branch": {"name": new_destination}}}
+        payload = {
+            "version": pr.version,
+            "destination": {"branch": {"name": new_destination}}
+        }
         return self.put(url, json=payload)
