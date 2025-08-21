@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=61", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atlassian-api-py"
+description = "Python Wrapper for Atlassian REST API"
+readme = "README.rst"
+keywords = ["atlassian", "jira", "bitbucket", "confluence", "rest", "api"]
+license = {text = "MIT License"}
+authors = [
+    {name = "Xianpeng Shen"},
+    {email = "xianpeng.shen@gmail.com"},
+]
+dependencies = [
+    "requests"
+]
+requires-python = ">=3.9"
+dynamic = ["version"]
+
+classifiers = [
+    # https://pypi.org/pypi?%3Aaction=list_classifiers
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Information Technology",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Utilities",
+    "Topic :: Internet",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+
+[project.urls]
+source =  "https://github.com/shenxianpeng/atlassian-api-py"
+tracker = "https://github.com/shenxianpeng/atlassian-api-py/issues"
+download = "https://pypi.org/project/atlassian-api-py/#files"
+
+[project.optional-dependencies]
+dev = ["nox", "pre-commit", "mypy", "twine"]
+test = ["pytest", "coverage"]
+docs = ["myst-parser", "sphinx", "sphinx_rtd_theme", "sphinx-autobuild"]
+
+[tool.setuptools]
+zip-safe = false
+packages = ["atlassian"]
+
+[tool.setuptools_scm]
+# It would be nice to include the commit hash in the version, but that
+# can't be done in a PEP 440-compatible way.
+version_scheme= "no-guess-dev"
+# Test PyPI does not support local versions.
+local_scheme = "no-local-version"
+fallback_version = "0.0.0"
+
+[tool.mypy]
+show_error_codes = true
+show_column_numbers = true
+
+
+[tool.coverage.run]
+# Only measure our package and omit tests from coverage collection
+source = ["atlassian"]
+omit = [
+    "tests/*",
+]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == '__main__':",
+]
