@@ -12,7 +12,6 @@ def get_console_handler():
     """
     Output log to console
 
-    :param: None
     :return: StreamHandler
     :rtype: StreamHandler
     """
@@ -24,7 +23,6 @@ def get_console_handler():
 def get_file_handler():
     """Output log to file
 
-    :param: None
     :return: RotatingFileHandler
     :rtype: RotatingFileHandler
     """

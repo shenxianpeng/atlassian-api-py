@@ -100,4 +100,4 @@ Get page information
    print(page.title)                   # e.g. "My Page"
    print(page.body)                    # Page content
 
-For more advanced usage and API details, refer to the class references :doc:`atlassian`.
+For more advanced usage and API details, refer to the class references :doc:`atlassian.rst`.
