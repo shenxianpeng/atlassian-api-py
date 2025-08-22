@@ -90,10 +90,10 @@ Alternatively, load credentials from ``config.ini`` file:
 
    [jira]
    url = https://jira.company.com
-   username = username
-   password = password
+   username = your_username
+   password = your_password
    # Alternatively
-   token = yourToken
+   token = your_token
 
 .. code-block:: python
 
