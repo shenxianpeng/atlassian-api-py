@@ -62,30 +62,28 @@ To upgrade to the latest version, use:
 
 .. end-install
 
-.. start-example
-
 Usage
 -----
 
-You can connect to JIRA using a username and password or a token.
+You can authenticate using either username/password or a personal access token. Credentials can be provided directly or loaded from a configuration file.
 
-Using Username and Password:
-
-.. code-block:: python
-
-   >>> from atlassian import Jira
-   >>> jira = Jira(url='https://jira.company.com', username="username", password="password")
-
-Using a Token:
+Using username and password
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-   >>> from atlassian import Jira
-   >>> jira = Jira(url='https://jira.company.com', token="yourToken")
+   from atlassian import Jira
+   jira = Jira(url='https://jira.company.com', username="your_username", password="your_password")
 
-Using a Configuration File:
+Using a token
+~~~~~~~~~~~~~
 
-Alternatively, you can store your credentials in a ``config.ini`` file:
+.. code-block:: python
+
+   from atlassian import Jira
+   jira = Jira(url='https://jira.company.com', token="your_token")
+
+Alternatively, load credentials from ``config.ini`` file:
 
 .. code-block:: ini
 
@@ -93,53 +91,43 @@ Alternatively, you can store your credentials in a ``config.ini`` file:
    url = https://jira.company.com
    username = username
    password = password
-   # Or
+   # Alternatively
    token = yourToken
-
-Then, you can use the configuration file to establish a connection:
 
 .. code-block:: python
 
-   >>> import configparser
-   >>> config = configparser.ConfigParser()
-   >>> config.read('config.ini')
+   import configparser
+   config = configparser.ConfigParser()
+   config.read('config.ini')
 
-   >>> jira_url = config['jira']['url']
-   >>> jira_usr = config['jira']['username']
-   >>> jira_psw = config['jira']['password']
-   >>> jira_token = config['jira']['token']
+   jira_url = config['jira']['url']
+   jira_usr = config['jira']['username']
+   jira_psw = config['jira']['password']
+   # Alternatively
+   jira_token = config['jira']['token']
+
+Jira Usage
+~~~~~~~~~~
 
 Getting issue fields
 
-Next, you can get the issue's fields as follows:
+.. code-block:: python
+
+   issue = jira.issue("TEST-1")
+   print(issue.fields.status.name)      # e.g. "Triage"
+   print(issue.fields.description)      # e.g. "This is a demo Jira ticket"
+   print(issue.fields.issuetype.name)   # e.g. "Bug"
+
+Get additional issue details
 
 .. code-block:: python
 
-   >>> issue = jira.issue('TEST-1')
-   >>> print(issue.fields.status.name)
-   Triage
-   >>> print(issue.fields.description)
-   this is a demo jira ticket
-   >>> print(issue.fields.status.name)
-   Triage
-   >>> print(issue.fields.issuetype.name)
-   Bug
+   print(issue.id)                      # e.g. 1684517
+   print(issue.key)                     # e.g. "TEST-1"
+   print(issue.fields.assignee.key)     # e.g. "xpshen"
+   print(issue.fields.summary)          # e.g. "Jira REST API Unit Test Example"
 
-Getting issue more fields
-
-.. code-block:: python
-
-   >>> print(issue.id)
-   1684517
-   >>> print(issue.key)
-   TEST-1
-   >>> print(issue.fields.assignee.key)
-   xpshen
-   >>> print(issue.fields.summary)
-   Jira REST API Unit Test Example
-   >>> ...
-
-.. end-example
+More about Jira, Bitbucket, and Confluence API usage can be found in the `documentation <https://atlassian-api-py.readthedocs.io/>`_
 
 .. start-license
 

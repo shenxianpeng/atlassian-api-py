@@ -14,7 +14,8 @@ Welcome to Atlassian REST API's documentation!
    :maxdepth: 2
    :caption: Getting Started:
 
-   getting-started
+   installation
+   usage
 
 .. toctree::
    :maxdepth: 2

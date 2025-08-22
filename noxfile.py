@@ -64,4 +64,6 @@ def docs_live(session: nox.Session) -> None:
         session.skip("Skipping docs session on Python 3.13")
     session.install(".[docs]")
     session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
-    session.run("sphinx-autobuild", "docs", "docs/build/html", external=True)
+    session.run(
+        "sphinx-autobuild", "docs", "docs/build/html", "--watch", ".", external=True
+    )

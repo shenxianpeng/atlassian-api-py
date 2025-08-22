@@ -9,14 +9,25 @@ LOG_FILE = "logs/atlassian-api-py.log"
 
 
 def get_console_handler():
-    """output log to console"""
+    """
+    Output log to console
+
+    :param: None
+    :return: StreamHandler
+    :rtype: StreamHandler
+    """
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(FORMATTER)
     return console_handler
 
 
 def get_file_handler():
-    """output log to file"""
+    """Output log to file
+
+    :param: None
+    :return: RotatingFileHandler
+    :rtype: RotatingFileHandler
+    """
     file_handler = RotatingFileHandler(
         filename=LOG_FILE, backupCount=1, encoding="utf-8"
     )
@@ -26,12 +37,19 @@ def get_file_handler():
 
 def get_logger(name):
     """
-    Example 'application' code
-    logger.debug('debug message')
-    logger.info('info message')
-    logger.warning('warn message')
-    logger.error('error message')
-    logger.critical('critical message')
+    Get a logger instance
+
+       Example 'application' code
+       logger.debug('debug message')
+       logger.info('info message')
+       logger.warning('warn message')
+       logger.error('error message')
+       logger.critical('critical message')
+
+    :param name: The name of the logger
+    :type name: str
+    :return: A logger instance
+    :rtype: Logger
     """
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)

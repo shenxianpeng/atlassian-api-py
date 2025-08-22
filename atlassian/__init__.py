@@ -18,9 +18,9 @@ Example usage:
 
     from atlassian import Jira, Bitbucket, Confluence
 
-    jira = Jira(url="https://your-jira-instance.com", username="user", password="pass")
-    bitbucket = Bitbucket(url="https://your-bitbucket-instance.com", token="your-token")
-    confluence = Confluence(url="https://your-confluence-instance.com", username="user", password="pass")
+    jira = Jira(url="https://jira.company.com", username="your_username", password="your_password")
+    bitbucket = Bitbucket(url="https://bitbucket.company.com", token="your_token")
+    confluence = Confluence(url="https://confluence.company.com", username="your_username", password="your_password")
 """
 
 from atlassian.jira import Jira
