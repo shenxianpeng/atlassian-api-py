@@ -11,7 +11,7 @@ Python Wrapper for Atlassian REST API
    :target: https://atlassian-api-py.readthedocs.io/
    :alt: Documentation
 
-.. |coverage-badge| image:: https://codecov.io/gh/shenxianpeng/atlassian-api-py/graph/badge.svg?token=UE90982FF2
+.. |coverage-badge| image:: https://codecov.io/gh/shenxianpeng/atlassian-api-py/branch/main/graph/badge.svg?token=UE90982FF2
    :target: https://codecov.io/gh/shenxianpeng/atlassian-api-py
    :alt: Code Coverage
 
