@@ -13,6 +13,7 @@ Python Wrapper for Atlassian REST API
 
 .. |coverage-badge| image:: https://codecov.io/gh/shenxianpeng/atlassian-api-py/graph/badge.svg?token=UE90982FF2
    :target: https://codecov.io/gh/shenxianpeng/atlassian-api-py
+   :alt: Code Coverage
 
 .. |python-version| image:: https://img.shields.io/pypi/pyversions/atlassian-api-py?style=flat-square
    :target: https://pypi.org/project/atlassian-api-py
