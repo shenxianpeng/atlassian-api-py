@@ -54,7 +54,7 @@ def docs(session: nox.Session) -> None:
         session.skip("Skipping docs session on Python 3.13")
     session.install(".[docs]")
     session.run("sphinx-build", "-b", "html", "docs", "docs/build/html")
-    session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
+    session.run("sphinx-apidoc", "-o", "docs", "atlassian")
 
 
 @nox.session(name="docs-live", default=False)
@@ -63,5 +63,7 @@ def docs_live(session: nox.Session) -> None:
     if sys.version_info.major == 3 and sys.version_info.minor == 13:
         session.skip("Skipping docs session on Python 3.13")
     session.install(".[docs]")
-    session.run("sphinx-apidoc", "-f", "-o", "docs", "atlassian")
-    session.run("sphinx-autobuild", "docs", "docs/build/html", external=True)
+    session.run("sphinx-apidoc", "-o", "docs", "atlassian")
+    session.run(
+        "sphinx-autobuild", "docs", "docs/build/html", "--watch", ".", external=True
+    )
