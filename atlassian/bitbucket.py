@@ -898,7 +898,8 @@ class Bitbucket(AtlassianAPI):
         :param pr_id: The ID of the pull request.
         :type pr_id: int
         :param task_id: The ID of the task to convert.
-        :type task_id: int
+        :param comment_id: The ID of the task to convert.
+        :type comment_id: int
         :return: The response from the API.
         :rtype: dict
         """
