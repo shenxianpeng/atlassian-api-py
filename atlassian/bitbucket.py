@@ -829,3 +829,79 @@ class Bitbucket(AtlassianAPI):
             "destination": {"branch": {"name": new_destination}},
         }
         return self.put(url, json=payload)
+
+    def resolve_blocker_comment(self, project_key, repo_slug, pr_id, comment_id):
+        """
+        Resolve a blocker comment on a pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment_id: The ID of the comment to resolve.
+        :type comment_id: int
+        :return: The response from the API.
+        :rtype: dict
+        """
+        url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/blocker-comments/{comment_id}"
+        payload = {"state": "RESOLVED"}
+        return self.put(url, json=payload)
+
+    def reopen_blocker_comment(self, project_key, repo_slug, pr_id, comment_id):
+        """
+        Reopen a blocker comment on a pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment_id: The ID of the comment to reopen.
+        :type comment_id: int
+        :return: The response from the API.
+        :rtype: dict
+        """
+        url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/blocker-comments/{comment_id}"
+        payload = {"state": "OPEN"}
+        return self.put(url, json=payload)
+
+    def convert_comment_to_task(self, project_key, repo_slug, pr_id, comment_id):
+        """
+        Convert a blocker comment on a pull request to a task.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment_id: The ID of the comment to convert.
+        :type comment_id: int
+        :return: The response from the API.
+        :rtype: dict
+        """
+        url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/blocker-comments/{comment_id}"
+        payload = {"severity": "BLOCKER"}
+        return self.put(url, json=payload)
+
+    def convert_task_to_comment(self, project_key, repo_slug, pr_id, comment_id):
+        """
+        Convert a task on a pull request to a comment.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment_id: The ID of the task to convert.
+        :type comment_id: int
+        :return: The response from the API.
+        :rtype: dict
+        """
+        url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/blocker-comments/{comment_id}"
+        payload = {"severity": "NORMAL"}
+        return self.put(url, json=payload)

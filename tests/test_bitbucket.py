@@ -62,3 +62,63 @@ class TestBitbucket:
         assert args[0] == "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/987"
         assert "destination" in kwargs["json"]
         assert kwargs["json"]["destination"]["branch"]["name"] == "release/1.2.3"
+
+    def test_resolve_blocker_comment(self, bitbucket):
+        bitbucket.resolve_blocker_comment(
+            "PROJ",
+            "repo",
+            123,
+            456,
+        )
+        args, kwargs = bitbucket.put.call_args
+        assert (
+            args[0]
+            == "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/123/blocker-comments/456"
+        )
+        assert "state" in kwargs["json"]
+        assert kwargs["json"]["state"] == "RESOLVED"
+
+    def test_reopen_blocker_comment(self, bitbucket):
+        bitbucket.reopen_blocker_comment(
+            "PROJ",
+            "repo",
+            123,
+            456,
+        )
+        args, kwargs = bitbucket.put.call_args
+        assert (
+            args[0]
+            == "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/123/blocker-comments/456"
+        )
+        assert "state" in kwargs["json"]
+        assert kwargs["json"]["state"] == "OPEN"
+
+    def test_convert_task_to_comment(self, bitbucket):
+        bitbucket.convert_task_to_comment(
+            "PROJ",
+            "repo",
+            123,
+            456,
+        )
+        args, kwargs = bitbucket.put.call_args
+        assert (
+            args[0]
+            == "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/123/blocker-comments/456"
+        )
+        assert "severity" in kwargs["json"]
+        assert kwargs["json"]["severity"] == "NORMAL"
+
+    def test_convert_comment_to_task(self, bitbucket):
+        bitbucket.convert_comment_to_task(
+            "PROJ",
+            "repo",
+            123,
+            456,
+        )
+        args, kwargs = bitbucket.put.call_args
+        assert (
+            args[0]
+            == "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/123/blocker-comments/456"
+        )
+        assert "severity" in kwargs["json"]
+        assert kwargs["json"]["severity"] == "BLOCKER"
