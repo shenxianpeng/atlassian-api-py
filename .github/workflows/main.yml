@@ -17,7 +17,7 @@ jobs:
         fetch-depth: 0 # for gittleaks
         ref: ${{ github.event.pull_request.head.sha }}  # checkout PR HEAD commit
     - name: Commit check
-      uses: commit-check/commit-check-action@v1
+      uses: commit-check/commit-check-action@04667fa89b3d3feb0f28facf9c5ff944a5500e85 # v0.9.4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -28,16 +28,16 @@ jobs:
         commit-signoff: false
         job-summary: true
     - name: gitleaks
-      uses: gitleaks/gitleaks-action@v2
+      uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Perform Bandit Analysis
-      uses: PyCQA/bandit-action@v1
+      uses: PyCQA/bandit-action@67a458d90fa11fb1463e91e7f4c8f068b5863c7f # v1.0.1
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
@@ -51,7 +51,7 @@ jobs:
       - name: Test with nox
         run: nox
       - name: Upload coverage report
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         with:
           files: ./coverage.xml
           flags: unittests
