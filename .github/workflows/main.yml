@@ -17,7 +17,7 @@ jobs:
         fetch-depth: 0 # for gittleaks
         ref: ${{ github.event.pull_request.head.sha }}  # checkout PR HEAD commit
     - name: Commit check
-      uses: commit-check/commit-check-action@fc0543792ea1ba666c86fea9792d1d72e253ca97 # v2.1.0
+      uses: commit-check/commit-check-action@a0193b1ca486178b85d7a1db145af34cd227f81f # v2.1.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
