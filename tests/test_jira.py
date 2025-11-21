@@ -19,7 +19,9 @@ class TestJira:
 
     def test_issue_changelog(self, jira):
         jira.issue_changelog("TEST-456")
-        jira.get.assert_called_with("/rest/api/2/issue/TEST-456?expand=changelog&fields=summary")
+        jira.get.assert_called_with(
+            "/rest/api/2/issue/TEST-456?expand=changelog&fields=summary"
+        )
 
     def test_update_issue_label_add_only(self, jira):
         jira.update_issue_label("TEST-1", add_labels=["label1", "label2"])
@@ -64,7 +66,9 @@ class TestJira:
         assert "update" in kwargs["json"]
 
     def test_update_issue_component_add_and_remove(self, jira):
-        jira.update_issue_component("TEST-2", add_components=["new"], remove_components=["old"])
+        jira.update_issue_component(
+            "TEST-2", add_components=["new"], remove_components=["old"]
+        )
         args, kwargs = jira.put.call_args
         assert args[0] == "/rest/api/2/issue/TEST-2"
         assert "update" in kwargs["json"]
@@ -112,7 +116,9 @@ class TestJira:
         jira.delete.assert_called_with("/rest/api/2/issue/TEST-6/comment/12345")
 
     def test_link_issue_as(self, jira):
-        jira.link_issue_as(type_name="Dependence", inward_issue="TEST-1", outward_issue="TEST-2")
+        jira.link_issue_as(
+            type_name="Dependence", inward_issue="TEST-1", outward_issue="TEST-2"
+        )
         args, kwargs = jira.post.call_args
         assert args[0] == "/rest/api/2/issueLink"
         assert kwargs["json"]["type"]["name"] == "Dependence"
@@ -146,7 +152,7 @@ class TestJira:
             owner="owner1",
             labels=["label1"],
             components=[{"name": "comp1"}],
-            issue_type=10
+            issue_type=10,
         )
         args, kwargs = jira.post.call_args
         assert args[0] == "/rest/api/2/issue"
@@ -162,7 +168,7 @@ class TestJira:
             assignee="user1",
             description="Description",
             labels=["label1"],
-            issue_type=20
+            issue_type=20,
         )
         args, kwargs = jira.post.call_args
         assert args[0] == "/rest/api/2/issue"
@@ -179,7 +185,7 @@ class TestJira:
             description="Description",
             labels=["label1"],
             team="TeamA",
-            issue_type=20
+            issue_type=20,
         )
         args, kwargs = jira.post.call_args
         assert "customfield_11360" in kwargs["json"]["fields"]
@@ -198,7 +204,9 @@ class TestJira:
 
     def test_update_custom_field_too_many_args(self, jira):
         with pytest.raises(AttributeError):
-            jira.update_custom_field("TEST-7", "customfield_123", "arg1", "arg2", "arg3")
+            jira.update_custom_field(
+                "TEST-7", "customfield_123", "arg1", "arg2", "arg3"
+            )
 
     def test_assign_issue_with_assignee(self, jira):
         jira.assign_issue("TEST-8", assignee="user1")
@@ -229,7 +237,13 @@ class TestJira:
         jira.get.assert_called_with("/rest/api/2/issue/TEST-11/transitions")
 
     def test_search_issue_with_jql(self, jira):
-        jira.post = MagicMock(return_value={"total": 2, "maxResults": 50, "issues": [{"key": "TEST-1"}, {"key": "TEST-2"}]})
+        jira.post = MagicMock(
+            return_value={
+                "total": 2,
+                "maxResults": 50,
+                "issues": [{"key": "TEST-1"}, {"key": "TEST-2"}],
+            }
+        )
         result = jira.search_issue_with_jql("project=TEST")
         assert len(result) == 2
         args, kwargs = jira.post.call_args
@@ -239,8 +253,16 @@ class TestJira:
     def test_search_issue_with_jql_pagination(self, jira):
         # Mock response that requires pagination
         responses = [
-            {"total": 150, "maxResults": 100, "issues": [{"key": f"TEST-{i}"} for i in range(100)]},
-            {"total": 150, "maxResults": 100, "issues": [{"key": f"TEST-{i}"} for i in range(100, 150)]},
+            {
+                "total": 150,
+                "maxResults": 100,
+                "issues": [{"key": f"TEST-{i}"} for i in range(100)],
+            },
+            {
+                "total": 150,
+                "maxResults": 100,
+                "issues": [{"key": f"TEST-{i}"} for i in range(100, 150)],
+            },
         ]
         jira.post = MagicMock(side_effect=responses)
         result = jira.search_issue_with_jql("project=TEST")
@@ -261,8 +283,12 @@ class TestJira:
 
     def test_get_dev_status(self, jira):
         jira.get_dev_status("12345")
-        jira.get.assert_called_with("/rest/dev-status/1.0/issue/detail?issueId=12345&applicationType=stash&dataType=repository")
+        jira.get.assert_called_with(
+            "/rest/dev-status/1.0/issue/detail?issueId=12345&applicationType=stash&dataType=repository"
+        )
 
     def test_get_dev_status_custom_params(self, jira):
         jira.get_dev_status("12345", app_type="custom", data_type="branch")
-        jira.get.assert_called_with("/rest/dev-status/1.0/issue/detail?issueId=12345&applicationType=custom&dataType=branch")
+        jira.get.assert_called_with(
+            "/rest/dev-status/1.0/issue/detail?issueId=12345&applicationType=custom&dataType=branch"
+        )

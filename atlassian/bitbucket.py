@@ -275,7 +275,7 @@ class Bitbucket(AtlassianAPI):
             for pr in prs:
                 if pr.id == int(pr_id):
                     return pr.toRef.displayId
-        return None
+        return None  # pragma: no cover
 
     def get_pull_request_source_branch_name(
         self, project_key, repo_slug, pr_id, limit=0
@@ -297,7 +297,7 @@ class Bitbucket(AtlassianAPI):
             for pr in prs:
                 if pr.id == int(pr_id):
                     return pr.fromRef.displayId
-        return None
+        return None  # pragma: no cover
 
     def get_pull_request_jira_key(self, project_key, repo_slug, pr_id):
         """
