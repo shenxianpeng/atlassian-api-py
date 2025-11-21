@@ -4,7 +4,13 @@ import sys
 import os
 import tempfile
 from unittest.mock import patch, MagicMock
-from atlassian.logger import get_console_handler, get_file_handler, get_logger, FORMATTER, LOG_FILE
+from atlassian.logger import (
+    get_console_handler,
+    get_file_handler,
+    get_logger,
+    FORMATTER,
+    LOG_FILE,
+)
 
 
 class TestLogger:
@@ -18,12 +24,12 @@ class TestLogger:
         # Create the logs directory if it doesn't exist
         log_dir = os.path.dirname(LOG_FILE)
         os.makedirs(log_dir, exist_ok=True)
-        
+
         handler = get_file_handler()
         assert isinstance(handler, logging.handlers.RotatingFileHandler)
         assert handler.backupCount == 1
         assert handler.formatter == FORMATTER
-        
+
         # Clean up
         handler.close()
 

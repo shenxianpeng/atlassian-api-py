@@ -39,8 +39,12 @@ class TestAtlassianAPI:
         assert api.timeout == 30
 
     def test_init_with_auth_exception(self):
-        with patch.object(AtlassianAPI, "_create_basic_session", side_effect=Exception("Auth error")):
-            api = AtlassianAPI(url="https://example.com", username="user", password="pass")
+        with patch.object(
+            AtlassianAPI, "_create_basic_session", side_effect=Exception("Auth error")
+        ):
+            api = AtlassianAPI(
+                url="https://example.com", username="user", password="pass"
+            )
             assert api.username == "user"
 
     def test_context_manager_enter(self):
@@ -100,9 +104,9 @@ class TestAtlassianAPI:
         mock_response.status_code = 200
         mock_response.reason = "OK"
         api._session.request = MagicMock(return_value=mock_response)
-        
+
         result = api.request(method="GET", path="/api/test")
-        
+
         api._session.request.assert_called_once_with(
             method="GET",
             url="https://example.com/api/test",
@@ -119,9 +123,9 @@ class TestAtlassianAPI:
         mock_response.status_code = 200
         mock_response.reason = "OK"
         api._session.request = MagicMock(return_value=mock_response)
-        
+
         result = api.request(method="GET")
-        
+
         api._session.request.assert_called_once_with(
             method="GET",
             url="https://example.com",
@@ -137,15 +141,15 @@ class TestAtlassianAPI:
         mock_response.status_code = 200
         mock_response.reason = "OK"
         api._session.request = MagicMock(return_value=mock_response)
-        
+
         api.request(
             method="POST",
             path="/api/test",
             data={"key": "value"},
             json={"json_key": "json_value"},
-            params={"param": "value"}
+            params={"param": "value"},
         )
-        
+
         api._session.request.assert_called_once_with(
             method="POST",
             url="https://example.com/api/test",
@@ -160,9 +164,9 @@ class TestAtlassianAPI:
         mock_response = MagicMock()
         mock_response.text = '{"name": "test"}'
         api.request = MagicMock(return_value=mock_response)
-        
+
         result = api.get("/api/test")
-        
+
         api.request.assert_called_once_with("GET", "/api/test", data=None, params=None)
         assert isinstance(result, SimpleNamespace)
         assert result.name == "test"
@@ -172,9 +176,9 @@ class TestAtlassianAPI:
         mock_response = MagicMock()
         mock_response.text = ""
         api.request = MagicMock(return_value=mock_response)
-        
+
         result = api.get("/api/test")
-        
+
         assert result is None
 
     def test_get_with_json_error(self):
@@ -182,9 +186,9 @@ class TestAtlassianAPI:
         mock_response = MagicMock()
         mock_response.text = "not json"
         api.request = MagicMock(return_value=mock_response)
-        
+
         result = api.get("/api/test")
-        
+
         assert result == "not json"
 
     def test_get_with_params(self):
@@ -192,20 +196,24 @@ class TestAtlassianAPI:
         mock_response = MagicMock()
         mock_response.text = '{"result": "ok"}'
         api.request = MagicMock(return_value=mock_response)
-        
+
         api.get("/api/test", params={"key": "value"})
-        
-        api.request.assert_called_once_with("GET", "/api/test", data=None, params={"key": "value"})
+
+        api.request.assert_called_once_with(
+            "GET", "/api/test", data=None, params={"key": "value"}
+        )
 
     def test_post(self):
         api = AtlassianAPI(url="https://example.com")
         mock_response = MagicMock()
         mock_response.json.return_value = {"created": True}
         api.request = MagicMock(return_value=mock_response)
-        
+
         result = api.post("/api/create", json={"name": "test"})
-        
-        api.request.assert_called_once_with("POST", "/api/create", data=None, json={"name": "test"}, params=None)
+
+        api.request.assert_called_once_with(
+            "POST", "/api/create", data=None, json={"name": "test"}, params=None
+        )
         assert result == {"created": True}
 
     def test_post_with_data(self):
@@ -213,20 +221,24 @@ class TestAtlassianAPI:
         mock_response = MagicMock()
         mock_response.json.return_value = {"result": "ok"}
         api.request = MagicMock(return_value=mock_response)
-        
+
         api.post("/api/create", data={"key": "value"})
-        
-        api.request.assert_called_once_with("POST", "/api/create", data={"key": "value"}, json=None, params=None)
+
+        api.request.assert_called_once_with(
+            "POST", "/api/create", data={"key": "value"}, json=None, params=None
+        )
 
     def test_put(self):
         api = AtlassianAPI(url="https://example.com")
         mock_response = MagicMock()
         mock_response.json.return_value = {"updated": True}
         api.request = MagicMock(return_value=mock_response)
-        
+
         result = api.put("/api/update", json={"name": "updated"})
-        
-        api.request.assert_called_once_with("PUT", "/api/update", data=None, json={"name": "updated"}, params=None)
+
+        api.request.assert_called_once_with(
+            "PUT", "/api/update", data=None, json={"name": "updated"}, params=None
+        )
         assert result == {"updated": True}
 
     def test_put_with_data(self):
@@ -234,20 +246,24 @@ class TestAtlassianAPI:
         mock_response = MagicMock()
         mock_response.json.return_value = None
         api.request = MagicMock(return_value=mock_response)
-        
+
         api.put("/api/update", data={"key": "value"})
-        
-        api.request.assert_called_once_with("PUT", "/api/update", data={"key": "value"}, json=None, params=None)
+
+        api.request.assert_called_once_with(
+            "PUT", "/api/update", data={"key": "value"}, json=None, params=None
+        )
 
     def test_delete(self):
         api = AtlassianAPI(url="https://example.com")
         mock_response = MagicMock()
         mock_response.json.return_value = {"deleted": True}
         api.request = MagicMock(return_value=mock_response)
-        
+
         result = api.delete("/api/delete")
-        
-        api.request.assert_called_once_with("DELETE", "/api/delete", data=None, json=None, params=None)
+
+        api.request.assert_called_once_with(
+            "DELETE", "/api/delete", data=None, json=None, params=None
+        )
         assert result == {"deleted": True}
 
     def test_delete_with_json(self):
@@ -255,7 +271,9 @@ class TestAtlassianAPI:
         mock_response = MagicMock()
         mock_response.json.return_value = None
         api.request = MagicMock(return_value=mock_response)
-        
+
         api.delete("/api/delete", json={"id": 123})
-        
-        api.request.assert_called_once_with("DELETE", "/api/delete", data=None, json={"id": 123}, params=None)
+
+        api.request.assert_called_once_with(
+            "DELETE", "/api/delete", data=None, json={"id": 123}, params=None
+        )
