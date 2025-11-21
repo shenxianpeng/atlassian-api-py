@@ -15,18 +15,6 @@ jobs:
     - uses: actions/checkout@v5.0.1
       with:
         fetch-depth: 0 # for gittleaks
-        ref: ${{ github.event.pull_request.head.sha }}  # checkout PR HEAD commit
-    - name: Commit check
-      uses: commit-check/commit-check-action@a0193b1ca486178b85d7a1db145af34cd227f81f # v2.1.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        message: true
-        branch: false
-        author-name: false
-        author-email: false
-        commit-signoff: false
-        job-summary: true
     - name: gitleaks
       uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
       env:
