@@ -89,7 +89,8 @@ atlassian-api-py/
 ## Documentation
 
 - Documentation is built with Sphinx
-- Uses reStructuredText (.rst) format
+- Supports both reStructuredText (.rst) and Markdown (.md) formats via myst-parser
+- Current documentation primarily uses .rst format
 - Hosted on ReadTheDocs: https://atlassian-api-py.readthedocs.io/
 - Update documentation when adding new features or changing APIs
 - Build docs locally: `nox -s docs`
