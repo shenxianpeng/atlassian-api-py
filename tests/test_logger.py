@@ -1,5 +1,6 @@
 import pytest
 import logging
+import logging.handlers
 import sys
 import os
 import tempfile

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch, Mock
-import requests  # type: ignore
+import requests
 from types import SimpleNamespace
 from atlassian.client import AtlassianAPI
 
