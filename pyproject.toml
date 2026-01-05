@@ -79,3 +79,9 @@ exclude_lines = [
     "pragma: no cover",
     "if __name__ == '__main__':",
 ]
+
+[tool.bandit]
+# Exclude assert usage check (B101) in test files
+# Using assert in pytest tests is the correct and standard approach
+skips = ["B101"]
+exclude_dirs = ["./tests"]
