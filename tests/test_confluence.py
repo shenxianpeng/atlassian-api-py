@@ -47,7 +47,13 @@ class TestConfluence:
         )
 
     def test_update_content(self, confluence):
+        mock_current = MagicMock()
+        mock_current.version.number = 1
+        confluence.get_content_by_id = MagicMock(return_value=mock_current)
+        
         confluence.update_content(123, "Test Page", "Body Value")
+        
+        confluence.get_content_by_id.assert_called_with(123)
         confluence.put.assert_called_with(
             "/rest/api/content/123",
             json={

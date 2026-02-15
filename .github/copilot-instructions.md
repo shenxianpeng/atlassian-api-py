@@ -19,6 +19,14 @@ This is a Python wrapper for Atlassian REST APIs, supporting JIRA, Bitbucket, an
 - Maintain consistent error handling using the `atlassian.error` module
 - Use the logger from `atlassian.logger` for logging operations
 
+### API Method Conventions
+- Method names use snake_case (e.g., `issue_changelog`, `update_issue_label`)
+- Parameters use descriptive names matching Atlassian API terminology
+- Resource methods follow pattern: `{action}_{resource}` (e.g., `get_content`, `create_branch`, `delete_issue_link`)
+- Update methods typically accept optional `add_*` and `remove_*` parameters for list fields
+- URL construction uses f-strings: `f"/rest/api/2/issue/{issue_key}"`
+- Return `{}` or `None` for empty responses using `or {}` / `or None` pattern
+
 ## Development Environment
 
 ### Supported Python Versions
@@ -48,12 +56,26 @@ Use [nox](https://nox.thea.codes/) for all development tasks:
 ### Testing Guidelines
 - Tests are located in the `tests/` directory
 - Test files follow the pattern `test_*.py`
-- Use pytest for testing
+- Use pytest for testing with class-based test organization
 - Maintain or improve code coverage
 - Test structure mirrors the main package:
-  - `test_jira.py` for JIRA functionality
-  - `test_confluence.py` for Confluence functionality
-  - `test_bitbucket.py` for Bitbucket functionality
+  - [test_jira.py](tests/test_jira.py) for JIRA functionality
+  - [test_confluence.py](tests/test_confluence.py) for Confluence functionality
+  - [test_bitbucket.py](tests/test_bitbucket.py) for Bitbucket functionality
+
+#### Testing Patterns
+- Use `@pytest.fixture` to create test instances
+- Mock HTTP methods (`get`, `post`, `put`, `delete`) with `unittest.mock.MagicMock`
+- Test method calls by inspecting `call_args` on mocked methods
+- Use `SimpleNamespace` for mocking complex response objects (see [test_bitbucket.py](tests/test_bitbucket.py#L21-L23))
+- Example test fixture pattern from [test_jira.py](tests/test_jira.py#L7-L13):
+  ```python
+  @pytest.fixture
+  def jira(self):
+      jira_client = Jira(url="https://fake_url")
+      jira_client.get = MagicMock()
+      return jira_client
+  ```
 
 ## Project Structure
 
@@ -76,15 +98,42 @@ atlassian-api-py/
 ## Architecture Patterns
 
 ### API Client Pattern
-- All API classes inherit from `AtlassianAPI` base class in `client.py`
-- Base class handles common functionality (authentication, HTTP requests)
-- Each service (JIRA, Confluence, Bitbucket) has its own class
-- Methods return Python dictionaries or lists, not raw JSON
+All API classes (`Jira`, `Confluence`, `Bitbucket`) inherit from `AtlassianAPI` in [client.py](atlassian/client.py):
+- Base class constructor supports multiple authentication methods:
+  - Basic auth: `username` + `password` parameters
+  - Bearer token: `token` parameter
+  - Custom session: `session` parameter
+- Context manager support: use `with Jira(...) as jira:` pattern
+- Session management with `requests.Session` for connection pooling
+- Standard HTTP methods: `get()`, `post()`, `put()`, `delete()`, `request()`
+
+### Request/Response Patterns
+- **GET requests**: Return `SimpleNamespace` objects (access with dot notation: `issue.fields.status.name`)
+- **POST/PUT/DELETE**: Return dictionaries or `None`
+- Response handler (`_response_handler`) safely parses JSON responses
+- Empty responses return `None` or `{}` depending on the method
+- URL patterns follow `/rest/api/{version}/{resource}/{id}` format
+
+### Authentication Implementation
+Example from [client.py](atlassian/client.py#L43-L53):
+```python
+if username and password:
+    self._create_basic_session(username, password)
+elif token is not None:
+    self._create_token_session(token)
+```
+
+### Pagination Pattern (Bitbucket-specific)
+Bitbucket API uses `_get_paged()` helper in [bitbucket.py](atlassian/bitbucket.py#L12-L36):
+- Handles paginated responses with `isLastPage` and `nextPageStart`
+- Supports optional `limit` parameter to cap result count
+- Returns aggregated list of all paginated values
 
 ### Error Handling
-- Use custom exceptions from `atlassian.error` module
-- Handle HTTP errors appropriately
-- Log errors using the project's logger
+- Custom `APIError` exception in [error.py](atlassian/error.py#L52-L87)
+- Maps HTTP status codes to human-readable messages
+- Logger disabled by default in client (`logger.disabled = True`)
+- Log errors using `from atlassian.logger import get_logger`
 
 ## Documentation
 
