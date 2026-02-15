@@ -25,6 +25,8 @@ class Bitbucket(AtlassianAPI):
         :rtype: list
         """
         response = self.get(url, params=params)
+        if response is None or not hasattr(response, "values"):
+            return []
         if response.values:
             values = response.values
         else:
@@ -269,13 +271,18 @@ class Bitbucket(AtlassianAPI):
         :type pr_id: int
         :return: The destination branch name associated with the pull request.
         :rtype: str"""
-        while True:
+        max_attempts = 100
+        attempts = 0
+        while attempts < max_attempts:
+            attempts += 1
             limit += 25
             prs = self.get_pull_request(project_key, repo_slug, limit=limit)
+            if not prs:
+                return None
             for pr in prs:
                 if pr.id == int(pr_id):
                     return pr.toRef.displayId
-        return None  # pragma: no cover
+        return None
 
     def get_pull_request_source_branch_name(
         self, project_key, repo_slug, pr_id, limit=0
@@ -291,13 +298,18 @@ class Bitbucket(AtlassianAPI):
         :type pr_id: int
         :return: The source branch name associated with the pull request.
         :rtype: str"""
-        while True:
+        max_attempts = 100
+        attempts = 0
+        while attempts < max_attempts:
+            attempts += 1
             limit += 25
             prs = self.get_pull_request(project_key, repo_slug, limit=limit)
+            if not prs:
+                return None
             for pr in prs:
                 if pr.id == int(pr_id):
                     return pr.fromRef.displayId
-        return None  # pragma: no cover
+        return None
 
     def get_pull_request_jira_key(self, project_key, repo_slug, pr_id):
         """
@@ -315,11 +327,14 @@ class Bitbucket(AtlassianAPI):
         source_branch_name = self.get_pull_request_source_branch_name(
             project_key, repo_slug, pr_id
         )
+        if source_branch_name is None:
+            return None
         try:
             jira_key = re.search(r"[A-Z]+-[0-9]+", source_branch_name).group()
             return jira_key
-        except AttributeError as e:
+        except (AttributeError, TypeError) as e:
             logger.error(e)
+            return None
 
     def get_pull_request_id(
         self, project_key, repo_slug, pr_state="OPEN", start=0, limit=None
@@ -761,6 +776,8 @@ class Bitbucket(AtlassianAPI):
         :rtype: dict
         """
         pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
+        if pr is None or isinstance(pr, str):
+            return None
         url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
         payload = {"version": pr.version, "description": new_description}
         return self.put(url, json=payload)
@@ -781,6 +798,8 @@ class Bitbucket(AtlassianAPI):
         :rtype: dict
         """
         pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
+        if pr is None or isinstance(pr, str):
+            return None
         url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
         payload = {"version": pr.version, "title": new_title}
         return self.put(url, json=payload)
@@ -801,6 +820,8 @@ class Bitbucket(AtlassianAPI):
         :rtype: dict
         """
         pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
+        if pr is None or isinstance(pr, str):
+            return None
         url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
         payload = {"version": pr.version, "reviewers": reviewers}
         return self.put(url, json=payload)
@@ -823,6 +844,8 @@ class Bitbucket(AtlassianAPI):
         :rtype: dict
         """
         pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
+        if pr is None or isinstance(pr, str):
+            return None
         url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
         payload = {
             "version": pr.version,
