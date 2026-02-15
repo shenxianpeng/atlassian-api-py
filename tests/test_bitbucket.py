@@ -74,6 +74,25 @@ class TestBitbucket:
         # Should stop when limit would go negative
         assert len(result) == 3
 
+    def test_get_paged_none_response(self, bitbucket):
+        """Test that _get_paged returns empty list when get() returns None."""
+        bitbucket.get = MagicMock(return_value=None)
+        result = bitbucket._get_paged("/test/url", {})
+        assert result == []
+
+    def test_get_paged_string_response(self, bitbucket):
+        """Test that _get_paged returns empty list when response is a string (JSON parse failure)."""
+        bitbucket.get = MagicMock(return_value="error message")
+        result = bitbucket._get_paged("/test/url", {})
+        assert result == []
+
+    def test_get_paged_no_values_attribute(self, bitbucket):
+        """Test that _get_paged returns empty list when response lacks values attribute."""
+        mock_response = SimpleNamespace(isLastPage=True)
+        bitbucket.get = MagicMock(return_value=mock_response)
+        result = bitbucket._get_paged("/test/url", {})
+        assert result == []
+
     def test_get_project_repo(self, bitbucket):
         bitbucket._get_paged = MagicMock(return_value=[])
         bitbucket.get_project_repo("PROJ")
@@ -243,6 +262,11 @@ class TestBitbucket:
         )
 
         result = bitbucket.get_pull_request_jira_key("PROJ", "repo", 789)
+        assert result is None
+
+    def test_get_pull_request_jira_key_branch_not_found(self, bitbucket):
+        bitbucket.get_pull_request_source_branch_name = MagicMock(return_value=None)
+        result = bitbucket.get_pull_request_jira_key("PROJ", "repo", 123)
         assert result is None
 
     def test_get_pull_request_id(self, bitbucket):
