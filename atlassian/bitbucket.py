@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import re
+from types import SimpleNamespace
+
 from atlassian.client import AtlassianAPI
 from atlassian.logger import get_logger
 
@@ -13,7 +17,7 @@ class Bitbucket(AtlassianAPI):
         `Bitbucket REST API Documentation <https://docs.atlassian.com/bitbucket-server/rest/7.12.1/bitbucket-rest.html>`_
     """
 
-    def _get_paged(self, url, params):
+    def _get_paged(self, url: str, params: dict) -> list:
         """
         Retrieve paginated results from the Bitbucket API.
 
@@ -25,12 +29,13 @@ class Bitbucket(AtlassianAPI):
         :rtype: list
         """
         response = self.get(url, params=params)
-        if response is None or not hasattr(response, "values"):
+        if (
+            not isinstance(response, SimpleNamespace)
+            or not hasattr(response, "values")
+            or not response.values
+        ):
             return []
-        if response.values:
-            values = response.values
-        else:
-            return []
+        values = response.values
         limit = params.get("limit")
         while not response.isLastPage:
             if limit is not None:
@@ -39,10 +44,14 @@ class Bitbucket(AtlassianAPI):
                     break
             params["start"] = response.nextPageStart
             response = self.get(url, params=params)
-            values += response.values or {}
+            if not isinstance(response, SimpleNamespace):
+                break
+            values += response.values or []
         return values
 
-    def get_project_repo(self, project_key, start=0, limit=None):
+    def get_project_repo(
+        self, project_key: str, start: int = 0, limit: int | None = None
+    ) -> list:
         """
         Retrieve repositories for a specific project.
 
@@ -63,7 +72,7 @@ class Bitbucket(AtlassianAPI):
             params["limit"] = limit
         return self._get_paged(url, params=params)
 
-    def get_project_repo_name(self, project_key):
+    def get_project_repo_name(self, project_key: str) -> list[str]:
         """
         Retrieve the names of all repositories in a project.
 
@@ -78,7 +87,9 @@ class Bitbucket(AtlassianAPI):
             repo_name.append(value.name)
         return repo_name
 
-    def get_repo_info(self, project_key, repo_slug):
+    def get_repo_info(
+        self, project_key: str, repo_slug: str
+    ) -> SimpleNamespace | str | None:
         """
         Retrieve information about a specific repository.
 
@@ -92,7 +103,9 @@ class Bitbucket(AtlassianAPI):
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}"
         return self.get(url)
 
-    def get_repo_branch(self, project_key, repo_slug, start=0, limit=None):
+    def get_repo_branch(
+        self, project_key: str, repo_slug: str, start: int = 0, limit: int | None = None
+    ) -> list:
         """
         Retrieve branches for a specific repository.
 
@@ -115,7 +128,9 @@ class Bitbucket(AtlassianAPI):
             params["limit"] = limit
         return self._get_paged(url, params=params)
 
-    def create_branch(self, project_key, repo_slug, branch_name, start_point):
+    def create_branch(
+        self, project_key: str, repo_slug: str, branch_name: str, start_point: str
+    ) -> dict | None:
         """
         Create a new branch in a repository.
 
@@ -136,7 +151,9 @@ class Bitbucket(AtlassianAPI):
         payload = {"name": branch_name, "startPoint": start_point}
         return self.post(url, json=payload)
 
-    def delete_branch(self, project_key, repo_slug, branch_name, end_point):
+    def delete_branch(
+        self, project_key: str, repo_slug: str, branch_name: str, end_point: str
+    ) -> dict | None:
         """
         Delete a branch from a repository.
 
@@ -155,7 +172,9 @@ class Bitbucket(AtlassianAPI):
         payload = {"name": branch_name, "endPoint": end_point}
         return self.delete(url, json=payload)
 
-    def get_merged_branch(self, project_key, repo_slug, start=0, limit=None):
+    def get_merged_branch(
+        self, project_key: str, repo_slug: str, start: int = 0, limit: int | None = None
+    ) -> list[str]:
         """
         Retrieve the names of merged branches in a repository.
 
@@ -203,8 +222,13 @@ class Bitbucket(AtlassianAPI):
         return merged_branch
 
     def get_branch_commits(
-        self, project_key, repo_slug, branch_name, start=0, limit=None
-    ):
+        self,
+        project_key: str,
+        repo_slug: str,
+        branch_name: str,
+        start: int = 0,
+        limit: int | None = None,
+    ) -> list:
         """
         Get a specific branch commits.
 
@@ -230,8 +254,13 @@ class Bitbucket(AtlassianAPI):
         return self._get_paged(url, params=params)
 
     def get_pull_request(
-        self, project_key, repo_slug, pr_state="ALL", start=0, limit=None
-    ):
+        self,
+        project_key: str,
+        repo_slug: str,
+        pr_state: str = "ALL",
+        start: int = 0,
+        limit: int | None = None,
+    ) -> list:
         """
         Get ALL pull requests.
 
@@ -258,8 +287,8 @@ class Bitbucket(AtlassianAPI):
         return self._get_paged(url, params=params)
 
     def get_pull_request_destination_branch_name(
-        self, project_key, repo_slug, pr_id, limit=0
-    ):
+        self, project_key: str, repo_slug: str, pr_id: int, limit: int = 0
+    ) -> str | None:
         """
         Get a pull request destination branch name.
 
@@ -285,8 +314,8 @@ class Bitbucket(AtlassianAPI):
         return None
 
     def get_pull_request_source_branch_name(
-        self, project_key, repo_slug, pr_id, limit=0
-    ):
+        self, project_key: str, repo_slug: str, pr_id: int, limit: int = 0
+    ) -> str | None:
         """
         Get a pull request source branch name.
 
@@ -311,7 +340,9 @@ class Bitbucket(AtlassianAPI):
                     return pr.fromRef.displayId
         return None
 
-    def get_pull_request_jira_key(self, project_key, repo_slug, pr_id):
+    def get_pull_request_jira_key(
+        self, project_key: str, repo_slug: str, pr_id: int
+    ) -> str | None:
         """
         Get a pull request Jira ticket key.
 
@@ -329,16 +360,19 @@ class Bitbucket(AtlassianAPI):
         )
         if source_branch_name is None:
             return None
-        try:
-            jira_key = re.search(r"[A-Z]+-[0-9]+", source_branch_name).group()
-            return jira_key
-        except (AttributeError, TypeError) as e:
-            logger.error(e)
+        match = re.search(r"[A-Z]+-[0-9]+", source_branch_name)
+        if match is None:
             return None
+        return match.group()
 
     def get_pull_request_id(
-        self, project_key, repo_slug, pr_state="OPEN", start=0, limit=None
-    ):
+        self,
+        project_key: str,
+        repo_slug: str,
+        pr_state: str = "OPEN",
+        start: int = 0,
+        limit: int | None = None,
+    ) -> list[int]:
         """
         Get a specific pull request ID.
 
@@ -364,7 +398,9 @@ class Bitbucket(AtlassianAPI):
             pr_id.append(pr.id)
         return pr_id
 
-    def get_pull_request_overview(self, project_key, repo_slug, pr_id):
+    def get_pull_request_overview(
+        self, project_key: str, repo_slug: str, pr_id: int
+    ) -> SimpleNamespace | str | None:
         """
         Get a specific pull request overview.
 
@@ -380,7 +416,9 @@ class Bitbucket(AtlassianAPI):
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
         return self.get(url)
 
-    def get_pull_request_diff(self, project_key, repo_slug, pr_id):
+    def get_pull_request_diff(
+        self, project_key: str, repo_slug: str, pr_id: int
+    ) -> SimpleNamespace | str | None:
         """
         Get streams a diff within a pull request.
 
@@ -396,7 +434,9 @@ class Bitbucket(AtlassianAPI):
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/diff"
         return self.get(url)
 
-    def get_pull_request_raw_diff(self, project_key, repo_slug, pr_id) -> str:
+    def get_pull_request_raw_diff(
+        self, project_key: str, repo_slug: str, pr_id: int
+    ) -> SimpleNamespace | str | None:
         """
         Get streams the raw diff for a pull request.
 
@@ -412,7 +452,9 @@ class Bitbucket(AtlassianAPI):
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}.diff"
         return self.get(url)
 
-    def get_pull_request_patch(self, project_key, repo_slug, pr_id) -> str:
+    def get_pull_request_patch(
+        self, project_key: str, repo_slug: str, pr_id: int
+    ) -> SimpleNamespace | str | None:
         """
         Get streams a patch representing a pull request.
 
@@ -428,7 +470,9 @@ class Bitbucket(AtlassianAPI):
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}.patch"
         return self.get(url)
 
-    def get_pull_request_commits(self, project_key, repo_slug, pr_id):
+    def get_pull_request_commits(
+        self, project_key: str, repo_slug: str, pr_id: int
+    ) -> SimpleNamespace | str | None:
         """
         Get a specific pull request commits.
 
@@ -445,8 +489,13 @@ class Bitbucket(AtlassianAPI):
         return self.get(url)
 
     def get_pull_request_activities(
-        self, project_key, repo_slug, pr_id, start=0, limit=None
-    ):
+        self,
+        project_key: str,
+        repo_slug: str,
+        pr_id: int,
+        start: int = 0,
+        limit: int | None = None,
+    ) -> list:
         """
         Get a specific pull request activities information.
 
@@ -471,7 +520,9 @@ class Bitbucket(AtlassianAPI):
             params["limit"] = limit
         return self._get_paged(url, params=params)
 
-    def get_pull_request_merge(self, project_key, repo_slug, pr_id):
+    def get_pull_request_merge(
+        self, project_key: str, repo_slug: str, pr_id: int
+    ) -> SimpleNamespace | str | None:
         """
         Get the specific Pull Request merge information.
 
@@ -485,11 +536,16 @@ class Bitbucket(AtlassianAPI):
         :rtype: dict
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/merge"
-        return self.get(url) or {}
+        return self.get(url)
 
     def get_branch_committer_info(
-        self, project_key, repo_slug, branch_name, start=0, limit=None
-    ):
+        self,
+        project_key: str,
+        repo_slug: str,
+        branch_name: str,
+        start: int = 0,
+        limit: int | None = None,
+    ) -> list:
         """
         Get branch committer information.
 
@@ -514,7 +570,9 @@ class Bitbucket(AtlassianAPI):
             committer.append(commit.committer)
         return committer
 
-    def get_pull_request_comments(self, project_key, repo_slug, pr_id):
+    def get_pull_request_comments(
+        self, project_key: str, repo_slug: str, pr_id: int
+    ) -> SimpleNamespace | str | None:
         """
         Get a specific pull request all comments.
 
@@ -530,7 +588,9 @@ class Bitbucket(AtlassianAPI):
         url = f"/rest/ui/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments"
         return self.get(url)
 
-    def add_pull_request_comment(self, project_key, repo_slug, pr_id, comment):
+    def add_pull_request_comment(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
         """
         Add comment to a specific pull request.
 
@@ -550,8 +610,13 @@ class Bitbucket(AtlassianAPI):
         return self.post(url, json=payload)
 
     def update_pull_request_comment(
-        self, project_key, repo_slug, pr_id, old_comment, new_comment
-    ):
+        self,
+        project_key: str,
+        repo_slug: str,
+        pr_id: int,
+        old_comment: str,
+        new_comment: str,
+    ) -> dict | None:
         """
         Update a specific comment of a pull request.
 
@@ -581,7 +646,7 @@ class Bitbucket(AtlassianAPI):
             except AttributeError as e:
                 logger.error(e)
         if not comment_id:
-            return
+            return None
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{comment_id}"
         payload = {
             "version": version,
@@ -591,7 +656,9 @@ class Bitbucket(AtlassianAPI):
         }
         return self.put(url, json=payload)
 
-    def delete_pull_request_comment(self, project_key, repo_slug, pr_id, comment):
+    def delete_pull_request_comment(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
         """
         Delete comment from a specific pull request.
 
@@ -617,16 +684,22 @@ class Bitbucket(AtlassianAPI):
             except AttributeError as e:
                 logger.error(e)
         if not comment_id:
-            return
+            return None
         url = (
             f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{comment_id}"
             f"?version={version}"
         )
-        return self.delete(url) or {}
+        return self.delete(url)
 
     def get_file_change_history(
-        self, project_key, repo_slug, branch_name, file_path, start=0, limit=None
-    ):
+        self,
+        project_key: str,
+        repo_slug: str,
+        branch_name: str,
+        file_path: str,
+        start: int = 0,
+        limit: int | None = None,
+    ) -> list:
         """
         Get a specific file change histories.
 
@@ -656,7 +729,9 @@ class Bitbucket(AtlassianAPI):
             params["limit"] = limit
         return self._get_paged(url, params=params)
 
-    def get_file_content(self, project_key, repo_slug, branch_name, file_path):
+    def get_file_content(
+        self, project_key: str, repo_slug: str, branch_name: str, file_path: str
+    ) -> SimpleNamespace | str | None:
         """
         Get file content from a specific branch.
 
@@ -674,27 +749,27 @@ class Bitbucket(AtlassianAPI):
         url = f"/projects/{project_key}/repos/{repo_slug}/raw/{file_path}?at={branch_name}"
         return self.get(url)
 
-    def get_build_status(self, commit_id):
+    def get_build_status(self, commit_id: str) -> SimpleNamespace | str | None:
         """
         Get build status.
 
         :param commit_id: The ID of the commit.
         :type commit_id: str
-        :return: A dictionary containing build status information.
-        :rtype: dict
+        :return: A SimpleNamespace containing build status information.
+        :rtype: SimpleNamespace or None
         """
         url = f"/rest/build-status/latest/commits/{commit_id}"
-        return self.get(url) or {}
+        return self.get(url)
 
     def update_build_status(
         self,
-        commit_id,
-        build_state,
-        data_key,
-        build_name,
-        build_url,
-        description="ManuallyCheckBuildPass",
-    ):
+        commit_id: str,
+        build_state: str,
+        data_key: str,
+        build_name: str,
+        build_url: str,
+        description: str = "ManuallyCheckBuildPass",
+    ) -> dict | None:
         """
         Update build status.
 
@@ -710,6 +785,8 @@ class Bitbucket(AtlassianAPI):
         :type build_url: str
         :param description: The description of the build.
         :type description: str
+        :return: The response from the API.
+        :rtype: dict or None
         """
         url = f"/rest/build-status/latest/commits/{commit_id}"
         payload = {
@@ -719,9 +796,9 @@ class Bitbucket(AtlassianAPI):
             "url": build_url,
             "description": description,
         }
-        self.post(url, json=payload)
+        return self.post(url, json=payload)
 
-    def get_user(self, user_slug):
+    def get_user(self, user_slug: str) -> SimpleNamespace | str | None:
         """
         Get user information.
 
@@ -734,8 +811,13 @@ class Bitbucket(AtlassianAPI):
         return self.get(url)
 
     def review_pull_request(
-        self, project_key, repo_slug, pr_id, user_slug, status="APPROVED"
-    ):
+        self,
+        project_key: str,
+        repo_slug: str,
+        pr_id: int,
+        user_slug: str,
+        status: str = "APPROVED",
+    ) -> dict | None:
         """
         Review a pull request as the current user.
 
@@ -759,8 +841,8 @@ class Bitbucket(AtlassianAPI):
         return self.put(url, json=payload)
 
     def update_pull_request_description(
-        self, project_key, repo_slug, pr_id, new_description
-    ):
+        self, project_key: str, repo_slug: str, pr_id: int, new_description: str
+    ) -> dict | None:
         """
         Update the description of a pull request.
 
@@ -782,7 +864,9 @@ class Bitbucket(AtlassianAPI):
         payload = {"version": pr.version, "description": new_description}
         return self.put(url, json=payload)
 
-    def update_pull_request_title(self, project_key, repo_slug, pr_id, new_title):
+    def update_pull_request_title(
+        self, project_key: str, repo_slug: str, pr_id: int, new_title: str
+    ) -> dict | None:
         """
         Update the title of a pull request.
 
@@ -804,7 +888,9 @@ class Bitbucket(AtlassianAPI):
         payload = {"version": pr.version, "title": new_title}
         return self.put(url, json=payload)
 
-    def update_pull_request_reviewers(self, project_key, repo_slug, pr_id, reviewers):
+    def update_pull_request_reviewers(
+        self, project_key: str, repo_slug: str, pr_id: int, reviewers: list
+    ) -> dict | None:
         """
         Update the reviewers of a pull request.
 
@@ -827,8 +913,8 @@ class Bitbucket(AtlassianAPI):
         return self.put(url, json=payload)
 
     def update_pull_request_destination(
-        self, project_key, repo_slug, pr_id, new_destination
-    ):
+        self, project_key: str, repo_slug: str, pr_id: int, new_destination: str
+    ) -> dict | None:
         """
         Update the destination branch of a pull request.
 

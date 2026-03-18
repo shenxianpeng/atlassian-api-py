@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from types import SimpleNamespace
+
 from atlassian.client import AtlassianAPI
 from atlassian.logger import get_logger
 
@@ -12,31 +16,36 @@ class Jira(AtlassianAPI):
         `JIRA REST API Documentation <https://docs.atlassian.com/software/jira/docs/api/REST/7.6.1/>`_
     """
 
-    def issue(self, issue_key):
+    def issue(self, issue_key: str) -> SimpleNamespace | str | None:
         """
         Get issue fields.
 
         :param issue_key: The key of the issue to retrieve.
         :type issue_key: str
-        :return: A dictionary containing issue fields.
-        :rtype: dict
+        :return: A SimpleNamespace containing issue fields.
+        :rtype: SimpleNamespace or None
         """
         url = f"/rest/api/2/issue/{issue_key}"
-        return self.get(url) or {}
+        return self.get(url)
 
-    def issue_changelog(self, issue_key):
+    def issue_changelog(self, issue_key: str) -> SimpleNamespace | str | None:
         """
         Get issue changelog.
 
         :param issue_key: The key of the issue to retrieve the changelog for.
         :type issue_key: str
-        :return: A dictionary containing the issue changelog.
-        :rtype: dict
+        :return: A SimpleNamespace containing the issue changelog.
+        :rtype: SimpleNamespace or None
         """
         url = f"/rest/api/2/issue/{issue_key}?expand=changelog&fields=summary"
-        return self.get(url) or {}
+        return self.get(url)
 
-    def update_issue_label(self, issue_key, add_labels=None, remove_labels=None):
+    def update_issue_label(
+        self,
+        issue_key: str,
+        add_labels: list[str] | None = None,
+        remove_labels: list[str] | None = None,
+    ) -> dict | None:
         """
         Update issue labels.
 
@@ -47,7 +56,7 @@ class Jira(AtlassianAPI):
         :param remove_labels: A list of labels to remove.
         :type remove_labels: list[str], optional
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = f"/rest/api/2/issue/{issue_key}"
         add_labels_list = []
@@ -71,8 +80,11 @@ class Jira(AtlassianAPI):
         return self.put(url, json=label_data)
 
     def update_issue_component(
-        self, issue_key, add_components=None, remove_components=None
-    ):
+        self,
+        issue_key: str,
+        add_components: list[str] | None = None,
+        remove_components: list[str] | None = None,
+    ) -> dict | None:
         """
         Update issue components.
 
@@ -83,7 +95,7 @@ class Jira(AtlassianAPI):
         :param remove_components: A list of components to remove.
         :type remove_components: list[str], optional
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = f"/rest/api/2/issue/{issue_key}"
         add_component_list = []
@@ -107,7 +119,9 @@ class Jira(AtlassianAPI):
             component_data = {"update": {"components": remove_component_list}}
         return self.put(url, json=component_data)
 
-    def update_issue_description(self, issue_key, new_description):
+    def update_issue_description(
+        self, issue_key: str, new_description: str
+    ) -> dict | None:
         """
         Update issue description.
 
@@ -116,13 +130,19 @@ class Jira(AtlassianAPI):
         :param new_description: The new description for the issue.
         :type new_description: str
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = f"/rest/api/2/issue/{issue_key}"
         json = {"fields": {"description": new_description}}
         return self.put(url, json=json)
 
-    def update_field(self, issue_key, field_name, add=None, remove=None):
+    def update_field(
+        self,
+        issue_key: str,
+        field_name: str,
+        add: str | None = None,
+        remove: str | None = None,
+    ) -> dict | None:
         """
         Update a specific field of an issue.
 
@@ -135,7 +155,7 @@ class Jira(AtlassianAPI):
         :param remove: The value to remove from the field.
         :type remove: str, optional
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = f"/rest/api/2/issue/{issue_key}"
         element = []
@@ -146,7 +166,9 @@ class Jira(AtlassianAPI):
         json = {"update": {field_name: element}}
         return self.put(url, json=json)
 
-    def add_issue_comment(self, issue_key, content=None):
+    def add_issue_comment(
+        self, issue_key: str, content: str | None = None
+    ) -> dict | None:
         """
         Add a comment to an issue.
 
@@ -156,13 +178,13 @@ class Jira(AtlassianAPI):
         :type content: str, optional
 
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = f"/rest/api/2/issue/{issue_key}/comment"
         json = {"body": content}
-        return self.post(url, json=json) or {}
+        return self.post(url, json=json)
 
-    def delete_issue_comment(self, issue_key, comment_id):
+    def delete_issue_comment(self, issue_key: str, comment_id: str) -> dict | None:
         """
         Delete a comment from an issue.
 
@@ -171,12 +193,17 @@ class Jira(AtlassianAPI):
         :param comment_id: The ID of the comment to delete.
         :type comment_id: str
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = f"/rest/api/2/issue/{issue_key}/comment/{comment_id}"
-        return self.delete(url) or None
+        return self.delete(url)
 
-    def link_issue_as(self, type_name=None, inward_issue=None, outward_issue=None):
+    def link_issue_as(
+        self,
+        type_name: str | None = None,
+        inward_issue: str | None = None,
+        outward_issue: str | None = None,
+    ) -> dict | None:
         """
         Link two issues with a specific relationship.
 
@@ -187,7 +214,7 @@ class Jira(AtlassianAPI):
         :param outward_issue: The key of the outward issue.
         :type outward_issue: str, optional
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
 
         .. code-block:: python
 
@@ -201,20 +228,20 @@ class Jira(AtlassianAPI):
         }
         return self.post(url, json=json)
 
-    def delete_issue_link(self, link_id):
+    def delete_issue_link(self, link_id: str) -> dict | None:
         """Delete link from issue"""
         url = f"/rest/api/2/issueLink/{link_id}"
-        return self.delete(url) or {}
+        return self.delete(url)
 
-    def create_issue(self, fields, update=None):
+    def create_issue(self, fields: dict, update: dict | None = None) -> dict | None:
         """
         Creates an issue or a sub-task from a JSON representation.
 
-        :param type_name: JSON data. mandatory keys are issuetype, summary and project update: Use it to link issues or update worklog
-        :type type_name: dict
+        :param fields: JSON data. mandatory keys are issuetype, summary and project update: Use it to link issues or update worklog
+        :type fields: dict
 
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = "/rest/api/2/issue"
         data = {"fields": fields}
@@ -225,14 +252,14 @@ class Jira(AtlassianAPI):
     # TODO: replace by create_issue, will remove it in the future
     def create_task(
         self,
-        project_key=None,
-        summary=None,
-        assignee=None,
-        owner=None,
-        labels=None,
-        components=None,
-        issue_type=10,
-    ):
+        project_key: str | None = None,
+        summary: str | None = None,
+        assignee: str | None = None,
+        owner: str | None = None,
+        labels: list[str] | None = None,
+        components: list[str] | None = None,
+        issue_type: int = 10,
+    ) -> dict | None:
         """
         Create task issue.
 
@@ -251,7 +278,7 @@ class Jira(AtlassianAPI):
         :param issue_type: The issue type ID (default is 10).
         :type issue_type: int, optional
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = "/rest/api/2/issue"
         json = {
@@ -272,16 +299,16 @@ class Jira(AtlassianAPI):
     # TODO: replace by create_issue, will remove it in the future
     def create_sub_task(
         self,
-        project_key=None,
-        parent_issue_key=None,
-        summary=None,
-        fix_version=None,
-        assignee=None,
-        description=None,
-        labels=None,
-        team=None,
-        issue_type=20,
-    ):
+        project_key: str | None = None,
+        parent_issue_key: str | None = None,
+        summary: str | None = None,
+        fix_version: str | None = None,
+        assignee: str | None = None,
+        description: str | None = None,
+        labels: list[str] | None = None,
+        team: str | None = None,
+        issue_type: int = 20,
+    ) -> dict | None:
         """
         Create sub task issue.
 
@@ -304,7 +331,8 @@ class Jira(AtlassianAPI):
         :param issue_type: The issue type ID (default is 20).
         :type issue_type: int, optional
         :return: The response from the API.
-        :rtype: dict"""
+        :rtype: dict or None
+        """
         url = "/rest/api/2/issue"
         json = {
             "fields": {
@@ -326,7 +354,9 @@ class Jira(AtlassianAPI):
 
         return self.post(url, json=json)
 
-    def update_custom_field(self, issue_key, field_id, *field_args):
+    def update_custom_field(
+        self, issue_key: str, field_id: str, *field_args: object
+    ) -> dict | None:
         """
         Update custom field. in my Jira project.
 
@@ -347,7 +377,7 @@ class Jira(AtlassianAPI):
 
         return self.put(url, json=json)
 
-    def assign_issue(self, issue_key, assignee=None):
+    def assign_issue(self, issue_key: str, assignee: str | None = None) -> dict | None:
         """
         Assign issue to someone.
 
@@ -356,15 +386,15 @@ class Jira(AtlassianAPI):
         :param assignee: The assignee of the issue.
         :type assignee: str, optional
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = f"/rest/api/2/issue/{issue_key}/assignee"
-        if assignee is None:
-            assignee = -1
-        json = {"name": assignee}
-        return self.put(url, json=json) or {}
+        # Pass -1 to unassign; JIRA API accepts either a username string or -1
+        name: str | int = assignee if assignee is not None else -1
+        json = {"name": name}
+        return self.put(url, json=json)
 
-    def add_issue_watcher(self, issue_key, watcher):
+    def add_issue_watcher(self, issue_key: str, watcher: str) -> dict | None:
         """
         Add someone as watcher.
 
@@ -373,12 +403,15 @@ class Jira(AtlassianAPI):
         :param watcher: The username of the watcher.
         :type watcher: str
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = f"/rest/api/2/issue/{issue_key}/watchers"
-        return self.post(url, json=watcher)
+        # JIRA API expects the username as a raw JSON string body
+        return self.post(url, json=watcher)  # type: ignore[arg-type]
 
-    def issue_transition(self, issue_key, transition_id=None):
+    def issue_transition(
+        self, issue_key: str, transition_id: str | None = None
+    ) -> dict | None:
         """Each Jira project may have different transition_id. You can find your transition_id like below:
         Chose transition Button then right click on the view elements. for example:
         I find Close button's elements is id="action_id_51", so the close transition_id = 51.
@@ -389,25 +422,25 @@ class Jira(AtlassianAPI):
         :param transition_id: The ID of the transition to perform.
         :type transition_id: str, optional
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = "/rest/api/2/issue/{key}/transitions".format(key=issue_key)
         json = {"transition": {"id": transition_id}}
         return self.post(url, json=json)
 
-    def get_transitions(self, issue_id):
+    def get_transitions(self, issue_id: str) -> SimpleNamespace | str | None:
         """
         Get a list of the transitions possible for this issue by the current user.
 
         :param issue_id: The ID of the issue to get transitions for.
         :type issue_id: str
-        :return: A dictionary containing the transitions.
-        :rtype: dict
+        :return: A SimpleNamespace containing the transitions.
+        :rtype: SimpleNamespace or None
         """
         url = f"/rest/api/2/issue/{issue_id}/transitions"
-        return self.get(url) or {}
+        return self.get(url)
 
-    def search_issue_with_jql(self, jql, max_result=1000) -> list:
+    def search_issue_with_jql(self, jql: str, max_result: int = 1000) -> list:
         """
         Search issues using JQL (JIRA Query Language).
 
@@ -450,31 +483,36 @@ class Jira(AtlassianAPI):
                 issues.append(issue)
         return issues
 
-    def get_project_components(self, project_id):
+    def get_project_components(self, project_id: str) -> SimpleNamespace | str | None:
         """
         Get project components.
 
         :param project_id: The ID of the project to get components for.
         :type project_id: str
-        :return: A dictionary containing the project components.
-        :rtype: dict
+        :return: A SimpleNamespace containing the project components.
+        :rtype: SimpleNamespace or None
         """
         url = f"/rest/api/2/project/{project_id}/components"
-        return self.get(url) or {}
+        return self.get(url)
 
-    def user(self, username):
+    def user(self, username: str) -> SimpleNamespace | str | None:
         """
         Get user information by username.
 
         :param username: The username of the user to retrieve.
         :type username: str
-        :return: A dictionary containing user information.
-        :rtype: dict
+        :return: A SimpleNamespace containing user information.
+        :rtype: SimpleNamespace or None
         """
         url = f"/rest/api/2/user?username={username}"
-        return self.get(url) or {}
+        return self.get(url)
 
-    def get_dev_status(self, issue_id, app_type="stash", data_type="repository"):
+    def get_dev_status(
+        self,
+        issue_id: str,
+        app_type: str = "stash",
+        data_type: str = "repository",
+    ) -> SimpleNamespace | str | None:
         """
         Get development status for an issue.
 
@@ -484,8 +522,8 @@ class Jira(AtlassianAPI):
         :type app_type: str, optional
         :param data_type: The type of data (default is "repository").
         :type data_type: str, optional
-        :return: A dictionary containing the development status.
-        :rtype: dict
+        :return: A SimpleNamespace containing the development status.
+        :rtype: SimpleNamespace or None
         """
         url = f"/rest/dev-status/1.0/issue/detail?issueId={issue_id}&applicationType={app_type}&dataType={data_type}"
-        return self.get(url) or {}
+        return self.get(url)
