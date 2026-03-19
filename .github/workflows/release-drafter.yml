@@ -14,7 +14,9 @@ jobs:
   update_release_draft:
     runs-on: ubuntu-latest
     steps:
-      # Drafts your next Release notes as Pull Requests are merged into the default branch
+      # Draft your next Release notes as Pull Requests are merged into the default branch
       - uses: release-drafter/release-drafter@3a7fb5c85b80b1dda66e1ccb94009adbbd32fce3 # v7.0.0
+        with:
+          config-name: github:shenxianpeng/.github:/.github/release-drafter.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
