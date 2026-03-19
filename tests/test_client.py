@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch, Mock
 import requests
 from types import SimpleNamespace
 from atlassian.client import AtlassianAPI
+from atlassian.error import APIError
 
 
 class TestAtlassianAPI:
@@ -277,3 +278,78 @@ class TestAtlassianAPI:
         api.request.assert_called_once_with(
             "DELETE", "/api/delete", data=None, json={"id": 123}, params=None
         )
+
+    def test_request_raises_api_error_on_4xx(self):
+        api = AtlassianAPI(url="https://example.com")
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_response.reason = "Not Found"
+        mock_response.text = "Not Found"
+        api._session.request = MagicMock(return_value=mock_response)
+
+        with pytest.raises(APIError) as exc_info:
+            api.request(method="GET", path="/api/missing")
+
+        assert exc_info.value.code == 404
+
+    def test_request_raises_api_error_on_401(self):
+        api = AtlassianAPI(url="https://example.com")
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.reason = "Unauthorized"
+        mock_response.text = "Unauthorized"
+        api._session.request = MagicMock(return_value=mock_response)
+
+        with pytest.raises(APIError) as exc_info:
+            api.request(method="GET", path="/api/secure")
+
+        assert exc_info.value.code == 401
+
+    def test_request_raises_api_error_on_5xx(self):
+        api = AtlassianAPI(url="https://example.com")
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.reason = "Internal Server Error"
+        mock_response.text = "Server error"
+        api._session.request = MagicMock(return_value=mock_response)
+
+        with pytest.raises(APIError) as exc_info:
+            api.request(method="POST", path="/api/create")
+
+        assert exc_info.value.code == 500
+
+    def test_request_does_not_raise_on_2xx(self):
+        api = AtlassianAPI(url="https://example.com")
+        mock_response = MagicMock()
+        mock_response.status_code = 201
+        mock_response.reason = "Created"
+        api._session.request = MagicMock(return_value=mock_response)
+
+        result = api.request(method="POST", path="/api/create")
+
+        assert result.status_code == 201
+
+    def test_request_does_not_raise_on_204(self):
+        api = AtlassianAPI(url="https://example.com")
+        mock_response = MagicMock()
+        mock_response.status_code = 204
+        mock_response.reason = "No Content"
+        api._session.request = MagicMock(return_value=mock_response)
+
+        result = api.request(method="DELETE", path="/api/resource")
+
+        assert result.status_code == 204
+
+    def test_api_error_message_from_response(self):
+        api = AtlassianAPI(url="https://example.com")
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_response.reason = "Forbidden"
+        mock_response.text = '{"message": "You do not have permission"}'
+        api._session.request = MagicMock(return_value=mock_response)
+
+        with pytest.raises(APIError) as exc_info:
+            api.request(method="GET", path="/api/admin")
+
+        assert exc_info.value.code == 403
+        assert '{"message": "You do not have permission"}' in exc_info.value.message

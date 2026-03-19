@@ -5,6 +5,8 @@ https://developer.atlassian.com/server/confluence/http-response-code-definitions
 This module defines HTTP response codes and provides an `APIError` class for handling API errors.
 """
 
+from __future__ import annotations
+
 _ERROR_CODE_MESSAGE = {
     -1: "Unknown Error Code",
     100: "Continue",
@@ -63,7 +65,7 @@ class APIError(Exception):
     :type message: str, optional
     """
 
-    def __init__(self, code=None, message=None):
+    def __init__(self, code: int | None = None, message: str | None = None) -> None:
         """
         Initialize the APIError instance.
 
@@ -76,9 +78,13 @@ class APIError(Exception):
         if message:
             self.message = message
         else:
-            self.message = _ERROR_CODE_MESSAGE.get(code, "Unknown Error")
+            self.message = (
+                _ERROR_CODE_MESSAGE.get(code, "Unknown Error")
+                if code is not None
+                else "Unknown Error"
+            )
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Return a string representation of the error.
 

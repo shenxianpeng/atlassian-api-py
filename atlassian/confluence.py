@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import Any
+from types import SimpleNamespace
+
 from atlassian.client import AtlassianAPI
 from atlassian.logger import get_logger
 
@@ -12,19 +17,24 @@ class Confluence(AtlassianAPI):
         `Confluence REST API Documentation <https://docs.atlassian.com/ConfluenceServer/rest/7.17.2/>`_
     """
 
-    def get_content(self):
+    def get_content(self) -> SimpleNamespace | str | None:
         """
         Retrieve all content from Confluence.
 
-        :return: A dictionary containing all content.
-        :rtype: dict
+        :return: A SimpleNamespace containing all content, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
         """
         url = "/rest/api/content"
-        return self.get(url) or {}
+        return self.get(url)
 
     def create_content(
-        self, title, space_key, body_value, ancestors_id=None, type="page"
-    ):
+        self,
+        title: str,
+        space_key: str,
+        body_value: str,
+        ancestors_id: int | None = None,
+        type: str = "page",
+    ) -> dict | None:
         """
         Create new content in Confluence.
 
@@ -39,10 +49,10 @@ class Confluence(AtlassianAPI):
         :param type: The type of the content (e.g., "page").
         :type type: str
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = "/rest/api/content"
-        json = {
+        payload: dict[str, Any] = {
             "type": f"{type}",
             "title": f"{title}",
             "space": {"key": f"{space_key}"},
@@ -50,19 +60,17 @@ class Confluence(AtlassianAPI):
                 "storage": {"value": f"{body_value}", "representation": "storage"}
             },
         }
-        if ancestors_id:
-            json = {
-                "type": f"{type}",
-                "title": f"{title}",
-                "ancestors": [{"id": ancestors_id}],
-                "space": {"key": f"{space_key}"},
-                "body": {
-                    "storage": {"value": f"{body_value}", "representation": "storage"}
-                },
-            }
-        return self.post(url, json=json) or {}
+        if ancestors_id is not None:
+            payload["ancestors"] = [{"id": ancestors_id}]
+        return self.post(url, json=payload)
 
-    def update_content(self, page_id, title, body_value, type="page") -> dict:
+    def update_content(
+        self,
+        page_id: int,
+        title: str,
+        body_value: str,
+        type: str = "page",
+    ) -> dict | None:
         """
         Update existing content in Confluence.
 
@@ -75,7 +83,7 @@ class Confluence(AtlassianAPI):
         :param type: The type of the content (e.g., "page").
         :type type: str
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = f"/rest/api/content/{page_id}"
         json = {
@@ -86,40 +94,40 @@ class Confluence(AtlassianAPI):
                 "storage": {"value": f"{body_value}", "representation": "storage"}
             },
         }
-        return self.put(url, json=json) or {}
+        return self.put(url, json=json)
 
-    def delete_content(self, page_id):
+    def delete_content(self, page_id: int) -> dict | None:
         """
         Delete content from Confluence.
 
         :param page_id: The ID of the content to delete.
         :type page_id: int
         :return: The response from the API.
-        :rtype: dict
+        :rtype: dict or None
         """
         url = f"/rest/api/content/{page_id}"
-        return self.delete(url) or {}
+        return self.delete(url)
 
-    def get_content_by_id(self, page_id):
+    def get_content_by_id(self, page_id: int) -> SimpleNamespace | str | None:
         """
         Retrieve content by its ID.
 
         :param page_id: The ID of the content to retrieve.
         :type page_id: int
-        :return: A dictionary containing the content details.
-        :rtype: dict
+        :return: A SimpleNamespace containing the content details, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/content/{page_id}"
-        return self.get(url) or {}
+        return self.get(url)
 
-    def get_content_history(self, page_id):
+    def get_content_history(self, page_id: int) -> SimpleNamespace | str | None:
         """
         Retrieve the history of a specific content.
 
         :param page_id: The ID of the content to retrieve the history for.
         :type page_id: int
-        :return: A dictionary containing the content history.
-        :rtype: dict
+        :return: A SimpleNamespace containing the content history.
+        :rtype: SimpleNamespace or None
         """
         url = f"/rest/api/content/{page_id}/history"
-        return self.get(url) or {}
+        return self.get(url)

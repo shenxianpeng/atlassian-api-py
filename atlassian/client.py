@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import requests  # type: ignore
 import json
-from types import SimpleNamespace
+from types import SimpleNamespace, TracebackType
+from .error import APIError
 from .logger import get_logger
 
 logger = get_logger(__name__)
@@ -18,8 +21,14 @@ class AtlassianAPI:
     default_headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
     def __init__(
-        self, url, username=None, password=None, timeout=60, session=None, token=None
-    ):
+        self,
+        url: str,
+        username: str | None = None,
+        password: str | None = None,
+        timeout: int = 60,
+        session: requests.Session | None = None,
+        token: str | None = None,
+    ) -> None:
         """
         Initialize the AtlassianAPI instance.
 
@@ -52,7 +61,7 @@ class AtlassianAPI:
         elif token is not None:
             self._create_token_session(token)
 
-    def __enter__(self):
+    def __enter__(self) -> AtlassianAPI:
         """
         Enter the runtime context for the API instance.
 
@@ -61,7 +70,12 @@ class AtlassianAPI:
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """
         Exit the runtime context and close the session.
 
@@ -74,7 +88,7 @@ class AtlassianAPI:
         """
         self.close()
 
-    def _create_basic_session(self, username, password):
+    def _create_basic_session(self, username: str, password: str) -> None:
         """
         Create a session with basic authentication.
 
@@ -85,7 +99,7 @@ class AtlassianAPI:
         """
         self._session.auth = (username, password)
 
-    def _create_token_session(self, token):
+    def _create_token_session(self, token: str) -> None:
         """
         Create a session with bearer token authentication.
 
@@ -94,7 +108,7 @@ class AtlassianAPI:
         """
         self._update_header("Authorization", f"Bearer {token}")
 
-    def _update_header(self, key, value):
+    def _update_header(self, key: str, value: str) -> None:
         """
         Update the headers for the current session.
 
@@ -106,7 +120,7 @@ class AtlassianAPI:
         self._session.headers.update({key: value})
 
     @staticmethod
-    def _response_handler(response):
+    def _response_handler(response: requests.Response) -> dict | None:
         """
         Handle the HTTP response and parse JSON content.
 
@@ -124,15 +138,22 @@ class AtlassianAPI:
             logger.error(e)
             return None
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the current session.
 
         :return: None
         """
-        return self._session.close()
+        self._session.close()
 
-    def request(self, method="GET", path="", data=None, json=None, params=None):
+    def request(
+        self,
+        method: str = "GET",
+        path: str = "",
+        data: dict | None = None,
+        json: object | None = None,
+        params: dict | None = None,
+    ) -> requests.Response:
         """
         Make an HTTP request.
 
@@ -143,11 +164,12 @@ class AtlassianAPI:
         :param data: The data to send in the request body (optional).
         :type data: dict or None
         :param json: The JSON payload to send in the request body (optional).
-        :type json: dict or None
+        :type json: object or None
         :param params: The query parameters for the request (optional).
         :type params: dict or None
         :return: The HTTP response object.
         :rtype: requests.Response
+        :raises APIError: If the response status code is 4xx or 5xx.
         """
         if path:
             url = self.url + path
@@ -163,9 +185,16 @@ class AtlassianAPI:
         )
         response.encoding = "utf-8"
         logger.debug(f"HTTP: {method} -> {response.status_code} {response.reason}")
+        if response.status_code >= 400:
+            raise APIError(response.status_code, response.text)
         return response
 
-    def get(self, path, data=None, params=None):
+    def get(
+        self,
+        path: str,
+        data: dict | None = None,
+        params: dict | None = None,
+    ) -> SimpleNamespace | str | None:
         """
         Make a GET request.
 
@@ -177,19 +206,26 @@ class AtlassianAPI:
         :type params: dict or None
         :return: The parsed JSON response or raw text if parsing fails.
         :rtype: SimpleNamespace or str or None
+        :raises APIError: If the response status code is 4xx or 5xx.
         """
         response = self.request("GET", path, data=data, params=params)
         if not response.text:
             return None
         try:
-            data = response.text
-            result = json.loads(data, object_hook=lambda d: SimpleNamespace(**d))
+            text = response.text
+            result = json.loads(text, object_hook=lambda d: SimpleNamespace(**d))
             return result
         except Exception as e:
             logger.error(e)
             return response.text
 
-    def post(self, path, data=None, json=None, params=None):
+    def post(
+        self,
+        path: str,
+        data: dict | None = None,
+        json: dict | None = None,
+        params: dict | None = None,
+    ) -> dict | None:
         """
         Make a POST request.
 
@@ -203,11 +239,18 @@ class AtlassianAPI:
         :type params: dict or None
         :return: The parsed JSON response or None if parsing fails.
         :rtype: dict or None
+        :raises APIError: If the response status code is 4xx or 5xx.
         """
         response = self.request("POST", path, data=data, json=json, params=params)
         return self._response_handler(response)
 
-    def put(self, path, data=None, json=None, params=None):
+    def put(
+        self,
+        path: str,
+        data: dict | None = None,
+        json: dict | None = None,
+        params: dict | None = None,
+    ) -> dict | None:
         """
         Make a PUT request.
 
@@ -221,11 +264,18 @@ class AtlassianAPI:
         :type params: dict or None
         :return: The parsed JSON response or None if parsing fails.
         :rtype: dict or None
+        :raises APIError: If the response status code is 4xx or 5xx.
         """
         response = self.request("PUT", path, data=data, json=json, params=params)
         return self._response_handler(response)
 
-    def delete(self, path, data=None, json=None, params=None):
+    def delete(
+        self,
+        path: str,
+        data: dict | None = None,
+        json: dict | None = None,
+        params: dict | None = None,
+    ) -> dict | None:
         """
         Make a DELETE request.
 
@@ -239,6 +289,7 @@ class AtlassianAPI:
         :type params: dict or None
         :return: The parsed JSON response or None if parsing fails.
         :rtype: dict or None
+        :raises APIError: If the response status code is 4xx or 5xx.
         """
         response = self.request("DELETE", path, data=data, json=json, params=params)
         return self._response_handler(response)
