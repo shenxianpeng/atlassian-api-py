@@ -410,8 +410,10 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: A dictionary containing pull request overview information.
-        :rtype: dict
+        :return: The pull request overview as a :class:`SimpleNamespace` when the
+            response contains valid JSON, the raw response body as ``str`` when
+            JSON parsing fails, or ``None`` for an empty response.
+        :rtype: SimpleNamespace | str | None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
         return self.get(url)
@@ -428,8 +430,10 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: A dictionary containing pull request diff information.
-        :rtype: dict
+        :return: The pull request diff as a :class:`SimpleNamespace` when the
+            response contains valid JSON, the raw response body as ``str`` when
+            JSON parsing fails, or ``None`` for an empty response.
+        :rtype: SimpleNamespace | str | None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/diff"
         return self.get(url)
@@ -482,8 +486,10 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: A list of commits in the pull request.
-        :rtype: list
+        :return: The parsed JSON response as a SimpleNamespace when available,
+            the raw string response when the body is not JSON, or None for an
+            empty response.
+        :rtype: SimpleNamespace | str | None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/commits"
         return self.get(url)
@@ -532,8 +538,10 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: A dictionary containing pull request merge information.
-        :rtype: dict
+        :return: Parsed pull request merge information as a ``SimpleNamespace`` when the
+            response body is valid JSON, the raw response body as ``str`` if JSON
+            parsing fails, or ``None`` for empty responses.
+        :rtype: SimpleNamespace | str | None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/merge"
         return self.get(url)

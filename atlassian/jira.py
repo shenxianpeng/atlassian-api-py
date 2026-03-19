@@ -22,8 +22,8 @@ class Jira(AtlassianAPI):
 
         :param issue_key: The key of the issue to retrieve.
         :type issue_key: str
-        :return: A SimpleNamespace containing issue fields.
-        :rtype: SimpleNamespace or None
+        :return: A SimpleNamespace containing issue fields, a raw text response string, or None.
+        :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/2/issue/{issue_key}"
         return self.get(url)
@@ -34,8 +34,8 @@ class Jira(AtlassianAPI):
 
         :param issue_key: The key of the issue to retrieve the changelog for.
         :type issue_key: str
-        :return: A SimpleNamespace containing the issue changelog.
-        :rtype: SimpleNamespace or None
+        :return: A SimpleNamespace containing the issue changelog, a raw text response string, or None.
+        :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/2/issue/{issue_key}?expand=changelog&fields=summary"
         return self.get(url)

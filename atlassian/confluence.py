@@ -21,8 +21,8 @@ class Confluence(AtlassianAPI):
         """
         Retrieve all content from Confluence.
 
-        :return: A SimpleNamespace containing all content.
-        :rtype: SimpleNamespace or None
+        :return: A SimpleNamespace containing all content, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
         """
         url = "/rest/api/content"
         return self.get(url)
@@ -60,7 +60,7 @@ class Confluence(AtlassianAPI):
                 "storage": {"value": f"{body_value}", "representation": "storage"}
             },
         }
-        if ancestors_id:
+        if ancestors_id is not None:
             payload["ancestors"] = [{"id": ancestors_id}]
         return self.post(url, json=payload)
 
@@ -114,8 +114,8 @@ class Confluence(AtlassianAPI):
 
         :param page_id: The ID of the content to retrieve.
         :type page_id: int
-        :return: A SimpleNamespace containing the content details.
-        :rtype: SimpleNamespace or None
+        :return: A SimpleNamespace containing the content details, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/content/{page_id}"
         return self.get(url)

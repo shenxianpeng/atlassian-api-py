@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import requests  # type: ignore
 import json
-from types import SimpleNamespace
+from types import SimpleNamespace, TracebackType
 from .error import APIError
 from .logger import get_logger
 
@@ -74,7 +74,7 @@ class AtlassianAPI:
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: object | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         """
         Exit the runtime context and close the session.
@@ -151,7 +151,7 @@ class AtlassianAPI:
         method: str = "GET",
         path: str = "",
         data: dict | None = None,
-        json: dict | None = None,
+        json: object | None = None,
         params: dict | None = None,
     ) -> requests.Response:
         """
@@ -164,7 +164,7 @@ class AtlassianAPI:
         :param data: The data to send in the request body (optional).
         :type data: dict or None
         :param json: The JSON payload to send in the request body (optional).
-        :type json: dict or None
+        :type json: object or None
         :param params: The query parameters for the request (optional).
         :type params: dict or None
         :return: The HTTP response object.
