@@ -13,7 +13,7 @@ authors = [
     {email = "xianpeng.shen@gmail.com"},
 ]
 dependencies = [
-    "requests"
+    "requests>=2.25.0"
 ]
 requires-python = ">=3.9"
 dynamic = ["version"]

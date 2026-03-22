@@ -353,3 +353,130 @@ class TestAtlassianAPI:
 
         assert exc_info.value.code == 403
         assert '{"message": "You do not have permission"}' in exc_info.value.message
+
+    # ------------------------------------------------------------------ #
+    # Network error wrapping                                               #
+    # ------------------------------------------------------------------ #
+
+    def test_request_wraps_connection_error_as_api_error(self):
+        api = AtlassianAPI(url="https://example.com")
+        api._session.request = MagicMock(
+            side_effect=requests.exceptions.ConnectionError("refused")
+        )
+        with pytest.raises(APIError) as exc_info:
+            api.request(method="GET", path="/api/test")
+        assert exc_info.value.code == -1
+        assert "refused" in exc_info.value.message
+
+    def test_request_wraps_timeout_error_as_api_error(self):
+        api = AtlassianAPI(url="https://example.com")
+        api._session.request = MagicMock(
+            side_effect=requests.exceptions.Timeout("timed out")
+        )
+        with pytest.raises(APIError) as exc_info:
+            api.request(method="GET", path="/api/test")
+        assert exc_info.value.code == -1
+
+    def test_request_wraps_ssl_error_as_api_error(self):
+        api = AtlassianAPI(url="https://example.com")
+        api._session.request = MagicMock(
+            side_effect=requests.exceptions.SSLError("cert verify failed")
+        )
+        with pytest.raises(APIError) as exc_info:
+            api.request(method="GET", path="/api/test")
+        assert exc_info.value.code == -1
+
+    # ------------------------------------------------------------------ #
+    # max_retries / HTTPAdapter                                            #
+    # ------------------------------------------------------------------ #
+
+    def test_max_retries_mounts_https_adapter(self):
+        api = AtlassianAPI(url="https://example.com", max_retries=3)
+        from requests.adapters import HTTPAdapter
+
+        adapter = api._session.get_adapter("https://example.com")
+        assert isinstance(adapter, HTTPAdapter)
+        assert adapter.max_retries.total == 3
+
+    def test_max_retries_mounts_http_adapter(self):
+        api = AtlassianAPI(url="http://example.com", max_retries=2)
+        from requests.adapters import HTTPAdapter
+
+        adapter = api._session.get_adapter("http://example.com")
+        assert isinstance(adapter, HTTPAdapter)
+        assert adapter.max_retries.total == 2
+
+    def test_zero_max_retries_uses_default_adapter(self):
+        # When max_retries=0 (default), no custom HTTPAdapter should be mounted.
+        # The default requests HTTPAdapter has max_retries.total == 0.
+        api = AtlassianAPI(url="https://example.com")
+        from requests.adapters import HTTPAdapter
+
+        adapter = api._session.get_adapter("https://example.com")
+        assert isinstance(adapter, HTTPAdapter)
+        assert adapter.max_retries.total == 0
+
+    # ------------------------------------------------------------------ #
+    # files= forwarding in request()                                       #
+    # ------------------------------------------------------------------ #
+
+    def test_request_forwards_files_kwarg(self):
+        api = AtlassianAPI(url="https://example.com")
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.reason = "OK"
+        api._session.request = MagicMock(return_value=mock_response)
+
+        fake_files = {"file": ("name.txt", b"content", "text/plain")}
+        api.request(method="POST", path="/api/upload", files=fake_files)
+
+        call_kwargs = api._session.request.call_args[1]
+        assert call_kwargs["files"] == fake_files
+
+    def test_request_does_not_forward_files_when_none(self):
+        api = AtlassianAPI(url="https://example.com")
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.reason = "OK"
+        api._session.request = MagicMock(return_value=mock_response)
+
+        api.request(method="GET", path="/api/test")
+
+        call_kwargs = api._session.request.call_args[1]
+        assert "files" not in call_kwargs
+
+    # ------------------------------------------------------------------ #
+    # upload()                                                             #
+    # ------------------------------------------------------------------ #
+
+    def test_upload_sends_x_atlassian_token_header(self, tmp_path):
+        api = AtlassianAPI(url="https://example.com")
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.reason = "OK"
+        mock_response.json.return_value = [{"id": "1"}]
+        api._session.request = MagicMock(return_value=mock_response)
+
+        test_file = tmp_path / "attachment.txt"
+        test_file.write_bytes(b"hello")
+
+        api.upload("/rest/api/2/issue/TEST-1/attachments", str(test_file))
+
+        call_kwargs = api._session.request.call_args[1]
+        assert call_kwargs["headers"]["X-Atlassian-Token"] == "nocheck"
+
+    def test_upload_sends_file_content(self, tmp_path):
+        api = AtlassianAPI(url="https://example.com")
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.reason = "OK"
+        mock_response.json.return_value = [{"id": "1"}]
+        api._session.request = MagicMock(return_value=mock_response)
+
+        test_file = tmp_path / "data.txt"
+        test_file.write_bytes(b"test content")
+
+        api.upload("/rest/api/upload", str(test_file))
+
+        call_kwargs = api._session.request.call_args[1]
+        assert "files" in call_kwargs

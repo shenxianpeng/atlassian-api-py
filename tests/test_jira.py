@@ -292,3 +292,210 @@ class TestJira:
         jira.get.assert_called_with(
             "/rest/dev-status/1.0/issue/detail?issueId=12345&applicationType=custom&dataType=branch"
         )
+
+    # ------------------------------------------------------------------ #
+    # DeprecationWarning                                                   #
+    # ------------------------------------------------------------------ #
+
+    def test_create_task_emits_deprecation_warning(self, jira):
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            jira.create_task(project_key="PROJ", summary="s", assignee="a", owner="o")
+        assert any(issubclass(x.category, DeprecationWarning) for x in w)
+
+    def test_create_sub_task_emits_deprecation_warning(self, jira):
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            jira.create_sub_task(
+                project_key="PROJ",
+                parent_issue_key="PROJ-1",
+                summary="s",
+                fix_version="1.0",
+                assignee="a",
+                description="d",
+                labels=[],
+            )
+        assert any(issubclass(x.category, DeprecationWarning) for x in w)
+
+    # ------------------------------------------------------------------ #
+    # _paged_post                                                          #
+    # ------------------------------------------------------------------ #
+
+    def test_paged_post_single_page(self, jira):
+        jira.post = MagicMock(
+            return_value={"values": [1, 2, 3], "total": 3, "maxResults": 50}
+        )
+        result = jira._paged_post(
+            "/rest/agile/1.0/board/1/sprint", {}, result_key="values"
+        )
+        assert result == [1, 2, 3]
+
+    def test_paged_post_multiple_pages(self, jira):
+        jira.post = MagicMock(
+            side_effect=[
+                {"values": list(range(50)), "total": 75, "maxResults": 50},
+                {"values": list(range(25)), "total": 75, "maxResults": 50},
+            ]
+        )
+        result = jira._paged_post(
+            "/rest/agile/1.0/board/1/sprint", {}, result_key="values"
+        )
+        assert len(result) == 75
+
+    def test_paged_post_empty_response(self, jira):
+        jira.post = MagicMock(return_value={"values": [], "total": 0, "maxResults": 50})
+        result = jira._paged_post(
+            "/rest/agile/1.0/board/1/sprint", {}, result_key="values"
+        )
+        assert result == []
+
+    # ------------------------------------------------------------------ #
+    # Agile                                                                #
+    # ------------------------------------------------------------------ #
+
+    def test_get_boards(self, jira):
+        jira.get_boards()
+        jira.get.assert_called_with(
+            "https://fake_url/rest/agile/1.0/board", params=None
+        )
+
+    def test_get_boards_with_project(self, jira):
+        jira.get_boards(project_key="PROJ")
+        args, kwargs = jira.get.call_args
+        assert kwargs["params"]["projectKeyOrId"] == "PROJ"
+
+    def test_get_board(self, jira):
+        jira.get_board(42)
+        jira.get.assert_called_with("https://fake_url/rest/agile/1.0/board/42")
+
+    def test_get_sprints(self, jira):
+        jira.get_sprints(1)
+        jira.get.assert_called_with(
+            "https://fake_url/rest/agile/1.0/board/1/sprint", params=None
+        )
+
+    def test_get_sprints_with_state(self, jira):
+        jira.get_sprints(1, state="active")
+        args, kwargs = jira.get.call_args
+        assert kwargs["params"]["state"] == "active"
+
+    def test_get_active_sprint(self, jira):
+        jira.get_active_sprint(1)
+        args, kwargs = jira.get.call_args
+        assert kwargs["params"]["state"] == "active"
+
+    def test_get_sprint_issues(self, jira):
+        jira.get_sprint_issues(10)
+        jira.get.assert_called_with(
+            "https://fake_url/rest/agile/1.0/sprint/10/issue",
+            params={"maxResults": 50},
+        )
+
+    def test_create_sprint(self, jira):
+        jira.create_sprint(1, "Sprint 1")
+        args, kwargs = jira.post.call_args
+        assert args[0] == "https://fake_url/rest/agile/1.0/sprint"
+        assert kwargs["json"]["name"] == "Sprint 1"
+        assert kwargs["json"]["originBoardId"] == 1
+
+    def test_update_sprint_valid_state(self, jira):
+        jira.update_sprint(5, "active")
+        args, kwargs = jira.put.call_args
+        assert args[0] == "https://fake_url/rest/agile/1.0/sprint/5"
+        assert kwargs["json"]["state"] == "active"
+
+    def test_update_sprint_invalid_state_raises(self, jira):
+        with pytest.raises(ValueError):
+            jira.update_sprint(5, "invalid")
+
+    # ------------------------------------------------------------------ #
+    # Projects                                                             #
+    # ------------------------------------------------------------------ #
+
+    def test_get_project(self, jira):
+        jira.get_project("PROJ")
+        jira.get.assert_called_with("/rest/api/2/project/PROJ")
+
+    def test_list_projects(self, jira):
+        jira.list_projects()
+        jira.get.assert_called_with("/rest/api/2/project")
+
+    def test_create_project(self, jira):
+        jira.create_project("NEWP", "New Project", "software")
+        args, kwargs = jira.post.call_args
+        assert args[0] == "/rest/api/2/project"
+        assert kwargs["json"]["key"] == "NEWP"
+        assert kwargs["json"]["projectTypeKey"] == "software"
+
+    def test_delete_project(self, jira):
+        jira.delete_project("OLDP")
+        jira.delete.assert_called_with("/rest/api/2/project/OLDP")
+
+    # ------------------------------------------------------------------ #
+    # Attachments                                                          #
+    # ------------------------------------------------------------------ #
+
+    def test_add_attachment(self, jira):
+        jira.upload = MagicMock(return_value=[{"id": "1"}])
+        jira.add_attachment("TEST-1", "/tmp/file.txt")
+        jira.upload.assert_called_with(
+            "/rest/api/2/issue/TEST-1/attachments",
+            "/tmp/file.txt",
+            "application/octet-stream",
+        )
+
+    def test_get_attachments(self, jira):
+        jira.get_attachments("TEST-1")
+        jira.get.assert_called_with("/rest/api/2/issue/TEST-1?fields=attachment")
+
+    def test_delete_attachment(self, jira):
+        jira.delete_attachment("att-123")
+        jira.delete.assert_called_with("/rest/api/2/attachment/att-123")
+
+    # ------------------------------------------------------------------ #
+    # Worklogs                                                             #
+    # ------------------------------------------------------------------ #
+
+    def test_add_worklog(self, jira):
+        jira.add_worklog("TEST-1", "2h")
+        args, kwargs = jira.post.call_args
+        assert args[0] == "/rest/api/2/issue/TEST-1/worklog"
+        assert kwargs["json"]["timeSpent"] == "2h"
+
+    def test_get_worklogs(self, jira):
+        jira.get_worklogs("TEST-1")
+        jira.get.assert_called_with("/rest/api/2/issue/TEST-1/worklog")
+
+    def test_delete_worklog(self, jira):
+        jira.delete_worklog("TEST-1", "wl-99")
+        jira.delete.assert_called_with("/rest/api/2/issue/TEST-1/worklog/wl-99")
+
+    # ------------------------------------------------------------------ #
+    # Versions                                                             #
+    # ------------------------------------------------------------------ #
+
+    def test_get_versions(self, jira):
+        jira.get_versions("PROJ")
+        jira.get.assert_called_with("/rest/api/2/project/PROJ/versions")
+
+    def test_create_version(self, jira):
+        jira.create_version("PROJ", "1.0.0")
+        args, kwargs = jira.post.call_args
+        assert args[0] == "/rest/api/2/version"
+        assert kwargs["json"]["name"] == "1.0.0"
+        assert kwargs["json"]["project"] == "PROJ"
+
+    def test_update_version(self, jira):
+        jira.update_version("v-1", name="1.0.1", released=True)
+        args, kwargs = jira.put.call_args
+        assert args[0] == "/rest/api/2/version/v-1"
+        assert kwargs["json"]["name"] == "1.0.1"
+        assert kwargs["json"]["released"] is True
+
+    def test_delete_version(self, jira):
+        jira.delete_version("v-1")
+        jira.delete.assert_called_with("/rest/api/2/version/v-1")

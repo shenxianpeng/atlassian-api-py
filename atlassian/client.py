@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import os
 import requests  # type: ignore
 import json
+from typing import Any
 from types import SimpleNamespace, TracebackType
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from .error import APIError
 from .logger import get_logger
 
@@ -28,6 +32,7 @@ class AtlassianAPI:
         timeout: int = 60,
         session: requests.Session | None = None,
         token: str | None = None,
+        max_retries: int = 0,
     ) -> None:
         """
         Initialize the AtlassianAPI instance.
@@ -44,6 +49,10 @@ class AtlassianAPI:
         :type session: requests.Session, optional
         :param token: The token for bearer authentication (optional).
         :type token: str, optional
+        :param max_retries: Number of retries for 429/503 responses (default 0, disabled).
+            Requires requests>=2.25.0. Uses exponential backoff with backoff_factor=0.5
+            and honours Retry-After headers.
+        :type max_retries: int, optional
         """
         self.url = url.strip("/")
         self.username = username
@@ -53,6 +62,16 @@ class AtlassianAPI:
             self._session = requests.Session()
         else:
             self._session = session
+        if max_retries > 0:
+            retry = Retry(
+                total=max_retries,
+                status_forcelist=[429, 503],
+                backoff_factor=0.5,
+                respect_retry_after_header=True,
+            )
+            adapter = HTTPAdapter(max_retries=retry)
+            self._session.mount("https://", adapter)
+            self._session.mount("http://", adapter)
         if username and password:
             try:
                 self._create_basic_session(username, password)
@@ -153,6 +172,8 @@ class AtlassianAPI:
         data: dict | None = None,
         json: object | None = None,
         params: dict | None = None,
+        files: dict | None = None,
+        headers: dict | None = None,
     ) -> requests.Response:
         """
         Make an HTTP request.
@@ -167,22 +188,33 @@ class AtlassianAPI:
         :type json: object or None
         :param params: The query parameters for the request (optional).
         :type params: dict or None
+        :param files: Multipart file payload for upload requests (optional).
+            When provided, Content-Type is set automatically by requests.
+        :type files: dict or None
+        :param headers: Per-request headers to merge with session headers (optional).
+        :type headers: dict or None
         :return: The HTTP response object.
         :rtype: requests.Response
-        :raises APIError: If the response status code is 4xx or 5xx.
+        :raises APIError: If the response status code is 4xx/5xx or a network
+            error occurs (code -1).
         """
-        if path:
-            url = self.url + path
-        else:
-            url = self.url
-        response = self._session.request(
-            method=method,
-            url=url,
-            data=data,
-            json=json,
-            params=params,
-            timeout=self.timeout,
-        )
+        url = self.url + path if path else self.url
+        kwargs: dict = {
+            "method": method,
+            "url": url,
+            "data": data,
+            "json": json,
+            "params": params,
+            "timeout": self.timeout,
+        }
+        if files is not None:
+            kwargs["files"] = files
+        if headers is not None:
+            kwargs["headers"] = headers
+        try:
+            response = self._session.request(**kwargs)
+        except requests.exceptions.RequestException as e:
+            raise APIError(-1, str(e)) from e
         response.encoding = "utf-8"
         logger.debug(f"HTTP: {method} -> {response.status_code} {response.reason}")
         if response.status_code >= 400:
@@ -223,7 +255,7 @@ class AtlassianAPI:
         self,
         path: str,
         data: dict | None = None,
-        json: dict | None = None,
+        json: Any = None,
         params: dict | None = None,
     ) -> dict | None:
         """
@@ -293,3 +325,35 @@ class AtlassianAPI:
         """
         response = self.request("DELETE", path, data=data, json=json, params=params)
         return self._response_handler(response)
+
+    def upload(
+        self,
+        path: str,
+        file_path: str,
+        mime_type: str = "application/octet-stream",
+    ) -> dict | None:
+        """
+        Upload a file via multipart POST.
+
+        Sends the file through the shared ``request()`` path so retry, timeout,
+        and error-wrapping behaviour is consistent with all other calls.
+        The ``X-Atlassian-Token: nocheck`` header is injected automatically to
+        satisfy Atlassian's XSRF protection on attachment endpoints.
+
+        :param path: The API endpoint path (e.g. ``/rest/api/2/issue/{key}/attachments``).
+        :type path: str
+        :param file_path: Absolute or relative path to the local file to upload.
+        :type file_path: str
+        :param mime_type: MIME type for the file (default ``application/octet-stream``).
+        :type mime_type: str, optional
+        :return: The parsed JSON response or None.
+        :rtype: dict or None
+        :raises APIError: If the response status code is 4xx/5xx or a network error occurs.
+        """
+        file_name = os.path.basename(file_path)
+        with open(file_path, "rb") as fh:
+            files = {"file": (file_name, fh, mime_type)}
+            response = self.request(
+                "POST", path, files=files, headers={"X-Atlassian-Token": "nocheck"}
+            )
+            return self._response_handler(response)
