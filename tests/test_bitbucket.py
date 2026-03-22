@@ -363,8 +363,14 @@ class TestBitbucket:
 
     def test_add_pull_request_inline_comment_custom_types(self, bitbucket):
         bitbucket.add_pull_request_inline_comment(
-            "PROJ", "repo", 123, "Old line issue", "src/utils.py", 10,
-            line_type="REMOVED", file_type="FROM"
+            "PROJ",
+            "repo",
+            123,
+            "Old line issue",
+            "src/utils.py",
+            10,
+            line_type="REMOVED",
+            file_type="FROM",
         )
         args, kwargs = bitbucket.post.call_args
         assert kwargs["json"]["anchor"]["lineType"] == "REMOVED"
