@@ -71,3 +71,90 @@ class TestConfluence:
     def test_get_content_history(self, confluence):
         confluence.get_content_history(123)
         confluence.get.assert_called_with("/rest/api/content/123/history")
+
+    def test_get_spaces(self, confluence):
+        confluence.get_spaces()
+        confluence.get.assert_called_with(
+            "/rest/api/space", params={"start": 0, "limit": 25}
+        )
+
+    def test_get_spaces_custom_params(self, confluence):
+        confluence.get_spaces(start=25, limit=50)
+        confluence.get.assert_called_with(
+            "/rest/api/space", params={"start": 25, "limit": 50}
+        )
+
+    def test_get_space(self, confluence):
+        confluence.get_space("TEST_SPACE")
+        confluence.get.assert_called_with("/rest/api/space/TEST_SPACE")
+
+    def test_get_content_by_space(self, confluence):
+        confluence.get_content_by_space("TEST_SPACE")
+        confluence.get.assert_called_with(
+            "/rest/api/content",
+            params={"spaceKey": "TEST_SPACE", "type": "page", "start": 0, "limit": 25},
+        )
+
+    def test_get_content_by_space_blogpost(self, confluence):
+        confluence.get_content_by_space(
+            "TEST_SPACE", content_type="blogpost", start=10, limit=5
+        )
+        confluence.get.assert_called_with(
+            "/rest/api/content",
+            params={
+                "spaceKey": "TEST_SPACE",
+                "type": "blogpost",
+                "start": 10,
+                "limit": 5,
+            },
+        )
+
+    def test_search_content(self, confluence):
+        confluence.search_content("space=TEST AND type=page")
+        confluence.get.assert_called_with(
+            "/rest/api/content/search",
+            params={"cql": "space=TEST AND type=page", "start": 0, "limit": 25},
+        )
+
+    def test_search_content_custom_params(self, confluence):
+        confluence.search_content("title=Hello", start=5, limit=10)
+        confluence.get.assert_called_with(
+            "/rest/api/content/search",
+            params={"cql": "title=Hello", "start": 5, "limit": 10},
+        )
+
+    def test_get_child_pages(self, confluence):
+        confluence.get_child_pages(123)
+        confluence.get.assert_called_with(
+            "/rest/api/content/123/child/page",
+            params={"start": 0, "limit": 25},
+        )
+
+    def test_get_child_pages_custom_params(self, confluence):
+        confluence.get_child_pages(456, start=10, limit=5)
+        confluence.get.assert_called_with(
+            "/rest/api/content/456/child/page",
+            params={"start": 10, "limit": 5},
+        )
+
+    def test_get_attachments(self, confluence):
+        confluence.get_attachments(123)
+        confluence.get.assert_called_with("/rest/api/content/123/child/attachment")
+
+    def test_get_labels(self, confluence):
+        confluence.get_labels(123)
+        confluence.get.assert_called_with("/rest/api/content/123/label")
+
+    def test_add_label(self, confluence):
+        confluence.add_label(123, "my-label")
+        confluence.post.assert_called_with(
+            "/rest/api/content/123/label",
+            json=[{"prefix": "global", "name": "my-label"}],
+        )
+
+    def test_remove_label(self, confluence):
+        confluence.remove_label(123, "my-label")
+        confluence.delete.assert_called_with(
+            "/rest/api/content/123/label",
+            params={"name": "my-label"},
+        )
