@@ -223,7 +223,7 @@ class AtlassianAPI:
         self,
         path: str,
         data: dict | None = None,
-        json: dict | None = None,
+        json: object | None = None,
         params: dict | None = None,
     ) -> dict | None:
         """
@@ -234,7 +234,7 @@ class AtlassianAPI:
         :param data: The data to send in the request body (optional).
         :type data: dict or None
         :param json: The JSON payload to send in the request body (optional).
-        :type json: dict or None
+        :type json: object or None
         :param params: The query parameters for the request (optional).
         :type params: dict or None
         :return: The parsed JSON response or None if parsing fails.
@@ -248,7 +248,7 @@ class AtlassianAPI:
         self,
         path: str,
         data: dict | None = None,
-        json: dict | None = None,
+        json: object | None = None,
         params: dict | None = None,
     ) -> dict | None:
         """
@@ -259,7 +259,7 @@ class AtlassianAPI:
         :param data: The data to send in the request body (optional).
         :type data: dict or None
         :param json: The JSON payload to send in the request body (optional).
-        :type json: dict or None
+        :type json: object or None
         :param params: The query parameters for the request (optional).
         :type params: dict or None
         :return: The parsed JSON response or None if parsing fails.
@@ -273,7 +273,7 @@ class AtlassianAPI:
         self,
         path: str,
         data: dict | None = None,
-        json: dict | None = None,
+        json: object | None = None,
         params: dict | None = None,
     ) -> dict | None:
         """
@@ -284,7 +284,7 @@ class AtlassianAPI:
         :param data: The data to send in the request body (optional).
         :type data: dict or None
         :param json: The JSON payload to send in the request body (optional).
-        :type json: dict or None
+        :type json: object or None
         :param params: The query parameters for the request (optional).
         :type params: dict or None
         :return: The parsed JSON response or None if parsing fails.

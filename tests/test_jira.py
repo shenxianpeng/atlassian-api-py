@@ -292,3 +292,58 @@ class TestJira:
         jira.get.assert_called_with(
             "/rest/dev-status/1.0/issue/detail?issueId=12345&applicationType=custom&dataType=branch"
         )
+
+    def test_delete_issue(self, jira):
+        jira.delete_issue("TEST-1")
+        jira.delete.assert_called_with("/rest/api/2/issue/TEST-1")
+
+    def test_get_project(self, jira):
+        jira.get_project("PROJ")
+        jira.get.assert_called_with("/rest/api/2/project/PROJ")
+
+    def test_get_projects(self, jira):
+        jira.get_projects()
+        jira.get.assert_called_with("/rest/api/2/project")
+
+    def test_get_issue_comments(self, jira):
+        jira.get_issue_comments("TEST-1")
+        jira.get.assert_called_with("/rest/api/2/issue/TEST-1/comment")
+
+    def test_update_issue_comment(self, jira):
+        jira.update_issue_comment("TEST-1", "10001", "Updated comment body")
+        args, kwargs = jira.put.call_args
+        assert args[0] == "/rest/api/2/issue/TEST-1/comment/10001"
+        assert kwargs["json"]["body"] == "Updated comment body"
+
+    def test_get_issue_watchers(self, jira):
+        jira.get_issue_watchers("TEST-1")
+        jira.get.assert_called_with("/rest/api/2/issue/TEST-1/watchers")
+
+    def test_get_versions(self, jira):
+        jira.get_versions("PROJ")
+        jira.get.assert_called_with("/rest/api/2/project/PROJ/versions")
+
+    def test_create_version(self, jira):
+        jira.create_version("PROJ", "1.0.0")
+        args, kwargs = jira.post.call_args
+        assert args[0] == "/rest/api/2/version"
+        assert kwargs["json"]["project"] == "PROJ"
+        assert kwargs["json"]["name"] == "1.0.0"
+        assert kwargs["json"]["released"] is False
+
+    def test_create_version_with_all_fields(self, jira):
+        jira.create_version(
+            "PROJ",
+            "2.0.0",
+            description="Major release",
+            released=True,
+            start_date="2024-01-01",
+            release_date="2024-06-01",
+        )
+        args, kwargs = jira.post.call_args
+        assert args[0] == "/rest/api/2/version"
+        assert kwargs["json"]["name"] == "2.0.0"
+        assert kwargs["json"]["description"] == "Major release"
+        assert kwargs["json"]["released"] is True
+        assert kwargs["json"]["startDate"] == "2024-01-01"
+        assert kwargs["json"]["releaseDate"] == "2024-06-01"

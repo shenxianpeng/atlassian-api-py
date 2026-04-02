@@ -527,3 +527,129 @@ class Jira(AtlassianAPI):
         """
         url = f"/rest/dev-status/1.0/issue/detail?issueId={issue_id}&applicationType={app_type}&dataType={data_type}"
         return self.get(url)
+
+    def delete_issue(self, issue_key: str) -> dict | None:
+        """
+        Delete an issue.
+
+        :param issue_key: The key of the issue to delete.
+        :type issue_key: str
+        :return: The response from the API.
+        :rtype: dict or None
+        """
+        url = f"/rest/api/2/issue/{issue_key}"
+        return self.delete(url)
+
+    def get_project(self, project_key: str) -> SimpleNamespace | str | None:
+        """
+        Get project information.
+
+        :param project_key: The key of the project to retrieve.
+        :type project_key: str
+        :return: A SimpleNamespace containing project information.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = f"/rest/api/2/project/{project_key}"
+        return self.get(url)
+
+    def get_projects(self) -> SimpleNamespace | str | None:
+        """
+        Get all projects visible to the current user.
+
+        :return: A SimpleNamespace containing all projects.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = "/rest/api/2/project"
+        return self.get(url)
+
+    def get_issue_comments(self, issue_key: str) -> SimpleNamespace | str | None:
+        """
+        Get all comments for an issue.
+
+        :param issue_key: The key of the issue.
+        :type issue_key: str
+        :return: A SimpleNamespace containing the comments.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = f"/rest/api/2/issue/{issue_key}/comment"
+        return self.get(url)
+
+    def update_issue_comment(
+        self, issue_key: str, comment_id: str, content: str
+    ) -> dict | None:
+        """
+        Update an existing comment on an issue.
+
+        :param issue_key: The key of the issue.
+        :type issue_key: str
+        :param comment_id: The ID of the comment to update.
+        :type comment_id: str
+        :param content: The new content of the comment.
+        :type content: str
+        :return: The response from the API.
+        :rtype: dict or None
+        """
+        url = f"/rest/api/2/issue/{issue_key}/comment/{comment_id}"
+        json = {"body": content}
+        return self.put(url, json=json)
+
+    def get_issue_watchers(self, issue_key: str) -> SimpleNamespace | str | None:
+        """
+        Get all watchers for an issue.
+
+        :param issue_key: The key of the issue.
+        :type issue_key: str
+        :return: A SimpleNamespace containing the watchers.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = f"/rest/api/2/issue/{issue_key}/watchers"
+        return self.get(url)
+
+    def get_versions(self, project_key: str) -> SimpleNamespace | str | None:
+        """
+        Get all versions for a project.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :return: A SimpleNamespace containing the project versions.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = f"/rest/api/2/project/{project_key}/versions"
+        return self.get(url)
+
+    def create_version(
+        self,
+        project_key: str,
+        name: str,
+        description: str | None = None,
+        released: bool = False,
+        start_date: str | None = None,
+        release_date: str | None = None,
+    ) -> dict | None:
+        """
+        Create a new version for a project.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param name: The name of the version.
+        :type name: str
+        :param description: An optional description for the version.
+        :type description: str, optional
+        :param released: Whether the version has been released (default False).
+        :type released: bool, optional
+        :param start_date: The start date in YYYY-MM-DD format (optional).
+        :type start_date: str, optional
+        :param release_date: The release date in YYYY-MM-DD format (optional).
+        :type release_date: str, optional
+        :return: The response from the API.
+        :rtype: dict or None
+        """
+        url = "/rest/api/2/version"
+        payload: dict = {"project": project_key, "name": name, "released": released}
+        if description is not None:
+            payload["description"] = description
+        if start_date is not None:
+            payload["startDate"] = start_date
+        if release_date is not None:
+            payload["releaseDate"] = release_date
+        return self.post(url, json=payload)

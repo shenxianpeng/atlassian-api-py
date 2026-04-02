@@ -131,3 +131,154 @@ class Confluence(AtlassianAPI):
         """
         url = f"/rest/api/content/{page_id}/history"
         return self.get(url)
+
+    def get_spaces(
+        self, start: int = 0, limit: int = 25
+    ) -> SimpleNamespace | str | None:
+        """
+        Retrieve all spaces.
+
+        :param start: The starting index for pagination (default 0).
+        :type start: int, optional
+        :param limit: The maximum number of spaces to return (default 25).
+        :type limit: int, optional
+        :return: A SimpleNamespace containing spaces, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = "/rest/api/space"
+        params: dict[str, Any] = {"start": start, "limit": limit}
+        return self.get(url, params=params)
+
+    def get_space(self, space_key: str) -> SimpleNamespace | str | None:
+        """
+        Retrieve a specific space by its key.
+
+        :param space_key: The key of the space to retrieve.
+        :type space_key: str
+        :return: A SimpleNamespace containing the space details, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = f"/rest/api/space/{space_key}"
+        return self.get(url)
+
+    def get_content_by_space(
+        self,
+        space_key: str,
+        content_type: str = "page",
+        start: int = 0,
+        limit: int = 25,
+    ) -> SimpleNamespace | str | None:
+        """
+        Retrieve content (pages or blog posts) within a specific space.
+
+        :param space_key: The key of the space.
+        :type space_key: str
+        :param content_type: The type of content to retrieve ("page" or "blogpost"). Defaults to "page".
+        :type content_type: str, optional
+        :param start: The starting index for pagination (default 0).
+        :type start: int, optional
+        :param limit: The maximum number of results to return (default 25).
+        :type limit: int, optional
+        :return: A SimpleNamespace containing the content list, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = "/rest/api/content"
+        params: dict[str, Any] = {
+            "spaceKey": space_key,
+            "type": content_type,
+            "start": start,
+            "limit": limit,
+        }
+        return self.get(url, params=params)
+
+    def search_content(
+        self, cql: str, start: int = 0, limit: int = 25
+    ) -> SimpleNamespace | str | None:
+        """
+        Search for content using Confluence Query Language (CQL).
+
+        :param cql: The CQL query string.
+        :type cql: str
+        :param start: The starting index for pagination (default 0).
+        :type start: int, optional
+        :param limit: The maximum number of results to return (default 25).
+        :type limit: int, optional
+        :return: A SimpleNamespace containing the search results, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = "/rest/api/content/search"
+        params: dict[str, Any] = {"cql": cql, "start": start, "limit": limit}
+        return self.get(url, params=params)
+
+    def get_child_pages(
+        self, page_id: int, start: int = 0, limit: int = 25
+    ) -> SimpleNamespace | str | None:
+        """
+        Retrieve the child pages of a specific page.
+
+        :param page_id: The ID of the parent page.
+        :type page_id: int
+        :param start: The starting index for pagination (default 0).
+        :type start: int, optional
+        :param limit: The maximum number of results to return (default 25).
+        :type limit: int, optional
+        :return: A SimpleNamespace containing the child pages, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = f"/rest/api/content/{page_id}/child/page"
+        params: dict[str, Any] = {"start": start, "limit": limit}
+        return self.get(url, params=params)
+
+    def get_attachments(self, page_id: int) -> SimpleNamespace | str | None:
+        """
+        Retrieve all attachments for a specific page.
+
+        :param page_id: The ID of the page.
+        :type page_id: int
+        :return: A SimpleNamespace containing the attachments, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = f"/rest/api/content/{page_id}/child/attachment"
+        return self.get(url)
+
+    def get_labels(self, page_id: int) -> SimpleNamespace | str | None:
+        """
+        Retrieve all labels for a specific piece of content.
+
+        :param page_id: The ID of the content.
+        :type page_id: int
+        :return: A SimpleNamespace containing the labels, the raw text response, or None.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = f"/rest/api/content/{page_id}/label"
+        return self.get(url)
+
+    def add_label(self, page_id: int, label: str) -> dict | None:
+        """
+        Add a label to a specific piece of content.
+
+        :param page_id: The ID of the content.
+        :type page_id: int
+        :param label: The label name to add.
+        :type label: str
+        :return: The response from the API.
+        :rtype: dict or None
+        """
+        url = f"/rest/api/content/{page_id}/label"
+        payload = [{"prefix": "global", "name": label}]
+        return self.post(url, json=payload)
+
+    def remove_label(self, page_id: int, label: str) -> dict | None:
+        """
+        Remove a label from a specific piece of content.
+
+        :param page_id: The ID of the content.
+        :type page_id: int
+        :param label: The label name to remove.
+        :type label: str
+        :return: The response from the API.
+        :rtype: dict or None
+        """
+        url = f"/rest/api/content/{page_id}/label"
+        params: dict[str, Any] = {"name": label}
+        return self.delete(url, params=params)

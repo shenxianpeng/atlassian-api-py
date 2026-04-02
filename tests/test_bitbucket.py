@@ -541,3 +541,75 @@ class TestBitbucket:
         assert "destination" in kwargs["json"]
         assert kwargs["json"]["destination"]["branch"]["name"] == "release/1.2.3"
         assert kwargs["json"]["version"] == 1
+
+    def test_create_pull_request(self, bitbucket):
+        bitbucket.create_pull_request("PROJ", "repo", "My PR", "feature/branch", "main")
+        args, kwargs = bitbucket.post.call_args
+        assert args[0] == "/rest/api/latest/projects/PROJ/repos/repo/pull-requests"
+        assert kwargs["json"]["title"] == "My PR"
+        assert kwargs["json"]["fromRef"]["id"] == "refs/heads/feature/branch"
+        assert kwargs["json"]["toRef"]["id"] == "refs/heads/main"
+        assert "description" not in kwargs["json"]
+        assert "reviewers" not in kwargs["json"]
+
+    def test_create_pull_request_with_optional_fields(self, bitbucket):
+        bitbucket.create_pull_request(
+            "PROJ",
+            "repo",
+            "My PR",
+            "feature/branch",
+            "main",
+            description="PR description",
+            reviewers=["alice", "bob"],
+        )
+        args, kwargs = bitbucket.post.call_args
+        assert kwargs["json"]["description"] == "PR description"
+        assert kwargs["json"]["reviewers"] == [
+            {"user": {"slug": "alice"}},
+            {"user": {"slug": "bob"}},
+        ]
+
+    def test_merge_pull_request(self, bitbucket):
+        bitbucket.merge_pull_request("PROJ", "repo", 123, 3)
+        args, kwargs = bitbucket.post.call_args
+        assert (
+            args[0]
+            == "/rest/api/latest/projects/PROJ/repos/repo/pull-requests/123/merge"
+        )
+        assert kwargs["params"]["version"] == 3
+
+    def test_decline_pull_request(self, bitbucket):
+        bitbucket.decline_pull_request("PROJ", "repo", 456, 1)
+        args, kwargs = bitbucket.post.call_args
+        assert (
+            args[0]
+            == "/rest/api/latest/projects/PROJ/repos/repo/pull-requests/456/decline"
+        )
+        assert kwargs["params"]["version"] == 1
+
+    def test_get_tags(self, bitbucket):
+        bitbucket._get_paged = MagicMock(return_value=[])
+        bitbucket.get_tags("PROJ", "repo")
+        bitbucket._get_paged.assert_called_once()
+        args, kwargs = bitbucket._get_paged.call_args
+        assert args[0] == "/rest/api/latest/projects/PROJ/repos/repo/tags"
+
+    def test_get_tags_with_params(self, bitbucket):
+        bitbucket._get_paged = MagicMock(return_value=[])
+        bitbucket.get_tags("PROJ", "repo", start=5, limit=10)
+        args, kwargs = bitbucket._get_paged.call_args
+        assert kwargs["params"]["start"] == 5
+        assert kwargs["params"]["limit"] == 10
+
+    def test_create_tag(self, bitbucket):
+        bitbucket.create_tag("PROJ", "repo", "v1.0.0", "abc123")
+        args, kwargs = bitbucket.post.call_args
+        assert args[0] == "/rest/api/latest/projects/PROJ/repos/repo/tags"
+        assert kwargs["json"]["name"] == "v1.0.0"
+        assert kwargs["json"]["startPoint"] == "abc123"
+        assert "message" not in kwargs["json"]
+
+    def test_create_tag_with_message(self, bitbucket):
+        bitbucket.create_tag("PROJ", "repo", "v2.0.0", "def456", message="Release 2.0")
+        args, kwargs = bitbucket.post.call_args
+        assert kwargs["json"]["message"] == "Release 2.0"

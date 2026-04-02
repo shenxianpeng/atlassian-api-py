@@ -946,3 +946,146 @@ class Bitbucket(AtlassianAPI):
             "destination": {"branch": {"name": new_destination}},
         }
         return self.put(url, json=payload)
+
+    def create_pull_request(
+        self,
+        project_key: str,
+        repo_slug: str,
+        title: str,
+        from_branch: str,
+        to_branch: str,
+        description: str | None = None,
+        reviewers: list[str] | None = None,
+    ) -> dict | None:
+        """
+        Create a new pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param title: The title of the pull request.
+        :type title: str
+        :param from_branch: The source branch name.
+        :type from_branch: str
+        :param to_branch: The destination branch name.
+        :type to_branch: str
+        :param description: An optional description for the pull request.
+        :type description: str, optional
+        :param reviewers: An optional list of reviewer user slugs.
+        :type reviewers: list[str], optional
+        :return: The response from the API.
+        :rtype: dict or None
+        """
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests"
+        payload: dict = {
+            "title": title,
+            "fromRef": {"id": f"refs/heads/{from_branch}"},
+            "toRef": {"id": f"refs/heads/{to_branch}"},
+        }
+        if description is not None:
+            payload["description"] = description
+        if reviewers:
+            payload["reviewers"] = [{"user": {"slug": slug}} for slug in reviewers]
+        return self.post(url, json=payload)
+
+    def merge_pull_request(
+        self, project_key: str, repo_slug: str, pr_id: int, pr_version: int
+    ) -> dict | None:
+        """
+        Merge a pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param pr_version: The current version of the pull request (required for optimistic locking).
+        :type pr_version: int
+        :return: The response from the API.
+        :rtype: dict or None
+        """
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/merge"
+        params = {"version": pr_version}
+        return self.post(url, params=params)
+
+    def decline_pull_request(
+        self, project_key: str, repo_slug: str, pr_id: int, pr_version: int
+    ) -> dict | None:
+        """
+        Decline a pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param pr_version: The current version of the pull request (required for optimistic locking).
+        :type pr_version: int
+        :return: The response from the API.
+        :rtype: dict or None
+        """
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/decline"
+        params = {"version": pr_version}
+        return self.post(url, params=params)
+
+    def get_tags(
+        self,
+        project_key: str,
+        repo_slug: str,
+        start: int = 0,
+        limit: int | None = None,
+    ) -> list:
+        """
+        Retrieve all tags for a repository.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param start: The starting index for pagination (optional).
+        :type start: int, optional
+        :param limit: The maximum number of results to return (optional).
+        :type limit: int, optional
+        :return: A list of tags in the repository.
+        :rtype: list
+        """
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/tags"
+        params: dict = {}
+        if start is not None and start > 0:
+            params["start"] = start
+        if limit is not None:
+            params["limit"] = limit
+        return self._get_paged(url, params=params)
+
+    def create_tag(
+        self,
+        project_key: str,
+        repo_slug: str,
+        tag_name: str,
+        start_point: str,
+        message: str | None = None,
+    ) -> dict | None:
+        """
+        Create a new tag in a repository.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param tag_name: The name of the tag to create.
+        :type tag_name: str
+        :param start_point: The commit SHA or branch name to tag.
+        :type start_point: str
+        :param message: An optional message for an annotated tag.
+        :type message: str, optional
+        :return: The response from the API.
+        :rtype: dict or None
+        """
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/tags"
+        payload: dict = {"name": tag_name, "startPoint": start_point}
+        if message is not None:
+            payload["message"] = message
+        return self.post(url, json=payload)
