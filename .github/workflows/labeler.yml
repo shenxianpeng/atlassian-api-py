@@ -7,156 +7,49 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  models: read
 
 jobs:
   label:
     runs-on: ubuntu-latest
     steps:
-      - name: Label PR using AI
+      - name: Ensure labels exist
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const MODELS_API_URL = 'https://models.inference.ai.azure.com/chat/completions';
-
-            const prNumber = context.payload.pull_request.number;
-            const prTitle = context.payload.pull_request.title;
-            const prBody = context.payload.pull_request.body || '';
-
-            // Fetch list of changed files
-            const { data: files } = await github.rest.pulls.listFiles({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber,
-            });
-            const changedFiles = files.map(f => f.filename).join(', ');
-
-            const validLabels = [
-              'bug',
-              'enhancement',
-              'documentation',
-              'dependencies',
-              'testing',
-              'chore',
-              'breaking-change',
+            const labels = [
+              { name: 'bug',            color: 'd73a4a' },
+              { name: 'enhancement',    color: 'a2eeef' },
+              { name: 'documentation',  color: '0075ca' },
+              { name: 'dependencies',   color: '0366d6' },
+              { name: 'testing',        color: 'e4e669' },
+              { name: 'chore',          color: 'ededed' },
+              { name: 'breaking-change', color: 'b60205' },
             ];
-
-            // Call GitHub Models API for AI-based label prediction
-            let response;
-            try {
-              response = await fetch(MODELS_API_URL, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${github.token}`,
-                },
-                body: JSON.stringify({
-                  model: 'gpt-4o-mini',
-                  messages: [
-                    {
-                      role: 'system',
-                      content: [
-                        'You are a PR labeler for atlassian-api-py, a Python wrapper for Atlassian REST APIs',
-                        '(JIRA, Confluence, Bitbucket).',
-                        '',
-                        'Available labels and when to use them:',
-                        '- bug: fixes a defect or incorrect behavior',
-                        '- enhancement: adds new features or improves existing functionality',
-                        '- documentation: updates docs, README, or docstrings only',
-                        '- dependencies: updates package dependencies or requirements',
-                        '- testing: adds or improves tests only',
-                        '- chore: maintenance tasks, CI/CD, or configuration changes',
-                        '- breaking-change: changes that break backward compatibility',
-                        '',
-                        'Respond with ONLY the single most appropriate label name from the list above.',
-                        'No explanation, no punctuation — just the label.',
-                      ].join('\n'),
-                    },
-                    {
-                      role: 'user',
-                      content: `PR Title: ${prTitle}\nPR Description: ${prBody}\nChanged files: ${changedFiles}`,
-                    },
-                  ],
-                  max_tokens: 20,
-                  temperature: 0,
-                }),
-              });
-            } catch (e) {
-              core.warning(`Failed to reach GitHub Models API: ${e.message}`);
-              return;
-            }
-
-            if (!response.ok) {
-              core.warning(`GitHub Models API returned ${response.status}: ${await response.text()}`);
-              return;
-            }
-
-            const data = await response.json();
-            if (!data.choices || data.choices.length === 0 || !data.choices[0].message) {
-              core.warning('GitHub Models API returned an empty or malformed choices array. Skipping.');
-              return;
-            }
-            const label = data.choices[0].message.content.trim().toLowerCase();
-
-            if (!validLabels.includes(label)) {
-              core.warning(`AI returned an unrecognized label: "${label}". Skipping.`);
-              return;
-            }
-
-            // Ensure the label exists in the repository; create it if not
-            const labelColors = {
-              'bug': 'd73a4a',
-              'enhancement': 'a2eeef',
-              'documentation': '0075ca',
-              'dependencies': '0366d6',
-              'testing': 'e4e669',
-              'chore': 'ededed',
-              'breaking-change': 'b60205',
-            };
-            try {
-              await github.rest.issues.getLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: label,
-              });
-            } catch (e) {
-              if (e.status === 404) {
-                await github.rest.issues.createLabel({
+            for (const label of labels) {
+              try {
+                await github.rest.issues.getLabel({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  name: label,
-                  color: labelColors[label] || 'ededed',
+                  name: label.name,
                 });
-                core.info(`Created missing label: ${label}`);
-              } else {
-                throw e;
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    color: label.color,
+                  });
+                  core.info(`Created label: ${label.name}`);
+                } else {
+                  throw e;
+                }
               }
             }
 
-            // Remove any existing managed labels before applying the new one
-            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-            });
-            for (const currentLabel of currentLabels) {
-              if (validLabels.includes(currentLabel.name)) {
-                await github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  name: currentLabel.name,
-                });
-                core.info(`Removed existing label: ${currentLabel.name}`);
-              }
-            }
-
-            // Apply the AI-determined label
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              labels: [label],
-            });
-            core.info(`Applied label: ${label}`);
+      - name: Label PR
+        uses: actions/labeler@634933edcd8ababfe52f92936142cc22ac488b1b # v6.0.1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          sync-labels: true
