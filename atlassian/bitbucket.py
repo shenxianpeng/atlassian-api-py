@@ -747,6 +747,166 @@ class Bitbucket(AtlassianAPI):
         )
         return self.delete(url)
 
+    def resolve_pull_request_comment(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
+        """
+        Resolve a blocker comment on a specific pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment: The comment text to be resolved.
+        :type comment: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        activities = self.get_pull_request_activities(project_key, repo_slug, pr_id)
+        comment_id = version = text = severity = None
+        for activity in activities:
+            try:
+                if comment in activity.comment.text:
+                    comment_id = activity.comment.id
+                    version = activity.comment.version
+                    text = activity.comment.text
+                    severity = activity.comment.severity
+                    break
+            except AttributeError as e:
+                logger.error(e)
+        if not comment_id:
+            return None
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{comment_id}"
+        payload = {
+            "version": version,
+            "text": text,
+            "severity": severity,
+            "state": "RESOLVED",
+        }
+        return self.put(url, json=payload)
+
+    def reopen_pull_request_comment(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
+        """
+        Reopen a resolved comment on a specific pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment: The comment text to be reopened.
+        :type comment: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        activities = self.get_pull_request_activities(project_key, repo_slug, pr_id)
+        comment_id = version = text = severity = None
+        for activity in activities:
+            try:
+                if comment in activity.comment.text:
+                    comment_id = activity.comment.id
+                    version = activity.comment.version
+                    text = activity.comment.text
+                    severity = activity.comment.severity
+                    break
+            except AttributeError as e:
+                logger.error(e)
+        if not comment_id:
+            return None
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{comment_id}"
+        payload = {
+            "version": version,
+            "text": text,
+            "severity": severity,
+            "state": "OPEN",
+        }
+        return self.put(url, json=payload)
+
+    def convert_comment_to_task(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
+        """
+        Convert a comment to a task (blocker) on a specific pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment: The comment text to be converted to a task.
+        :type comment: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        activities = self.get_pull_request_activities(project_key, repo_slug, pr_id)
+        comment_id = version = text = state = None
+        for activity in activities:
+            try:
+                if comment in activity.comment.text:
+                    comment_id = activity.comment.id
+                    version = activity.comment.version
+                    text = activity.comment.text
+                    state = activity.comment.state
+                    break
+            except AttributeError as e:
+                logger.error(e)
+        if not comment_id:
+            return None
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{comment_id}"
+        payload = {
+            "version": version,
+            "text": text,
+            "severity": "BLOCKER",
+            "state": state,
+        }
+        return self.put(url, json=payload)
+
+    def convert_task_to_comment(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
+        """
+        Convert a task (blocker) back to a regular comment on a specific pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment: The comment text of the task to be converted to a comment.
+        :type comment: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        activities = self.get_pull_request_activities(project_key, repo_slug, pr_id)
+        comment_id = version = text = state = None
+        for activity in activities:
+            try:
+                if comment in activity.comment.text:
+                    comment_id = activity.comment.id
+                    version = activity.comment.version
+                    text = activity.comment.text
+                    state = activity.comment.state
+                    break
+            except AttributeError as e:
+                logger.error(e)
+        if not comment_id:
+            return None
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{comment_id}"
+        payload = {
+            "version": version,
+            "text": text,
+            "severity": "NORMAL",
+            "state": state,
+        }
+        return self.put(url, json=payload)
+
     def get_file_change_history(
         self,
         project_key: str,

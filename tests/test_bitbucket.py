@@ -473,6 +473,112 @@ class TestBitbucket:
         result = bitbucket.delete_pull_request_comment("PROJ", "repo", 123, "Text")
         assert result is None
 
+    def test_resolve_pull_request_comment(self, bitbucket):
+        mock_activity = SimpleNamespace(
+            comment=SimpleNamespace(
+                text="Fix this bug", id=101, version=1, severity="BLOCKER"
+            )
+        )
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[mock_activity])
+
+        bitbucket.resolve_pull_request_comment("PROJ", "repo", 123, "Fix this bug")
+        args, kwargs = bitbucket.put.call_args
+        assert "/comments/101" in args[0]
+        assert kwargs["json"]["state"] == "RESOLVED"
+        assert kwargs["json"]["severity"] == "BLOCKER"
+
+    def test_resolve_pull_request_comment_not_found(self, bitbucket):
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[])
+
+        result = bitbucket.resolve_pull_request_comment("PROJ", "repo", 123, "Missing")
+        assert result is None
+
+    def test_resolve_pull_request_comment_no_comment_attr(self, bitbucket):
+        mock_activity = SimpleNamespace(action="OPENED")
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[mock_activity])
+
+        result = bitbucket.resolve_pull_request_comment("PROJ", "repo", 123, "Text")
+        assert result is None
+
+    def test_reopen_pull_request_comment(self, bitbucket):
+        mock_activity = SimpleNamespace(
+            comment=SimpleNamespace(
+                text="Fix this bug", id=102, version=2, severity="BLOCKER"
+            )
+        )
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[mock_activity])
+
+        bitbucket.reopen_pull_request_comment("PROJ", "repo", 123, "Fix this bug")
+        args, kwargs = bitbucket.put.call_args
+        assert "/comments/102" in args[0]
+        assert kwargs["json"]["state"] == "OPEN"
+        assert kwargs["json"]["severity"] == "BLOCKER"
+
+    def test_reopen_pull_request_comment_not_found(self, bitbucket):
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[])
+
+        result = bitbucket.reopen_pull_request_comment("PROJ", "repo", 123, "Missing")
+        assert result is None
+
+    def test_reopen_pull_request_comment_no_comment_attr(self, bitbucket):
+        mock_activity = SimpleNamespace(action="OPENED")
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[mock_activity])
+
+        result = bitbucket.reopen_pull_request_comment("PROJ", "repo", 123, "Text")
+        assert result is None
+
+    def test_convert_comment_to_task(self, bitbucket):
+        mock_activity = SimpleNamespace(
+            comment=SimpleNamespace(
+                text="Please fix this", id=201, version=1, state="OPEN"
+            )
+        )
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[mock_activity])
+
+        bitbucket.convert_comment_to_task("PROJ", "repo", 123, "Please fix this")
+        args, kwargs = bitbucket.put.call_args
+        assert "/comments/201" in args[0]
+        assert kwargs["json"]["severity"] == "BLOCKER"
+        assert kwargs["json"]["state"] == "OPEN"
+
+    def test_convert_comment_to_task_not_found(self, bitbucket):
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[])
+
+        result = bitbucket.convert_comment_to_task("PROJ", "repo", 123, "Missing")
+        assert result is None
+
+    def test_convert_comment_to_task_no_comment_attr(self, bitbucket):
+        mock_activity = SimpleNamespace(action="OPENED")
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[mock_activity])
+
+        result = bitbucket.convert_comment_to_task("PROJ", "repo", 123, "Text")
+        assert result is None
+
+    def test_convert_task_to_comment(self, bitbucket):
+        mock_activity = SimpleNamespace(
+            comment=SimpleNamespace(text="Task to fix", id=301, version=3, state="OPEN")
+        )
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[mock_activity])
+
+        bitbucket.convert_task_to_comment("PROJ", "repo", 123, "Task to fix")
+        args, kwargs = bitbucket.put.call_args
+        assert "/comments/301" in args[0]
+        assert kwargs["json"]["severity"] == "NORMAL"
+        assert kwargs["json"]["state"] == "OPEN"
+
+    def test_convert_task_to_comment_not_found(self, bitbucket):
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[])
+
+        result = bitbucket.convert_task_to_comment("PROJ", "repo", 123, "Missing")
+        assert result is None
+
+    def test_convert_task_to_comment_no_comment_attr(self, bitbucket):
+        mock_activity = SimpleNamespace(action="OPENED")
+        bitbucket.get_pull_request_activities = MagicMock(return_value=[mock_activity])
+
+        result = bitbucket.convert_task_to_comment("PROJ", "repo", 123, "Text")
+        assert result is None
+
     def test_get_file_change_history(self, bitbucket):
         bitbucket._get_paged = MagicMock(return_value=[])
         bitbucket.get_file_change_history("PROJ", "repo", "master", "src/file.py")
