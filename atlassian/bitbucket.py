@@ -747,6 +747,155 @@ class Bitbucket(AtlassianAPI):
         )
         return self.delete(url)
 
+    def _find_comment_in_activities(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
+        """
+        Find a comment in pull request activities by matching text.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment: The comment text to search for (substring match).
+        :type comment: str
+        :return: A dict with keys ``id``, ``version``, ``text``, ``severity``, and
+            ``state`` when found, or ``None`` if no matching comment exists.
+        :rtype: dict | None
+        """
+        activities = self.get_pull_request_activities(project_key, repo_slug, pr_id)
+        for activity in activities:
+            try:
+                if comment in activity.comment.text:
+                    return {
+                        "id": activity.comment.id,
+                        "version": activity.comment.version,
+                        "text": activity.comment.text,
+                        "severity": activity.comment.severity,
+                        "state": activity.comment.state,
+                    }
+            except AttributeError as e:
+                logger.error("Could not read comment from activity %s: %s", activity, e)
+        return None
+
+    def resolve_pull_request_comment(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
+        """
+        Resolve a blocker comment on a specific pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment: The comment text to be resolved.
+        :type comment: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        found = self._find_comment_in_activities(project_key, repo_slug, pr_id, comment)
+        if not found:
+            return None
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{found['id']}"
+        payload = {
+            "version": found["version"],
+            "text": found["text"],
+            "severity": found["severity"],
+            "state": "RESOLVED",
+        }
+        return self.put(url, json=payload)
+
+    def reopen_pull_request_comment(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
+        """
+        Reopen a resolved comment on a specific pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment: The comment text to be reopened.
+        :type comment: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        found = self._find_comment_in_activities(project_key, repo_slug, pr_id, comment)
+        if not found:
+            return None
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{found['id']}"
+        payload = {
+            "version": found["version"],
+            "text": found["text"],
+            "severity": found["severity"],
+            "state": "OPEN",
+        }
+        return self.put(url, json=payload)
+
+    def convert_comment_to_task(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
+        """
+        Convert a comment to a task (blocker) on a specific pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment: The comment text to be converted to a task.
+        :type comment: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        found = self._find_comment_in_activities(project_key, repo_slug, pr_id, comment)
+        if not found:
+            return None
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{found['id']}"
+        payload = {
+            "version": found["version"],
+            "text": found["text"],
+            "severity": "BLOCKER",
+            "state": found["state"],
+        }
+        return self.put(url, json=payload)
+
+    def convert_task_to_comment(
+        self, project_key: str, repo_slug: str, pr_id: int, comment: str
+    ) -> dict | None:
+        """
+        Convert a task (blocker) back to a regular comment on a specific pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment: The comment text of the task to be converted to a comment.
+        :type comment: str
+        :return: The response from the API.
+        :rtype: dict
+        """
+        found = self._find_comment_in_activities(project_key, repo_slug, pr_id, comment)
+        if not found:
+            return None
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments/{found['id']}"
+        payload = {
+            "version": found["version"],
+            "text": found["text"],
+            "severity": "NORMAL",
+            "state": found["state"],
+        }
+        return self.put(url, json=payload)
+
     def get_file_change_history(
         self,
         project_key: str,
