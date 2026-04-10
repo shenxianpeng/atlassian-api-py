@@ -1,0 +1,55 @@
+name: Labeler
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure labels exist
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const labels = [
+              { name: 'bug',            color: 'd73a4a' },
+              { name: 'enhancement',    color: 'a2eeef' },
+              { name: 'documentation',  color: '0075ca' },
+              { name: 'dependencies',   color: '0366d6' },
+              { name: 'testing',        color: 'e4e669' },
+              { name: 'chore',          color: 'ededed' },
+              { name: 'breaking-change', color: 'b60205' },
+            ];
+            for (const label of labels) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    color: label.color,
+                  });
+                  core.info(`Created label: ${label.name}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+      - name: Label PR
+        uses: actions/labeler@634933edcd8ababfe52f92936142cc22ac488b1b # v6.0.1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          sync-labels: true
