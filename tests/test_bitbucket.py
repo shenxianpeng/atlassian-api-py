@@ -346,6 +346,54 @@ class TestBitbucket:
         assert "/comments" in args[0]
         assert kwargs["json"]["text"] == "Great work!"
 
+    def test_add_pull_request_inline_comment(self, bitbucket):
+        bitbucket.add_pull_request_inline_comment(
+            "PROJ", "repo", 123, "Needs fix", "src/main.py", 42
+        )
+        args, kwargs = bitbucket.post.call_args
+        assert (
+            "/rest/api/latest/projects/PROJ/repos/repo/pull-requests/123/comments"
+            == args[0]
+        )
+        assert kwargs["json"]["text"] == "Needs fix"
+        anchor = kwargs["json"]["anchor"]
+        assert anchor["line"] == 42
+        assert anchor["lineType"] == "CONTEXT"
+        assert anchor["fileType"] == "TO"
+        assert anchor["path"] == "src/main.py"
+        assert "srcPath" not in anchor
+
+    def test_add_pull_request_inline_comment_custom_line_type(self, bitbucket):
+        bitbucket.add_pull_request_inline_comment(
+            "PROJ",
+            "repo",
+            123,
+            "Added line",
+            "src/main.py",
+            10,
+            line_type="ADDED",
+            file_type="TO",
+        )
+        args, kwargs = bitbucket.post.call_args
+        anchor = kwargs["json"]["anchor"]
+        assert anchor["lineType"] == "ADDED"
+        assert anchor["fileType"] == "TO"
+
+    def test_add_pull_request_inline_comment_with_src_path(self, bitbucket):
+        bitbucket.add_pull_request_inline_comment(
+            "PROJ",
+            "repo",
+            123,
+            "Rename check",
+            "new/path.py",
+            5,
+            src_path="old/path.py",
+        )
+        args, kwargs = bitbucket.post.call_args
+        anchor = kwargs["json"]["anchor"]
+        assert anchor["path"] == "new/path.py"
+        assert anchor["srcPath"] == "old/path.py"
+
     def test_update_pull_request_comment(self, bitbucket):
         mock_activity = SimpleNamespace(
             comment=SimpleNamespace(

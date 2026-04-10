@@ -617,6 +617,54 @@ class Bitbucket(AtlassianAPI):
         payload = {"text": comment}
         return self.post(url, json=payload)
 
+    def add_pull_request_inline_comment(
+        self,
+        project_key: str,
+        repo_slug: str,
+        pr_id: int,
+        comment: str,
+        path: str,
+        line: int,
+        line_type: str = "CONTEXT",
+        file_type: str = "TO",
+        src_path: str | None = None,
+    ) -> dict | None:
+        """
+        Add an inline comment to a specific file and line in a pull request.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param pr_id: The ID of the pull request.
+        :type pr_id: int
+        :param comment: The comment text.
+        :type comment: str
+        :param path: The path of the file to comment on (relative to the repo root).
+        :type path: str
+        :param line: The line number in the file to comment on.
+        :type line: int
+        :param line_type: The type of the line: CONTEXT, ADDED, or REMOVED (default: CONTEXT).
+        :type line_type: str
+        :param file_type: The side of the diff: FROM or TO (default: TO).
+        :type file_type: str
+        :param src_path: The path of the file in the source commit (for renames).
+        :type src_path: str, optional
+        :return: The response from the API.
+        :rtype: dict
+        """
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments"
+        anchor: dict = {
+            "line": line,
+            "lineType": line_type,
+            "fileType": file_type,
+            "path": path,
+        }
+        if src_path is not None:
+            anchor["srcPath"] = src_path
+        payload = {"text": comment, "anchor": anchor}
+        return self.post(url, json=payload)
+
     def update_pull_request_comment(
         self,
         project_key: str,
