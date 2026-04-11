@@ -20,7 +20,8 @@ class TestJira:
     def test_issue_changelog(self, jira):
         jira.issue_changelog("TEST-456")
         jira.get.assert_called_with(
-            "/rest/api/2/issue/TEST-456?expand=changelog&fields=summary"
+            "/rest/api/2/issue/TEST-456",
+            params={"expand": "changelog", "fields": "summary"},
         )
 
     def test_update_issue_label_add_only(self, jira):
@@ -145,48 +146,57 @@ class TestJira:
         assert kwargs["json"]["update"] == update
 
     def test_create_task(self, jira):
-        jira.create_task(
-            project_key="PROJ",
-            summary="Task summary",
-            assignee="user1",
-            owner="owner1",
-            labels=["label1"],
-            components=[{"name": "comp1"}],
-            issue_type=10,
-        )
+        import pytest
+
+        with pytest.warns(DeprecationWarning, match="create_task"):
+            jira.create_task(
+                project_key="PROJ",
+                summary="Task summary",
+                assignee="user1",
+                owner="owner1",
+                labels=["label1"],
+                components=[{"name": "comp1"}],
+                issue_type=10,
+            )
         args, kwargs = jira.post.call_args
         assert args[0] == "/rest/api/2/issue"
         assert kwargs["json"]["fields"]["project"]["key"] == "PROJ"
         assert kwargs["json"]["fields"]["summary"] == "Task summary"
 
     def test_create_sub_task(self, jira):
-        jira.create_sub_task(
-            project_key="PROJ",
-            parent_issue_key="PROJ-1",
-            summary="Subtask summary",
-            fix_version="1.0",
-            assignee="user1",
-            description="Description",
-            labels=["label1"],
-            issue_type=20,
-        )
+        import pytest
+
+        with pytest.warns(DeprecationWarning, match="create_sub_task"):
+            jira.create_sub_task(
+                project_key="PROJ",
+                parent_issue_key="PROJ-1",
+                summary="Subtask summary",
+                fix_version="1.0",
+                assignee="user1",
+                description="Description",
+                labels=["label1"],
+                issue_type=20,
+            )
         args, kwargs = jira.post.call_args
         assert args[0] == "/rest/api/2/issue"
         assert kwargs["json"]["fields"]["project"]["key"] == "PROJ"
         assert kwargs["json"]["fields"]["parent"]["key"] == "PROJ-1"
 
     def test_create_sub_task_with_team(self, jira):
-        jira.create_sub_task(
-            project_key="PROJ",
-            parent_issue_key="PROJ-1",
-            summary="Subtask summary",
-            fix_version="1.0",
-            assignee="user1",
-            description="Description",
-            labels=["label1"],
-            team="TeamA",
-            issue_type=20,
-        )
+        import pytest
+
+        with pytest.warns(DeprecationWarning, match="create_sub_task"):
+            jira.create_sub_task(
+                project_key="PROJ",
+                parent_issue_key="PROJ-1",
+                summary="Subtask summary",
+                fix_version="1.0",
+                assignee="user1",
+                description="Description",
+                labels=["label1"],
+                team="TeamA",
+                issue_type=20,
+            )
         args, kwargs = jira.post.call_args
         assert "customfield_11360" in kwargs["json"]["fields"]
 
@@ -249,6 +259,22 @@ class TestJira:
         args, kwargs = jira.post.call_args
         assert args[0] == "/rest/api/2/search"
         assert kwargs["json"]["jql"] == "project=TEST"
+        # When fields is None, no fields key should be in the payload
+        assert "fields" not in kwargs["json"]
+
+    def test_search_issue_with_jql_custom_fields(self, jira):
+        jira.post = MagicMock(
+            return_value={
+                "total": 1,
+                "maxResults": 50,
+                "issues": [{"key": "TEST-1"}],
+            }
+        )
+        custom_fields = ["summary", "assignee", "priority"]
+        result = jira.search_issue_with_jql("project=TEST", fields=custom_fields)
+        assert len(result) == 1
+        args, kwargs = jira.post.call_args
+        assert kwargs["json"]["fields"] == custom_fields
 
     def test_search_issue_with_jql_pagination(self, jira):
         # Mock response that requires pagination

@@ -74,8 +74,13 @@ class Confluence(AtlassianAPI):
         title: str,
         body_value: str,
         type: str = "page",
+        version: int | None = None,
     ) -> dict | None:
         """Update an existing Confluence content item.
+
+        The Confluence API requires that the version number supplied is exactly
+        the current version incremented by one. When ``version`` is not
+        provided this method fetches the current version automatically.
 
         :param page_id: The ID of the content to update.
         :type page_id: int
@@ -85,12 +90,23 @@ class Confluence(AtlassianAPI):
         :type body_value: str
         :param type: Content type, for example ``page``.
         :type type: str
+        :param version: Version number to submit. When omitted, the current
+            version is retrieved from the API and incremented by one.
+        :type version: int, optional
         :return: Decoded API response, or ``None`` when Confluence returns no body.
         :rtype: dict or None
         """
+        if version is None:
+            current = self.get(
+                f"/rest/api/content/{page_id}", params={"expand": "version"}
+            )
+            if isinstance(current, SimpleNamespace):
+                version = current.version.number + 1
+            else:
+                version = 1
         url = f"/rest/api/content/{page_id}"
         json = {
-            "version": {"number": 2},
+            "version": {"number": version},
             "title": f"{title}",
             "type": f"{type}",
             "body": {
@@ -282,3 +298,92 @@ class Confluence(AtlassianAPI):
         url = f"/rest/api/content/{page_id}/label"
         params: dict[str, Any] = {"name": label}
         return self.delete(url, params=params)
+
+    def get_page_by_title(
+        self, space_key: str, title: str
+    ) -> SimpleNamespace | str | None:
+        """Return a page by its title within a space.
+
+        :param space_key: The key of the space to search in.
+        :type space_key: str
+        :param title: The exact title of the page.
+        :type title: str
+        :return: Content data for the matching page, raw response text for
+            non-JSON responses, or ``None`` for an empty body.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = "/rest/api/content"
+        params: dict[str, Any] = {
+            "spaceKey": space_key,
+            "title": title,
+            "type": "page",
+        }
+        return self.get(url, params=params)
+
+    def upload_attachment(
+        self, page_id: int, filename: str, file_data: bytes, content_type: str = "application/octet-stream"
+    ) -> dict | None:
+        """Upload a file as an attachment to a page.
+
+        :param page_id: The ID of the page to attach the file to.
+        :type page_id: int
+        :param filename: The name of the attachment file.
+        :type filename: str
+        :param file_data: The binary content of the file to upload.
+        :type file_data: bytes
+        :param content_type: The MIME type of the file (default
+            ``application/octet-stream``).
+        :type content_type: str, optional
+        :return: Decoded API response, or ``None`` when Confluence returns no body.
+        :rtype: dict or None
+        """
+        from atlassian.error import APIError
+
+        url = f"/rest/api/content/{page_id}/child/attachment"
+        full_url = self.url + url
+        self._session.headers["X-Atlassian-Token"] = "nocheck"
+        try:
+            response = self._session.post(
+                full_url,
+                files={"file": (filename, file_data, content_type)},
+                data={"comment": ""},
+                timeout=self.timeout,
+            )
+            response.encoding = "utf-8"
+            if response.status_code >= 400:
+                raise APIError(response.status_code, response.text)
+            return self._response_handler(response)
+        finally:
+            self._session.headers.pop("X-Atlassian-Token", None)
+
+    def get_comments(self, page_id: int) -> SimpleNamespace | str | None:
+        """Return comments for a page.
+
+        :param page_id: The ID of the page.
+        :type page_id: int
+        :return: Comment data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
+        :rtype: SimpleNamespace or str or None
+        """
+        url = f"/rest/api/content/{page_id}/child/comment"
+        return self.get(url)
+
+    def add_comment(self, page_id: int, body: str) -> dict | None:
+        """Add a comment to a page.
+
+        :param page_id: The ID of the page to comment on.
+        :type page_id: int
+        :param body: Comment body in Confluence storage format.
+        :type body: str
+        :return: Decoded API response, or ``None`` when Confluence returns no body.
+        :rtype: dict or None
+        """
+        url = "/rest/api/content"
+        payload: dict[str, Any] = {
+            "type": "comment",
+            "container": {"id": page_id, "type": "page"},
+            "body": {
+                "storage": {"value": body, "representation": "storage"}
+            },
+        }
+        return self.post(url, json=payload)

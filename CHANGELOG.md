@@ -7,6 +7,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - Unreleased
+
+### Added
+- `atlassian.__version__` attribute for runtime version inspection (PEP 396).
+- `atlassian/py.typed` marker file to declare inline type information (PEP 561).
+- `verify` and `proxies` parameters to `AtlassianAPI.__init__()` for SSL certificate control and proxy support.
+- `Confluence.get_page_by_title(space_key, title)` — find a page by its title within a space.
+- `Confluence.upload_attachment(page_id, filename, file_data)` — attach a file to a page.
+- `Confluence.get_comments(page_id)` — retrieve comments on a page.
+- `Confluence.add_comment(page_id, body)` — post a comment on a page.
+- `fields` parameter to `Jira.search_issue_with_jql()` — callers can now specify which fields to return; defaults to `None` (all fields).
+- `version` parameter to `Confluence.update_content()` — callers can supply an explicit version; when omitted the current version is fetched automatically.
+
+### Changed
+- **Breaking**: `Confluence.update_content()` now fetches the current page version from the API and submits `current_version + 1` instead of always submitting version `2`.
+- `Jira.issue_changelog()` now passes query parameters via `params=` dict instead of URL string splicing, consistent with the rest of the library.
+- `Jira.search_issue_with_jql()` no longer hard-codes `["summary", "status", "issuetype", "fixVersions"]`; omitting `fields` returns all fields from the API.
+
+### Deprecated
+- `Jira.create_task()` — emits `DeprecationWarning`; use `create_issue()` instead. Will be removed in a future version.
+- `Jira.create_sub_task()` — emits `DeprecationWarning`; use `create_issue()` instead. Will be removed in a future version.
+
 * [0.5.0](https://pypi.org/project/atlassian-api-py/0.5.0/) - Apr 10, 2023
 * [0.4.0](https://pypi.org/project/atlassian-api-py/0.4.0/) - Apr 26, 2022 - Code format and add `Makefile` for build and test.
 * [0.3.24](https://pypi.org/project/atlassian-api-py/0.3.24/) - Apr 25, 2022 - Support search_issue_with_jql to get more than 1000 results.
