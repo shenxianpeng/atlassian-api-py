@@ -10,22 +10,25 @@ logger = get_logger(__name__)
 
 
 class Bitbucket(AtlassianAPI):
-    """
-    Bitbucket API Reference
+    """Client for Bitbucket Server/Data Center REST API operations.
+
+    Use this class for project repositories, branches, commits, pull requests,
+    comments, build status, users, and tags. Methods that list Bitbucket
+    resources automatically follow paginated ``values`` responses.
 
     .. seealso::
         `Bitbucket REST API Documentation <https://docs.atlassian.com/bitbucket-server/rest/7.12.1/bitbucket-rest.html>`_
     """
 
     def _get_paged(self, url: str, params: dict) -> list:
-        """
-        Retrieve paginated results from the Bitbucket API.
+        """Collect all ``values`` from a paginated Bitbucket endpoint.
 
-        :param url: The API endpoint URL.
+        :param url: Endpoint path to request.
         :type url: str
         :param params: Query parameters for pagination.
         :type params: dict
-        :return: A list of paginated results.
+        :return: Combined values from each page. Returns an empty list when the
+            response is missing ``values`` or cannot be parsed.
         :rtype: list
         """
         response = self.get(url, params=params)
@@ -52,8 +55,7 @@ class Bitbucket(AtlassianAPI):
     def get_project_repo(
         self, project_key: str, start: int = 0, limit: int | None = None
     ) -> list:
-        """
-        Retrieve repositories for a specific project.
+        """Return repositories in a Bitbucket project.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -61,7 +63,7 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
-        :return: A list of repositories in the project.
+        :return: Repository objects from the paginated ``values`` response.
         :rtype: list
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/"
@@ -73,12 +75,11 @@ class Bitbucket(AtlassianAPI):
         return self._get_paged(url, params=params)
 
     def get_project_repo_name(self, project_key: str) -> list[str]:
-        """
-        Retrieve the names of all repositories in a project.
+        """Return repository names for a Bitbucket project.
 
         :param project_key: The key of the project.
         :type project_key: str
-        :return: A list of repository names.
+        :return: Repository names.
         :rtype: list
         """
         values = self.get_project_repo(project_key)
@@ -90,15 +91,15 @@ class Bitbucket(AtlassianAPI):
     def get_repo_info(
         self, project_key: str, repo_slug: str
     ) -> SimpleNamespace | str | None:
-        """
-        Retrieve information about a specific repository.
+        """Return metadata for a repository.
 
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
         :type repo_slug: str
-        :return: A dictionary containing repository information.
-        :rtype: dict
+        :return: Repository data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
+        :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}"
         return self.get(url)
@@ -106,8 +107,7 @@ class Bitbucket(AtlassianAPI):
     def get_repo_branch(
         self, project_key: str, repo_slug: str, start: int = 0, limit: int | None = None
     ) -> list:
-        """
-        Retrieve branches for a specific repository.
+        """Return branches in a repository.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -117,7 +117,7 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
-        :return: A list of branches in the repository.
+        :return: Branch objects from the paginated ``values`` response.
         :rtype: list
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/branches"
@@ -131,8 +131,7 @@ class Bitbucket(AtlassianAPI):
     def create_branch(
         self, project_key: str, repo_slug: str, branch_name: str, start_point: str
     ) -> dict | None:
-        """
-        Create a new branch in a repository.
+        """Create a branch from an existing branch or commit.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -140,10 +139,10 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param branch_name: The name of the new branch.
         :type branch_name: str
-        :param start_point: The starting point for the branch (e.g., a commit hash or branch name).
+        :param start_point: Source branch name or commit hash.
         :type start_point: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when Bitbucket returns no body.
+        :rtype: dict or None
         """
         url = (
             f"/rest/branch-utils/1.0/projects/{project_key}/repos/{repo_slug}/branches"
@@ -154,8 +153,7 @@ class Bitbucket(AtlassianAPI):
     def delete_branch(
         self, project_key: str, repo_slug: str, branch_name: str, end_point: str
     ) -> dict | None:
-        """
-        Delete a branch from a repository.
+        """Delete a branch from a repository.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -163,10 +161,10 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param branch_name: The name of the branch to delete.
         :type branch_name: str
-        :param end_point: The endpoint for the branch deletion.
+        :param end_point: Current commit hash for the branch deletion request.
         :type end_point: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when Bitbucket returns no body.
+        :rtype: dict or None
         """
         url = f"/rest/branch-utils/latest/projects/{project_key}/repos/{repo_slug}/branches"
         payload = {"name": branch_name, "endPoint": end_point}
@@ -175,8 +173,7 @@ class Bitbucket(AtlassianAPI):
     def get_merged_branch(
         self, project_key: str, repo_slug: str, start: int = 0, limit: int | None = None
     ) -> list[str]:
-        """
-        Retrieve the names of merged branches in a repository.
+        """Return branch names that Bitbucket marks as merged.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -186,7 +183,7 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
-        :return: A list of merged branch names.
+        :return: Merged branch display names.
         :rtype: list
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/branches?base=refs/heads/master&details=true"
@@ -229,8 +226,7 @@ class Bitbucket(AtlassianAPI):
         start: int = 0,
         limit: int | None = None,
     ) -> list:
-        """
-        Get a specific branch commits.
+        """Return commits reachable from a branch.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -242,7 +238,7 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
-        :return: A list of commits in the branch.
+        :return: Commit objects from the paginated ``values`` response.
         :rtype: list
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/commits/?until={branch_name}"
@@ -261,10 +257,10 @@ class Bitbucket(AtlassianAPI):
         start: int = 0,
         limit: int | None = None,
     ) -> list:
-        """
-        Get ALL pull requests.
+        """Return pull requests for a repository.
 
-        By default: pr_state is ALL, other states are PEN, MERGED, DECLINED
+        Common ``pr_state`` values include ``ALL``, ``OPEN``, ``MERGED``, and
+        ``DECLINED``.
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -275,7 +271,7 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
-        :return: A list of pull requests.
+        :return: Pull request objects from the paginated ``values`` response.
         :rtype: list
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests?state={pr_state}"
@@ -289,8 +285,7 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request_destination_branch_name(
         self, project_key: str, repo_slug: str, pr_id: int, limit: int = 0
     ) -> str | None:
-        """
-        Get a pull request destination branch name.
+        """Return the destination branch name for a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -298,8 +293,10 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: The destination branch name associated with the pull request.
-        :rtype: str"""
+        :return: Destination branch name, or ``None`` when the pull request is
+            not found in the searched pages.
+        :rtype: str or None
+        """
         max_attempts = 100
         attempts = 0
         while attempts < max_attempts:
@@ -316,8 +313,7 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request_source_branch_name(
         self, project_key: str, repo_slug: str, pr_id: int, limit: int = 0
     ) -> str | None:
-        """
-        Get a pull request source branch name.
+        """Return the source branch name for a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -325,8 +321,10 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: The source branch name associated with the pull request.
-        :rtype: str"""
+        :return: Source branch name, or ``None`` when the pull request is not
+            found in the searched pages.
+        :rtype: str or None
+        """
         max_attempts = 100
         attempts = 0
         while attempts < max_attempts:
@@ -343,8 +341,7 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request_jira_key(
         self, project_key: str, repo_slug: str, pr_id: int
     ) -> str | None:
-        """
-        Get a pull request Jira ticket key.
+        """Extract a Jira issue key from a pull request source branch name.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -352,8 +349,9 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: The Jira ticket key associated with the pull request.
-        :rtype: str
+        :return: First ``PROJECT-123`` style key in the source branch, or
+            ``None`` when no key is found.
+        :rtype: str or None
         """
         source_branch_name = self.get_pull_request_source_branch_name(
             project_key, repo_slug, pr_id
@@ -373,10 +371,10 @@ class Bitbucket(AtlassianAPI):
         start: int = 0,
         limit: int | None = None,
     ) -> list[int]:
-        """
-        Get a specific pull request ID.
+        """Return pull request IDs for a repository and state.
 
-        By default: pr_state is OPEN, other states are ALL, MERGED, DECLINED
+        Common ``pr_state`` values include ``OPEN``, ``ALL``, ``MERGED``, and
+        ``DECLINED``.
         :param project_key: The key of the project.
         :type project_key: str
         :param repo_slug: The slug of the repository.
@@ -387,7 +385,7 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
-        :return: A list of pull request IDs.
+        :return: Pull request IDs.
         :rtype: list
         """
         prs = self.get_pull_request(
@@ -401,8 +399,7 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request_overview(
         self, project_key: str, repo_slug: str, pr_id: int
     ) -> SimpleNamespace | str | None:
-        """
-        Get a specific pull request overview.
+        """Return pull request metadata.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -410,9 +407,8 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: The pull request overview as a :class:`SimpleNamespace` when the
-            response contains valid JSON, the raw response body as ``str`` when
-            JSON parsing fails, or ``None`` for an empty response.
+        :return: Pull request metadata as a ``SimpleNamespace``, raw response
+            text for non-JSON responses, or ``None`` for an empty body.
         :rtype: SimpleNamespace | str | None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}"
@@ -421,8 +417,7 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request_diff(
         self, project_key: str, repo_slug: str, pr_id: int
     ) -> SimpleNamespace | str | None:
-        """
-        Get streams a diff within a pull request.
+        """Return the structured diff for a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -430,9 +425,8 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: The pull request diff as a :class:`SimpleNamespace` when the
-            response contains valid JSON, the raw response body as ``str`` when
-            JSON parsing fails, or ``None`` for an empty response.
+        :return: Diff data as a ``SimpleNamespace``, raw response text for
+            non-JSON responses, or ``None`` for an empty body.
         :rtype: SimpleNamespace | str | None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/diff"
@@ -441,8 +435,7 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request_raw_diff(
         self, project_key: str, repo_slug: str, pr_id: int
     ) -> SimpleNamespace | str | None:
-        """
-        Get streams the raw diff for a pull request.
+        """Return the raw unified diff for a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -450,8 +443,9 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: A string containing pull request diff information.
-        :rtype: str
+        :return: Raw diff text, parsed JSON if Bitbucket returns JSON, or
+            ``None`` for an empty body.
+        :rtype: SimpleNamespace | str | None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}.diff"
         return self.get(url)
@@ -459,8 +453,7 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request_patch(
         self, project_key: str, repo_slug: str, pr_id: int
     ) -> SimpleNamespace | str | None:
-        """
-        Get streams a patch representing a pull request.
+        """Return the raw patch for a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -468,8 +461,9 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: A string containing pull request diff information.
-        :rtype: str
+        :return: Raw patch text, parsed JSON if Bitbucket returns JSON, or
+            ``None`` for an empty body.
+        :rtype: SimpleNamespace | str | None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}.patch"
         return self.get(url)
@@ -477,8 +471,7 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request_commits(
         self, project_key: str, repo_slug: str, pr_id: int
     ) -> SimpleNamespace | str | None:
-        """
-        Get a specific pull request commits.
+        """Return commits in a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -486,9 +479,8 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: The parsed JSON response as a SimpleNamespace when available,
-            the raw string response when the body is not JSON, or None for an
-            empty response.
+        :return: Commit data as a ``SimpleNamespace``, raw response text for
+            non-JSON responses, or ``None`` for an empty body.
         :rtype: SimpleNamespace | str | None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/commits"
@@ -502,8 +494,7 @@ class Bitbucket(AtlassianAPI):
         start: int = 0,
         limit: int | None = None,
     ) -> list:
-        """
-        Get a specific pull request activities information.
+        """Return activity entries for a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -515,7 +506,7 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
-        :return: A list of pull request activities.
+        :return: Activity objects from the paginated ``values`` response.
         :rtype: list
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/activities"
@@ -529,8 +520,7 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request_merge(
         self, project_key: str, repo_slug: str, pr_id: int
     ) -> SimpleNamespace | str | None:
-        """
-        Get the specific Pull Request merge information.
+        """Return mergeability information for a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -538,9 +528,8 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: Parsed pull request merge information as a ``SimpleNamespace`` when the
-            response body is valid JSON, the raw response body as ``str`` if JSON
-            parsing fails, or ``None`` for empty responses.
+        :return: Merge data as a ``SimpleNamespace``, raw response text for
+            non-JSON responses, or ``None`` for an empty body.
         :rtype: SimpleNamespace | str | None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/merge"
@@ -554,8 +543,7 @@ class Bitbucket(AtlassianAPI):
         start: int = 0,
         limit: int | None = None,
     ) -> list:
-        """
-        Get branch committer information.
+        """Return committers for commits reachable from a branch.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -567,7 +555,7 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
-        :return: A list of committers in the branch.
+        :return: Committer objects extracted from branch commits.
         :rtype: list
         """
         commits = self.get_branch_commits(
@@ -581,8 +569,7 @@ class Bitbucket(AtlassianAPI):
     def get_pull_request_comments(
         self, project_key: str, repo_slug: str, pr_id: int
     ) -> SimpleNamespace | str | None:
-        """
-        Get a specific pull request all comments.
+        """Return comments for a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -590,8 +577,9 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :return: A list of comments in the pull request.
-        :rtype: list
+        :return: Comment data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
+        :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/ui/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments"
         return self.get(url)
@@ -599,8 +587,7 @@ class Bitbucket(AtlassianAPI):
     def add_pull_request_comment(
         self, project_key: str, repo_slug: str, pr_id: int, comment: str
     ) -> dict | None:
-        """
-        Add comment to a specific pull request.
+        """Add a general comment to a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -610,8 +597,8 @@ class Bitbucket(AtlassianAPI):
         :type pr_id: int
         :param comment: The comment text.
         :type comment: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when Bitbucket returns no body.
+        :rtype: dict or None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments"
         payload = {"text": comment}
@@ -629,8 +616,7 @@ class Bitbucket(AtlassianAPI):
         file_type: str = "TO",
         src_path: str | None = None,
     ) -> dict | None:
-        """
-        Add an inline comment to a specific file and line in a pull request.
+        """Add an inline comment to a file and line in a pull request diff.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -644,14 +630,15 @@ class Bitbucket(AtlassianAPI):
         :type path: str
         :param line: The line number in the file to comment on.
         :type line: int
-        :param line_type: The type of the line: CONTEXT, ADDED, or REMOVED (default: CONTEXT).
+        :param line_type: Diff line type: ``CONTEXT``, ``ADDED``, or
+            ``REMOVED``.
         :type line_type: str
-        :param file_type: The side of the diff: FROM or TO (default: TO).
+        :param file_type: Diff side: ``FROM`` or ``TO``.
         :type file_type: str
         :param src_path: The path of the file in the source commit (for renames).
         :type src_path: str, optional
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when Bitbucket returns no body.
+        :rtype: dict or None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/comments"
         anchor: dict = {
@@ -673,8 +660,7 @@ class Bitbucket(AtlassianAPI):
         old_comment: str,
         new_comment: str,
     ) -> dict | None:
-        """
-        Update a specific comment of a pull request.
+        """Find a pull request comment by text and replace it.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -682,12 +668,13 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :param old_comment: The old comment text to be updated.
+        :param old_comment: Existing comment text to search for.
         :type old_comment: str
         :param new_comment: The new comment text.
         :type new_comment: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when no matching comment is
+            found or Bitbucket returns no body.
+        :rtype: dict or None
         """
         activities = self.get_pull_request_activities(project_key, repo_slug, pr_id)
         comment_id = version = severity = state = None
@@ -715,8 +702,7 @@ class Bitbucket(AtlassianAPI):
     def delete_pull_request_comment(
         self, project_key: str, repo_slug: str, pr_id: int, comment: str
     ) -> dict | None:
-        """
-        Delete comment from a specific pull request.
+        """Find a pull request comment by exact text and delete it.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -726,8 +712,9 @@ class Bitbucket(AtlassianAPI):
         :type pr_id: int
         :param comment: The comment text to be deleted.
         :type comment: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when no matching comment is
+            found or Bitbucket returns no body.
+        :rtype: dict or None
         """
         activities = self.get_pull_request_activities(project_key, repo_slug, pr_id)
         comment_id = version = None
@@ -783,8 +770,7 @@ class Bitbucket(AtlassianAPI):
     def resolve_pull_request_comment(
         self, project_key: str, repo_slug: str, pr_id: int, comment: str
     ) -> dict | None:
-        """
-        Resolve a blocker comment on a specific pull request.
+        """Mark a pull request comment task as resolved.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -792,10 +778,11 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :param comment: The comment text to be resolved.
+        :param comment: Comment text to search for.
         :type comment: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when no matching comment is
+            found or Bitbucket returns no body.
+        :rtype: dict or None
         """
         found = self._find_comment_in_activities(project_key, repo_slug, pr_id, comment)
         if not found:
@@ -812,8 +799,7 @@ class Bitbucket(AtlassianAPI):
     def reopen_pull_request_comment(
         self, project_key: str, repo_slug: str, pr_id: int, comment: str
     ) -> dict | None:
-        """
-        Reopen a resolved comment on a specific pull request.
+        """Reopen a resolved pull request comment task.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -821,10 +807,11 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :param comment: The comment text to be reopened.
+        :param comment: Comment text to search for.
         :type comment: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when no matching comment is
+            found or Bitbucket returns no body.
+        :rtype: dict or None
         """
         found = self._find_comment_in_activities(project_key, repo_slug, pr_id, comment)
         if not found:
@@ -841,8 +828,7 @@ class Bitbucket(AtlassianAPI):
     def convert_comment_to_task(
         self, project_key: str, repo_slug: str, pr_id: int, comment: str
     ) -> dict | None:
-        """
-        Convert a comment to a task (blocker) on a specific pull request.
+        """Convert a pull request comment into a blocker task.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -850,10 +836,11 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :param comment: The comment text to be converted to a task.
+        :param comment: Comment text to search for.
         :type comment: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when no matching comment is
+            found or Bitbucket returns no body.
+        :rtype: dict or None
         """
         found = self._find_comment_in_activities(project_key, repo_slug, pr_id, comment)
         if not found:
@@ -870,8 +857,7 @@ class Bitbucket(AtlassianAPI):
     def convert_task_to_comment(
         self, project_key: str, repo_slug: str, pr_id: int, comment: str
     ) -> dict | None:
-        """
-        Convert a task (blocker) back to a regular comment on a specific pull request.
+        """Convert a blocker task back to a regular pull request comment.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -879,10 +865,11 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :param comment: The comment text of the task to be converted to a comment.
+        :param comment: Comment text to search for.
         :type comment: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when no matching comment is
+            found or Bitbucket returns no body.
+        :rtype: dict or None
         """
         found = self._find_comment_in_activities(project_key, repo_slug, pr_id, comment)
         if not found:
@@ -905,8 +892,7 @@ class Bitbucket(AtlassianAPI):
         start: int = 0,
         limit: int | None = None,
     ) -> list:
-        """
-        Get a specific file change histories.
+        """Return commit history for a file on a branch.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -920,7 +906,7 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
-        :return: A list of file change histories.
+        :return: Commit history objects from the paginated ``values`` response.
         :rtype: list
         """
         url = (
@@ -937,8 +923,7 @@ class Bitbucket(AtlassianAPI):
     def get_file_content(
         self, project_key: str, repo_slug: str, branch_name: str, file_path: str
     ) -> SimpleNamespace | str | None:
-        """
-        Get file content from a specific branch.
+        """Return raw file content from a branch.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -948,20 +933,21 @@ class Bitbucket(AtlassianAPI):
         :type branch_name: str
         :param file_path: The path of the file.
         :type file_path: str
-        :return: The content of the file.
-        :rtype: str
+        :return: Raw file content, parsed JSON if Bitbucket returns JSON, or
+            ``None`` for an empty body.
+        :rtype: SimpleNamespace or str or None
         """
         url = f"/projects/{project_key}/repos/{repo_slug}/raw/{file_path}?at={branch_name}"
         return self.get(url)
 
     def get_build_status(self, commit_id: str) -> SimpleNamespace | str | None:
-        """
-        Get build status.
+        """Return build status for a commit.
 
         :param commit_id: The ID of the commit.
         :type commit_id: str
-        :return: A SimpleNamespace containing build status information.
-        :rtype: SimpleNamespace or None
+        :return: Build status data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
+        :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/build-status/latest/commits/{commit_id}"
         return self.get(url)
@@ -975,14 +961,14 @@ class Bitbucket(AtlassianAPI):
         build_url: str,
         description: str = "ManuallyCheckBuildPass",
     ) -> dict | None:
-        """
-        Update build status.
+        """Create or update Bitbucket build status for a commit.
 
         :param commit_id: The ID of the commit.
         :type commit_id: str
-        :param build_state: The state of the build.
+        :param build_state: Build state, for example ``SUCCESSFUL`` or
+            ``FAILED``.
         :type build_state: str
-        :param data_key: The key of the data.
+        :param data_key: Stable key identifying this build status.
         :type data_key: str
         :param build_name: The name of the build.
         :type build_name: str
@@ -990,7 +976,7 @@ class Bitbucket(AtlassianAPI):
         :type build_url: str
         :param description: The description of the build.
         :type description: str
-        :return: The response from the API.
+        :return: Decoded API response, or ``None`` when Bitbucket returns no body.
         :rtype: dict or None
         """
         url = f"/rest/build-status/latest/commits/{commit_id}"
@@ -1004,13 +990,13 @@ class Bitbucket(AtlassianAPI):
         return self.post(url, json=payload)
 
     def get_user(self, user_slug: str) -> SimpleNamespace | str | None:
-        """
-        Get user information.
+        """Return Bitbucket user information by user slug.
 
         :param user_slug: The slug of the user.
         :type user_slug: str
-        :return: A dictionary containing user information.
-        :rtype: dict
+        :return: User data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
+        :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/latest/users/{user_slug}"
         return self.get(url)
@@ -1023,8 +1009,7 @@ class Bitbucket(AtlassianAPI):
         user_slug: str,
         status: str = "APPROVED",
     ) -> dict | None:
-        """
-        Review a pull request as the current user.
+        """Set a user's review status on a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -1034,10 +1019,11 @@ class Bitbucket(AtlassianAPI):
         :type pr_id: int
         :param user_slug: The slug of the user.
         :type user_slug: str
-        :param status: The status of the review (default: APPROVED).
+        :param status: Review status. Common values are ``APPROVED``,
+            ``UNAPPROVED``, and ``NEEDS_WORK``.
         :type status: str, optional
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when Bitbucket returns no body.
+        :rtype: dict or None
         """
         url = f"/rest/api/1.0/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/participants/{user_slug}"
         payload = {
@@ -1048,8 +1034,7 @@ class Bitbucket(AtlassianAPI):
     def update_pull_request_description(
         self, project_key: str, repo_slug: str, pr_id: int, new_description: str
     ) -> dict | None:
-        """
-        Update the description of a pull request.
+        """Replace a pull request description.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -1059,8 +1044,9 @@ class Bitbucket(AtlassianAPI):
         :type pr_id: int
         :param new_description: The new description for the pull request.
         :type new_description: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when the pull request cannot
+            be loaded or Bitbucket returns no body.
+        :rtype: dict or None
         """
         pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
         if pr is None or isinstance(pr, str):
@@ -1072,8 +1058,7 @@ class Bitbucket(AtlassianAPI):
     def update_pull_request_title(
         self, project_key: str, repo_slug: str, pr_id: int, new_title: str
     ) -> dict | None:
-        """
-        Update the title of a pull request.
+        """Replace a pull request title.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -1083,8 +1068,9 @@ class Bitbucket(AtlassianAPI):
         :type pr_id: int
         :param new_title: The new title for the pull request.
         :type new_title: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when the pull request cannot
+            be loaded or Bitbucket returns no body.
+        :rtype: dict or None
         """
         pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
         if pr is None or isinstance(pr, str):
@@ -1096,8 +1082,7 @@ class Bitbucket(AtlassianAPI):
     def update_pull_request_reviewers(
         self, project_key: str, repo_slug: str, pr_id: int, reviewers: list
     ) -> dict | None:
-        """
-        Update the reviewers of a pull request.
+        """Replace the reviewer list for a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -1105,10 +1090,11 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :param reviewers: A list of user slugs to add as reviewers.
+        :param reviewers: Reviewer payload expected by Bitbucket.
         :type reviewers: list
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when the pull request cannot
+            be loaded or Bitbucket returns no body.
+        :rtype: dict or None
         """
         pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
         if pr is None or isinstance(pr, str):
@@ -1120,8 +1106,7 @@ class Bitbucket(AtlassianAPI):
     def update_pull_request_destination(
         self, project_key: str, repo_slug: str, pr_id: int, new_destination: str
     ) -> dict | None:
-        """
-        Update the destination branch of a pull request.
+        """Change the destination branch of a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -1131,8 +1116,9 @@ class Bitbucket(AtlassianAPI):
         :type pr_id: int
         :param new_destination: The new destination branch for the pull request.
         :type new_destination: str
-        :return: The response from the API.
-        :rtype: dict
+        :return: Decoded API response, or ``None`` when the pull request cannot
+            be loaded or Bitbucket returns no body.
+        :rtype: dict or None
         """
         pr = self.get_pull_request_overview(project_key, repo_slug, pr_id)
         if pr is None or isinstance(pr, str):
@@ -1154,8 +1140,7 @@ class Bitbucket(AtlassianAPI):
         description: str | None = None,
         reviewers: list[str] | None = None,
     ) -> dict | None:
-        """
-        Create a new pull request.
+        """Create a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -1169,9 +1154,9 @@ class Bitbucket(AtlassianAPI):
         :type to_branch: str
         :param description: An optional description for the pull request.
         :type description: str, optional
-        :param reviewers: An optional list of reviewer user slugs.
+        :param reviewers: Optional reviewer user slugs.
         :type reviewers: list[str], optional
-        :return: The response from the API.
+        :return: Decoded API response, or ``None`` when Bitbucket returns no body.
         :rtype: dict or None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests"
@@ -1189,8 +1174,7 @@ class Bitbucket(AtlassianAPI):
     def merge_pull_request(
         self, project_key: str, repo_slug: str, pr_id: int, pr_version: int
     ) -> dict | None:
-        """
-        Merge a pull request.
+        """Merge a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -1198,9 +1182,10 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :param pr_version: The current version of the pull request (required for optimistic locking).
+        :param pr_version: Current pull request version required by Bitbucket
+            optimistic locking.
         :type pr_version: int
-        :return: The response from the API.
+        :return: Decoded API response, or ``None`` when Bitbucket returns no body.
         :rtype: dict or None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/merge"
@@ -1210,8 +1195,7 @@ class Bitbucket(AtlassianAPI):
     def decline_pull_request(
         self, project_key: str, repo_slug: str, pr_id: int, pr_version: int
     ) -> dict | None:
-        """
-        Decline a pull request.
+        """Decline a pull request.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -1219,9 +1203,10 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :param pr_id: The ID of the pull request.
         :type pr_id: int
-        :param pr_version: The current version of the pull request (required for optimistic locking).
+        :param pr_version: Current pull request version required by Bitbucket
+            optimistic locking.
         :type pr_version: int
-        :return: The response from the API.
+        :return: Decoded API response, or ``None`` when Bitbucket returns no body.
         :rtype: dict or None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests/{pr_id}/decline"
@@ -1235,8 +1220,7 @@ class Bitbucket(AtlassianAPI):
         start: int = 0,
         limit: int | None = None,
     ) -> list:
-        """
-        Retrieve all tags for a repository.
+        """Return tags for a repository.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -1246,7 +1230,7 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
-        :return: A list of tags in the repository.
+        :return: Tag objects from the paginated ``values`` response.
         :rtype: list
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/tags"
@@ -1265,8 +1249,7 @@ class Bitbucket(AtlassianAPI):
         start_point: str,
         message: str | None = None,
     ) -> dict | None:
-        """
-        Create a new tag in a repository.
+        """Create a lightweight or annotated tag in a repository.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -1276,9 +1259,9 @@ class Bitbucket(AtlassianAPI):
         :type tag_name: str
         :param start_point: The commit SHA or branch name to tag.
         :type start_point: str
-        :param message: An optional message for an annotated tag.
+        :param message: Optional message for an annotated tag.
         :type message: str, optional
-        :return: The response from the API.
+        :return: Decoded API response, or ``None`` when Bitbucket returns no body.
         :rtype: dict or None
         """
         url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/tags"

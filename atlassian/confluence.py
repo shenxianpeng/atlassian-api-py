@@ -10,18 +10,22 @@ logger = get_logger(__name__)
 
 
 class Confluence(AtlassianAPI):
-    """
-    Confluence API Reference
+    """Client for Confluence REST API operations.
+
+    Use this class for pages, spaces, content search, child pages, attachments,
+    and labels. Read methods return nested ``SimpleNamespace`` objects when the
+    API returns JSON, raw text for non-JSON responses, or ``None`` for empty
+    responses.
 
     .. seealso::
         `Confluence REST API Documentation <https://docs.atlassian.com/ConfluenceServer/rest/7.17.2/>`_
     """
 
     def get_content(self) -> SimpleNamespace | str | None:
-        """
-        Retrieve all content from Confluence.
+        """Return content visible to the current user.
 
-        :return: A SimpleNamespace containing all content, the raw text response, or None.
+        :return: Content data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         url = "/rest/api/content"
@@ -35,20 +39,20 @@ class Confluence(AtlassianAPI):
         ancestors_id: int | None = None,
         type: str = "page",
     ) -> dict | None:
-        """
-        Create new content in Confluence.
+        """Create a Confluence page or another content type.
 
         :param title: The title of the content.
         :type title: str
         :param space_key: The key of the space where the content will be created.
         :type space_key: str
-        :param body_value: The body of the content in storage format.
+        :param body_value: Body content in Confluence storage format.
         :type body_value: str
-        :param ancestors_id: The ID of the parent content (optional).
+        :param ancestors_id: Parent content ID. When provided, the new page is
+            created as a child of that content.
         :type ancestors_id: int, optional
-        :param type: The type of the content (e.g., "page").
+        :param type: Content type, for example ``page``.
         :type type: str
-        :return: The response from the API.
+        :return: Decoded API response, or ``None`` when Confluence returns no body.
         :rtype: dict or None
         """
         url = "/rest/api/content"
@@ -71,18 +75,17 @@ class Confluence(AtlassianAPI):
         body_value: str,
         type: str = "page",
     ) -> dict | None:
-        """
-        Update existing content in Confluence.
+        """Update an existing Confluence content item.
 
         :param page_id: The ID of the content to update.
         :type page_id: int
         :param title: The new title of the content.
         :type title: str
-        :param body_value: The new body of the content in storage format.
+        :param body_value: New body content in Confluence storage format.
         :type body_value: str
-        :param type: The type of the content (e.g., "page").
+        :param type: Content type, for example ``page``.
         :type type: str
-        :return: The response from the API.
+        :return: Decoded API response, or ``None`` when Confluence returns no body.
         :rtype: dict or None
         """
         url = f"/rest/api/content/{page_id}"
@@ -97,37 +100,36 @@ class Confluence(AtlassianAPI):
         return self.put(url, json=json)
 
     def delete_content(self, page_id: int) -> dict | None:
-        """
-        Delete content from Confluence.
+        """Delete content from Confluence by content ID.
 
         :param page_id: The ID of the content to delete.
         :type page_id: int
-        :return: The response from the API.
+        :return: Decoded API response, or ``None`` when Confluence returns no body.
         :rtype: dict or None
         """
         url = f"/rest/api/content/{page_id}"
         return self.delete(url)
 
     def get_content_by_id(self, page_id: int) -> SimpleNamespace | str | None:
-        """
-        Retrieve content by its ID.
+        """Return content by content ID.
 
         :param page_id: The ID of the content to retrieve.
         :type page_id: int
-        :return: A SimpleNamespace containing the content details, the raw text response, or None.
+        :return: Content data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/content/{page_id}"
         return self.get(url)
 
     def get_content_history(self, page_id: int) -> SimpleNamespace | str | None:
-        """
-        Retrieve the history of a specific content.
+        """Return version history for a content item.
 
         :param page_id: The ID of the content to retrieve the history for.
         :type page_id: int
-        :return: A SimpleNamespace containing the content history.
-        :rtype: SimpleNamespace or None
+        :return: History data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
+        :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/content/{page_id}/history"
         return self.get(url)
@@ -135,14 +137,14 @@ class Confluence(AtlassianAPI):
     def get_spaces(
         self, start: int = 0, limit: int = 25
     ) -> SimpleNamespace | str | None:
-        """
-        Retrieve all spaces.
+        """Return Confluence spaces visible to the current user.
 
         :param start: The starting index for pagination (default 0).
         :type start: int, optional
         :param limit: The maximum number of spaces to return (default 25).
         :type limit: int, optional
-        :return: A SimpleNamespace containing spaces, the raw text response, or None.
+        :return: Space data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         url = "/rest/api/space"
@@ -150,12 +152,12 @@ class Confluence(AtlassianAPI):
         return self.get(url, params=params)
 
     def get_space(self, space_key: str) -> SimpleNamespace | str | None:
-        """
-        Retrieve a specific space by its key.
+        """Return a Confluence space by space key.
 
         :param space_key: The key of the space to retrieve.
         :type space_key: str
-        :return: A SimpleNamespace containing the space details, the raw text response, or None.
+        :return: Space data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/space/{space_key}"
@@ -168,8 +170,7 @@ class Confluence(AtlassianAPI):
         start: int = 0,
         limit: int = 25,
     ) -> SimpleNamespace | str | None:
-        """
-        Retrieve content (pages or blog posts) within a specific space.
+        """Return pages or blog posts in a Confluence space.
 
         :param space_key: The key of the space.
         :type space_key: str
@@ -179,7 +180,8 @@ class Confluence(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (default 25).
         :type limit: int, optional
-        :return: A SimpleNamespace containing the content list, the raw text response, or None.
+        :return: Content list data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         url = "/rest/api/content"
@@ -194,8 +196,7 @@ class Confluence(AtlassianAPI):
     def search_content(
         self, cql: str, start: int = 0, limit: int = 25
     ) -> SimpleNamespace | str | None:
-        """
-        Search for content using Confluence Query Language (CQL).
+        """Search content with Confluence Query Language (CQL).
 
         :param cql: The CQL query string.
         :type cql: str
@@ -203,7 +204,8 @@ class Confluence(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (default 25).
         :type limit: int, optional
-        :return: A SimpleNamespace containing the search results, the raw text response, or None.
+        :return: Search result data, raw response text for non-JSON responses,
+            or ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         url = "/rest/api/content/search"
@@ -213,8 +215,7 @@ class Confluence(AtlassianAPI):
     def get_child_pages(
         self, page_id: int, start: int = 0, limit: int = 25
     ) -> SimpleNamespace | str | None:
-        """
-        Retrieve the child pages of a specific page.
+        """Return child pages for a parent page.
 
         :param page_id: The ID of the parent page.
         :type page_id: int
@@ -222,7 +223,8 @@ class Confluence(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (default 25).
         :type limit: int, optional
-        :return: A SimpleNamespace containing the child pages, the raw text response, or None.
+        :return: Child page data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/content/{page_id}/child/page"
@@ -230,38 +232,37 @@ class Confluence(AtlassianAPI):
         return self.get(url, params=params)
 
     def get_attachments(self, page_id: int) -> SimpleNamespace | str | None:
-        """
-        Retrieve all attachments for a specific page.
+        """Return attachments for a page.
 
         :param page_id: The ID of the page.
         :type page_id: int
-        :return: A SimpleNamespace containing the attachments, the raw text response, or None.
+        :return: Attachment data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/content/{page_id}/child/attachment"
         return self.get(url)
 
     def get_labels(self, page_id: int) -> SimpleNamespace | str | None:
-        """
-        Retrieve all labels for a specific piece of content.
+        """Return labels for a content item.
 
         :param page_id: The ID of the content.
         :type page_id: int
-        :return: A SimpleNamespace containing the labels, the raw text response, or None.
+        :return: Label data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/content/{page_id}/label"
         return self.get(url)
 
     def add_label(self, page_id: int, label: str) -> dict | None:
-        """
-        Add a label to a specific piece of content.
+        """Add a global label to a content item.
 
         :param page_id: The ID of the content.
         :type page_id: int
         :param label: The label name to add.
         :type label: str
-        :return: The response from the API.
+        :return: Decoded API response, or ``None`` when Confluence returns no body.
         :rtype: dict or None
         """
         url = f"/rest/api/content/{page_id}/label"
@@ -269,14 +270,13 @@ class Confluence(AtlassianAPI):
         return self.post(url, json=payload)
 
     def remove_label(self, page_id: int, label: str) -> dict | None:
-        """
-        Remove a label from a specific piece of content.
+        """Remove a label from a content item.
 
         :param page_id: The ID of the content.
         :type page_id: int
         :param label: The label name to remove.
         :type label: str
-        :return: The response from the API.
+        :return: Decoded API response, or ``None`` when Confluence returns no body.
         :rtype: dict or None
         """
         url = f"/rest/api/content/{page_id}/label"

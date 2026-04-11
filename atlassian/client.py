@@ -11,11 +11,14 @@ logger.disabled = True
 
 
 class AtlassianAPI:
-    """
-    Base class for interacting with Atlassian APIs.
+    """Base HTTP client shared by Jira, Bitbucket, and Confluence clients.
 
-    This class provides methods for making HTTP requests (GET, POST, PUT, DELETE)
-    and managing authentication sessions.
+    The client stores a ``requests.Session``, applies either basic auth or a
+    bearer token, appends endpoint paths to the configured base URL, and raises
+    :class:`atlassian.error.APIError` for HTTP ``4xx`` and ``5xx`` responses.
+
+    ``get()`` parses JSON into nested ``SimpleNamespace`` objects. Mutating
+    helpers return decoded JSON dictionaries when available.
     """
 
     default_headers = {"Content-Type": "application/json", "Accept": "application/json"}
@@ -29,20 +32,23 @@ class AtlassianAPI:
         session: requests.Session | None = None,
         token: str | None = None,
     ) -> None:
-        """
-        Initialize the AtlassianAPI instance.
+        """Create a client session for an Atlassian REST API.
 
-        :param url: The base URL of the Atlassian API.
+        :param url: Base URL of the Atlassian product, for example
+            ``https://jira.company.com``. Trailing slashes are removed.
         :type url: str
-        :param username: The username for basic authentication (optional).
+        :param username: Username for basic authentication. Use together with
+            ``password``.
         :type username: str, optional
-        :param password: The password for basic authentication (optional).
+        :param password: Password for basic authentication. Use together with
+            ``username``.
         :type password: str, optional
-        :param timeout: The timeout for HTTP requests in seconds (default is 60).
+        :param timeout: Request timeout in seconds.
         :type timeout: int, optional
-        :param session: A custom requests session (optional).
+        :param session: Existing ``requests.Session`` to reuse. When omitted, a
+            new session is created.
         :type session: requests.Session, optional
-        :param token: The token for bearer authentication (optional).
+        :param token: Bearer token used to set the ``Authorization`` header.
         :type token: str, optional
         """
         self.url = url.strip("/")
@@ -62,8 +68,7 @@ class AtlassianAPI:
             self._create_token_session(token)
 
     def __enter__(self) -> AtlassianAPI:
-        """
-        Enter the runtime context for the API instance.
+        """Return the client for ``with`` statement usage.
 
         :return: The API instance.
         :rtype: AtlassianAPI
@@ -76,8 +81,7 @@ class AtlassianAPI:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        """
-        Exit the runtime context and close the session.
+        """Close the session when leaving a ``with`` block.
 
         :param exc_type: The exception type (if any).
         :type exc_type: type
@@ -89,8 +93,7 @@ class AtlassianAPI:
         self.close()
 
     def _create_basic_session(self, username: str, password: str) -> None:
-        """
-        Create a session with basic authentication.
+        """Apply username/password authentication to the current session.
 
         :param username: The username for authentication.
         :type username: str
@@ -100,8 +103,7 @@ class AtlassianAPI:
         self._session.auth = (username, password)
 
     def _create_token_session(self, token: str) -> None:
-        """
-        Create a session with bearer token authentication.
+        """Apply bearer token authentication to the current session.
 
         :param token: The bearer token for authentication.
         :type token: str
@@ -109,8 +111,7 @@ class AtlassianAPI:
         self._update_header("Authorization", f"Bearer {token}")
 
     def _update_header(self, key: str, value: str) -> None:
-        """
-        Update the headers for the current session.
+        """Set or replace a header on the current session.
 
         :param key: The header key to update.
         :type key: str
@@ -121,12 +122,12 @@ class AtlassianAPI:
 
     @staticmethod
     def _response_handler(response: requests.Response) -> dict | None:
-        """
-        Handle the HTTP response and parse JSON content.
+        """Decode a response body as JSON.
 
         :param response: The HTTP response object.
         :type response: requests.Response
-        :return: The parsed JSON content or None if parsing fails.
+        :return: The parsed JSON content, or ``None`` when the response is
+            empty or cannot be parsed as JSON.
         :rtype: dict or None
         """
         try:
@@ -139,11 +140,7 @@ class AtlassianAPI:
             return None
 
     def close(self) -> None:
-        """
-        Close the current session.
-
-        :return: None
-        """
+        """Close the underlying ``requests.Session``."""
         self._session.close()
 
     def request(
@@ -154,18 +151,18 @@ class AtlassianAPI:
         json: object | None = None,
         params: dict | None = None,
     ) -> requests.Response:
-        """
-        Make an HTTP request.
+        """Send an HTTP request through the configured session.
 
         :param method: The HTTP method (e.g., "GET", "POST", "PUT", "DELETE").
         :type method: str
-        :param path: The API endpoint path.
+        :param path: Endpoint path appended to ``self.url``. Include the leading
+            slash, for example ``/rest/api/2/project``.
         :type path: str
-        :param data: The data to send in the request body (optional).
+        :param data: Form data or bytes to send in the request body.
         :type data: dict or None
-        :param json: The JSON payload to send in the request body (optional).
+        :param json: JSON payload to send in the request body.
         :type json: object or None
-        :param params: The query parameters for the request (optional).
+        :param params: Query string parameters.
         :type params: dict or None
         :return: The HTTP response object.
         :rtype: requests.Response
@@ -195,16 +192,16 @@ class AtlassianAPI:
         data: dict | None = None,
         params: dict | None = None,
     ) -> SimpleNamespace | str | None:
-        """
-        Make a GET request.
+        """Send a ``GET`` request and parse the response for script-friendly use.
 
-        :param path: The API endpoint path.
+        :param path: Endpoint path appended to the base URL.
         :type path: str
-        :param data: The data to send in the request body (optional).
+        :param data: Optional request body data.
         :type data: dict or None
-        :param params: The query parameters for the request (optional).
+        :param params: Query string parameters.
         :type params: dict or None
-        :return: The parsed JSON response or raw text if parsing fails.
+        :return: A nested ``SimpleNamespace`` for JSON responses, raw text when
+            JSON parsing fails, or ``None`` for empty responses.
         :rtype: SimpleNamespace or str or None
         :raises APIError: If the response status code is 4xx or 5xx.
         """
@@ -226,18 +223,17 @@ class AtlassianAPI:
         json: object | None = None,
         params: dict | None = None,
     ) -> dict | None:
-        """
-        Make a POST request.
+        """Send a ``POST`` request.
 
-        :param path: The API endpoint path.
+        :param path: Endpoint path appended to the base URL.
         :type path: str
-        :param data: The data to send in the request body (optional).
+        :param data: Optional request body data.
         :type data: dict or None
-        :param json: The JSON payload to send in the request body (optional).
+        :param json: JSON payload to send in the request body.
         :type json: object or None
-        :param params: The query parameters for the request (optional).
+        :param params: Query string parameters.
         :type params: dict or None
-        :return: The parsed JSON response or None if parsing fails.
+        :return: Decoded JSON response, or ``None`` for empty/non-JSON responses.
         :rtype: dict or None
         :raises APIError: If the response status code is 4xx or 5xx.
         """
@@ -251,18 +247,17 @@ class AtlassianAPI:
         json: object | None = None,
         params: dict | None = None,
     ) -> dict | None:
-        """
-        Make a PUT request.
+        """Send a ``PUT`` request.
 
-        :param path: The API endpoint path.
+        :param path: Endpoint path appended to the base URL.
         :type path: str
-        :param data: The data to send in the request body (optional).
+        :param data: Optional request body data.
         :type data: dict or None
-        :param json: The JSON payload to send in the request body (optional).
+        :param json: JSON payload to send in the request body.
         :type json: object or None
-        :param params: The query parameters for the request (optional).
+        :param params: Query string parameters.
         :type params: dict or None
-        :return: The parsed JSON response or None if parsing fails.
+        :return: Decoded JSON response, or ``None`` for empty/non-JSON responses.
         :rtype: dict or None
         :raises APIError: If the response status code is 4xx or 5xx.
         """
@@ -276,18 +271,17 @@ class AtlassianAPI:
         json: object | None = None,
         params: dict | None = None,
     ) -> dict | None:
-        """
-        Make a DELETE request.
+        """Send a ``DELETE`` request.
 
-        :param path: The API endpoint path.
+        :param path: Endpoint path appended to the base URL.
         :type path: str
-        :param data: The data to send in the request body (optional).
+        :param data: Optional request body data.
         :type data: dict or None
-        :param json: The JSON payload to send in the request body (optional).
+        :param json: JSON payload to send in the request body.
         :type json: object or None
-        :param params: The query parameters for the request (optional).
+        :param params: Query string parameters.
         :type params: dict or None
-        :return: The parsed JSON response or None if parsing fails.
+        :return: Decoded JSON response, or ``None`` for empty/non-JSON responses.
         :rtype: dict or None
         :raises APIError: If the response status code is 4xx or 5xx.
         """
