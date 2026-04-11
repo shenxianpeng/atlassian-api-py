@@ -321,7 +321,11 @@ class Confluence(AtlassianAPI):
         return self.get(url, params=params)
 
     def upload_attachment(
-        self, page_id: int, filename: str, file_data: bytes, content_type: str = "application/octet-stream"
+        self,
+        page_id: int,
+        filename: str,
+        file_data: bytes,
+        content_type: str = "application/octet-stream",
     ) -> dict | None:
         """Upload a file as an attachment to a page.
 

@@ -1,4 +1,5 @@
 import pytest
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 from atlassian.jira import Jira
 
@@ -146,8 +147,6 @@ class TestJira:
         assert kwargs["json"]["update"] == update
 
     def test_create_task(self, jira):
-        import pytest
-
         with pytest.warns(DeprecationWarning, match="create_task"):
             jira.create_task(
                 project_key="PROJ",
@@ -164,8 +163,6 @@ class TestJira:
         assert kwargs["json"]["fields"]["summary"] == "Task summary"
 
     def test_create_sub_task(self, jira):
-        import pytest
-
         with pytest.warns(DeprecationWarning, match="create_sub_task"):
             jira.create_sub_task(
                 project_key="PROJ",
@@ -183,8 +180,6 @@ class TestJira:
         assert kwargs["json"]["fields"]["parent"]["key"] == "PROJ-1"
 
     def test_create_sub_task_with_team(self, jira):
-        import pytest
-
         with pytest.warns(DeprecationWarning, match="create_sub_task"):
             jira.create_sub_task(
                 project_key="PROJ",

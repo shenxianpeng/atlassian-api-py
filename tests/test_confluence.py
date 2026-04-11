@@ -1,5 +1,6 @@
 import pytest
-from unittest.mock import MagicMock
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 from atlassian.confluence import Confluence
 
 
@@ -47,8 +48,6 @@ class TestConfluence:
         )
 
     def test_update_content(self, confluence):
-        from types import SimpleNamespace
-
         confluence.get = MagicMock(
             return_value=SimpleNamespace(version=SimpleNamespace(number=5))
         )
@@ -191,8 +190,6 @@ class TestConfluence:
         )
 
     def test_upload_attachment(self, confluence):
-        from unittest.mock import patch, MagicMock
-
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"results": []}
