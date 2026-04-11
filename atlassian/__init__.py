@@ -14,8 +14,15 @@ Example:
     confluence = Confluence(url="https://confluence.company.com", token="your_token")
 """
 
+from importlib.metadata import PackageNotFoundError, version
+
 from atlassian.jira import Jira
 from atlassian.bitbucket import Bitbucket
 from atlassian.confluence import Confluence
 
-__all__ = ["Jira", "Bitbucket", "Confluence"]
+try:
+    __version__ = version("atlassian-api-py")
+except PackageNotFoundError:
+    __version__ = "unknown"
+
+__all__ = ["Jira", "Bitbucket", "Confluence", "__version__"]

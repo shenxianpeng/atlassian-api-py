@@ -53,6 +53,9 @@ docs = ["myst-parser", "sphinx", "sphinx_rtd_theme", "sphinx-autobuild"]
 zip-safe = false
 packages = ["atlassian"]
 
+[tool.setuptools.package-data]
+atlassian = ["py.typed"]
+
 [tool.setuptools_scm]
 # It would be nice to include the commit hash in the version, but that
 # can't be done in a PEP 440-compatible way.

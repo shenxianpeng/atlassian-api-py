@@ -1,5 +1,6 @@
 import pytest
-from unittest.mock import MagicMock
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 from atlassian.confluence import Confluence
 
 
@@ -47,11 +48,14 @@ class TestConfluence:
         )
 
     def test_update_content(self, confluence):
+        confluence.get = MagicMock(
+            return_value=SimpleNamespace(version=SimpleNamespace(number=5))
+        )
         confluence.update_content(123, "Test Page", "Body Value")
         confluence.put.assert_called_with(
             "/rest/api/content/123",
             json={
-                "version": {"number": 2},
+                "version": {"number": 6},
                 "title": "Test Page",
                 "type": "page",
                 "body": {
@@ -59,6 +63,25 @@ class TestConfluence:
                 },
             },
         )
+        confluence.get.assert_called_with(
+            "/rest/api/content/123", params={"expand": "version"}
+        )
+
+    def test_update_content_explicit_version(self, confluence):
+        confluence.update_content(123, "Test Page", "Body Value", version=7)
+        confluence.put.assert_called_with(
+            "/rest/api/content/123",
+            json={
+                "version": {"number": 7},
+                "title": "Test Page",
+                "type": "page",
+                "body": {
+                    "storage": {"value": "Body Value", "representation": "storage"}
+                },
+            },
+        )
+        # When version is provided explicitly, get should not be called
+        confluence.get.assert_not_called()
 
     def test_delete_content(self, confluence):
         confluence.delete_content(123)
@@ -157,4 +180,41 @@ class TestConfluence:
         confluence.delete.assert_called_with(
             "/rest/api/content/123/label",
             params={"name": "my-label"},
+        )
+
+    def test_get_page_by_title(self, confluence):
+        confluence.get_page_by_title("TEST_SPACE", "My Page")
+        confluence.get.assert_called_with(
+            "/rest/api/content",
+            params={"spaceKey": "TEST_SPACE", "title": "My Page", "type": "page"},
+        )
+
+    def test_upload_attachment(self, confluence):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"results": []}
+        confluence._session.post = MagicMock(return_value=mock_response)
+        confluence.upload_attachment(123, "test.txt", b"hello world", "text/plain")
+        assert confluence._session.post.called
+        args, kwargs = confluence._session.post.call_args
+        assert "test.txt" in str(kwargs.get("files", args))
+
+    def test_get_comments(self, confluence):
+        confluence.get_comments(123)
+        confluence.get.assert_called_with("/rest/api/content/123/child/comment")
+
+    def test_add_comment(self, confluence):
+        confluence.add_comment(123, "This is a comment.")
+        confluence.post.assert_called_with(
+            "/rest/api/content",
+            json={
+                "type": "comment",
+                "container": {"id": 123, "type": "page"},
+                "body": {
+                    "storage": {
+                        "value": "This is a comment.",
+                        "representation": "storage",
+                    }
+                },
+            },
         )

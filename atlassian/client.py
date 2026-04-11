@@ -31,6 +31,8 @@ class AtlassianAPI:
         timeout: int = 60,
         session: requests.Session | None = None,
         token: str | None = None,
+        verify: bool | str = True,
+        proxies: dict | None = None,
     ) -> None:
         """Create a client session for an Atlassian REST API.
 
@@ -50,6 +52,13 @@ class AtlassianAPI:
         :type session: requests.Session, optional
         :param token: Bearer token used to set the ``Authorization`` header.
         :type token: str, optional
+        :param verify: SSL certificate verification. Pass ``False`` to disable
+            verification (not recommended in production), or a path to a CA
+            bundle to use for verification.
+        :type verify: bool or str, optional
+        :param proxies: Dictionary mapping protocol names to proxy URLs, for
+            example ``{"https": "http://proxy.example.com:8080"}``.
+        :type proxies: dict, optional
         """
         self.url = url.strip("/")
         self.username = username
@@ -59,6 +68,9 @@ class AtlassianAPI:
             self._session = requests.Session()
         else:
             self._session = session
+        self._session.verify = verify
+        if proxies is not None:
+            self._session.proxies.update(proxies)
         if username and password:
             try:
                 self._create_basic_session(username, password)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from types import SimpleNamespace
 
 from atlassian.client import AtlassianAPI
@@ -41,8 +42,8 @@ class Jira(AtlassianAPI):
             response text for non-JSON responses, or ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
-        url = f"/rest/api/2/issue/{issue_key}?expand=changelog&fields=summary"
-        return self.get(url)
+        url = f"/rest/api/2/issue/{issue_key}"
+        return self.get(url, params={"expand": "changelog", "fields": "summary"})
 
     def update_issue_label(
         self,
@@ -262,8 +263,11 @@ class Jira(AtlassianAPI):
     ) -> dict | None:
         """Create a task with the legacy project-specific payload.
 
-        Prefer :meth:`create_issue` for new code because custom fields and issue
-        type IDs vary between Jira projects.
+        .. deprecated::
+            Use :meth:`create_issue` instead. ``create_task()`` contains
+            hard-coded private custom fields (``customfield_11386``) that are
+            not portable across Jira projects and will be removed in a future
+            version.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -282,6 +286,12 @@ class Jira(AtlassianAPI):
         :return: Decoded API response, or ``None`` when Jira returns no body.
         :rtype: dict or None
         """
+        warnings.warn(
+            "create_task() is deprecated and will be removed in a future version. "
+            "Use create_issue() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         url = "/rest/api/2/issue"
         json = {
             "fields": {
@@ -313,8 +323,11 @@ class Jira(AtlassianAPI):
     ) -> dict | None:
         """Create a sub-task with the legacy project-specific payload.
 
-        Prefer :meth:`create_issue` for new code because custom fields and issue
-        type IDs vary between Jira projects.
+        .. deprecated::
+            Use :meth:`create_issue` instead. ``create_sub_task()`` contains
+            hard-coded private custom fields (``customfield_13430``,
+            ``customfield_11360``) that are not portable across Jira projects
+            and will be removed in a future version.
 
         :param project_key: The key of the project.
         :type project_key: str
@@ -337,6 +350,12 @@ class Jira(AtlassianAPI):
         :return: Decoded API response, or ``None`` when Jira returns no body.
         :rtype: dict or None
         """
+        warnings.warn(
+            "create_sub_task() is deprecated and will be removed in a future version. "
+            "Use create_issue() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         url = "/rest/api/2/issue"
         json = {
             "fields": {
@@ -447,27 +466,37 @@ class Jira(AtlassianAPI):
         url = f"/rest/api/2/issue/{issue_id}/transitions"
         return self.get(url)
 
-    def search_issue_with_jql(self, jql: str, max_result: int = 1000) -> list:
+    def search_issue_with_jql(
+        self,
+        jql: str,
+        max_result: int = 1000,
+        fields: list[str] | None = None,
+    ) -> list:
         """Search issues using JQL.
 
         :param jql: The JQL query string.
         :type jql: str
         :param max_result: Page size requested from Jira for each API call.
         :type max_result: int, optional
-        :return: Issues matching the query. The current implementation requests
-            ``summary``, ``status``, ``issuetype``, and ``fixVersions`` fields.
+        :param fields: List of field names to return for each issue. When
+            ``None`` (the default), all fields are returned. Pass an explicit
+            list to restrict the response, for example
+            ``["summary", "status", "assignee"]``.
+        :type fields: list[str], optional
+        :return: Issues matching the query.
         :rtype: list
         """
         url = "/rest/api/2/search"
         start_at = 0
         issues: list[str] = []
-        json = {
+        payload: dict = {
             "jql": jql,
             "startAt": start_at,
             "maxResults": max_result,
-            "fields": ["summary", "status", "issuetype", "fixVersions"],
         }
-        response = self.post(url, json=json) or {}
+        if fields is not None:
+            payload["fields"] = fields
+        response = self.post(url, json=payload) or {}
         try:
             total = response["total"]
         except KeyError:
@@ -478,13 +507,14 @@ class Jira(AtlassianAPI):
 
         while total > max_results:
             start_at = start_at + max_results
-            json = {
+            payload = {
                 "jql": jql,
                 "startAt": start_at,
                 "maxResults": max_result,
-                "fields": ["summary", "status", "issuetype", "fixVersions"],
             }
-            response = self.post(url, json=json) or {}
+            if fields is not None:
+                payload["fields"] = fields
+            response = self.post(url, json=payload) or {}
             total = total - max_results
             for issue in response["issues"]:
                 issues.append(issue)

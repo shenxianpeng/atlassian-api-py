@@ -39,6 +39,28 @@ class TestAtlassianAPI:
         api = AtlassianAPI(url="https://example.com", timeout=30)
         assert api.timeout == 30
 
+    def test_init_with_verify_false(self):
+        api = AtlassianAPI(url="https://example.com", verify=False)
+        assert api._session.verify is False
+
+    def test_init_with_verify_ca_bundle(self):
+        api = AtlassianAPI(url="https://example.com", verify="/path/to/ca-bundle.crt")
+        assert api._session.verify == "/path/to/ca-bundle.crt"
+
+    def test_init_verify_default_is_true(self):
+        api = AtlassianAPI(url="https://example.com")
+        assert api._session.verify is True
+
+    def test_init_with_proxies(self):
+        proxies = {"https": "http://proxy.example.com:8080"}
+        api = AtlassianAPI(url="https://example.com", proxies=proxies)
+        assert api._session.proxies.get("https") == "http://proxy.example.com:8080"
+
+    def test_init_without_proxies(self):
+        api = AtlassianAPI(url="https://example.com")
+        # No custom proxy should be set
+        assert api._session.proxies.get("https") is None
+
     def test_init_with_auth_exception(self):
         with patch.object(
             AtlassianAPI, "_create_basic_session", side_effect=Exception("Auth error")
