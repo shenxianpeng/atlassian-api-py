@@ -1,4 +1,4 @@
-"""Logger"""
+"""Logging helpers for the Atlassian clients."""
 
 import logging
 import sys
@@ -9,10 +9,9 @@ LOG_FILE = "logs/atlassian-api-py.log"
 
 
 def get_console_handler():
-    """
-    Output log to console
+    """Create a console log handler that writes to stdout.
 
-    :return: StreamHandler
+    :return: Configured stream handler.
     :rtype: StreamHandler
     """
     console_handler = logging.StreamHandler(sys.stdout)
@@ -21,9 +20,12 @@ def get_console_handler():
 
 
 def get_file_handler():
-    """Output log to file
+    """Create a rotating file log handler.
 
-    :return: RotatingFileHandler
+    The caller is responsible for ensuring that the ``logs`` directory exists
+    before attaching this handler.
+
+    :return: Configured rotating file handler.
     :rtype: RotatingFileHandler
     """
     file_handler = RotatingFileHandler(
@@ -34,19 +36,11 @@ def get_file_handler():
 
 
 def get_logger(name):
-    """
-    Get a logger instance
+    """Return a package logger with the project formatter attached.
 
-       Example 'application' code
-       logger.debug('debug message')
-       logger.info('info message')
-       logger.warning('warn message')
-       logger.error('error message')
-       logger.critical('critical message')
-
-    :param name: The name of the logger
+    :param name: Logger name, usually ``__name__``.
     :type name: str
-    :return: A logger instance
+    :return: Configured logger instance.
     :rtype: Logger
     """
     logger = logging.getLogger(name)

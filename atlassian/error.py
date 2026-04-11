@@ -1,8 +1,11 @@
-"""
-HTTP Response Codes:
-https://developer.atlassian.com/server/confluence/http-response-code-definitions/
+"""HTTP error helpers used by the Atlassian clients.
 
-This module defines HTTP response codes and provides an `APIError` class for handling API errors.
+``AtlassianAPI.request()`` raises ``APIError`` for HTTP ``4xx`` and ``5xx``
+responses. The exception keeps the status code and the response text so callers
+can log or branch on the failure.
+
+HTTP response code reference:
+https://developer.atlassian.com/server/confluence/http-response-code-definitions/
 """
 
 from __future__ import annotations
@@ -53,25 +56,21 @@ _ERROR_CODE_MESSAGE = {
 
 
 class APIError(Exception):
-    """
-    Exception class for handling API errors.
-
-    This class represents an error response from an API, including the HTTP status code
-    and a corresponding error message.
+    """Exception raised when an Atlassian REST API request fails.
 
     :param code: The HTTP status code of the error.
     :type code: int, optional
-    :param message: A custom error message. If not provided, a default message based on the code will be used.
+    :param message: Response body or custom error message. If omitted, a
+        default message is selected from the status code.
     :type message: str, optional
     """
 
     def __init__(self, code: int | None = None, message: str | None = None) -> None:
-        """
-        Initialize the APIError instance.
+        """Create an API error with a status code and message.
 
         :param code: The HTTP status code of the error.
         :type code: int, optional
-        :param message: A custom error message. If not provided, a default message based on the code will be used.
+        :param message: Response body or custom error message.
         :type message: str, optional
         """
         self.code = code
@@ -85,8 +84,7 @@ class APIError(Exception):
             )
 
     def __str__(self) -> str:
-        """
-        Return a string representation of the error.
+        """Return a readable ``Error [code] : message`` string.
 
         :return: A formatted string containing the error code and message.
         :rtype: str

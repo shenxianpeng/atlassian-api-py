@@ -1,7 +1,17 @@
 API documentation
 =================
 
-Please refer to the ``atlassian`` specific module documentation for detailed information.
+This page lists the public clients and lower-level helpers exposed by the
+``atlassian`` package.
+
+Most scripts should import one of the product clients from ``atlassian``:
+
+.. code-block:: python
+
+   from atlassian import Jira, Bitbucket, Confluence
+
+Use ``atlassian.client.AtlassianAPI`` directly only when you need to call an
+endpoint that does not yet have a convenience method.
 
 atlassian.jira module
 ---------------------
