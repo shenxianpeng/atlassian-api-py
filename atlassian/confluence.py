@@ -386,8 +386,6 @@ class Confluence(AtlassianAPI):
         payload: dict[str, Any] = {
             "type": "comment",
             "container": {"id": page_id, "type": "page"},
-            "body": {
-                "storage": {"value": body, "representation": "storage"}
-            },
+            "body": {"storage": {"value": body, "representation": "storage"}},
         }
         return self.post(url, json=payload)
