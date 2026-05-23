@@ -1,0 +1,32 @@
+name: Aion Scan
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+  workflow_dispatch:
+
+jobs:
+  scan:
+    name: Aion security scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install aion
+        run: pip install aion-evolve
+
+      - name: Run aion scan
+        run: aion scan . --output json
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
