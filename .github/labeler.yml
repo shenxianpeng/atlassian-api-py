@@ -1,0 +1,40 @@
+bug:
+  - head-branch:
+    - '^fix/'
+    - '^bugfix/'
+    - '^hotfix/'
+
+enhancement:
+  - head-branch:
+    - '^feat/'
+    - '^feature/'
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'docs/**'
+      - 'README.rst'
+      - '*.md'
+      - '*.rst'
+      - 'CHANGELOG.md'
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - '.github/dependabot.yml'
+
+testing:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tests/**'
+
+chore:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**'
+      - 'noxfile.py'
+      - '.pre-commit-config.yaml'
+      - '.readthedocs.yaml'
+      - '.gitignore'
