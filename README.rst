@@ -15,7 +15,7 @@ Python Wrapper for Atlassian REST API
    :target: https://codecov.io/gh/shenxianpeng/atlassian-api-py
    :alt: Code Coverage
 
-.. |python-version| image:: https://img.shields.io/pypi/pyversions/atlassian-api-py?style=flat-square
+.. |python-version| image:: https://img.shields.io/pypi/pyversions/atlassian-api-py
    :target: https://pypi.org/project/atlassian-api-py
    :alt: PyPI - Python Version
 
