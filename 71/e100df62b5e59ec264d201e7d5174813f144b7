@@ -1,0 +1,33 @@
+tests/test_url_encoding.py
+  s_66212c309e21f0::t_c2903f113e8e78 1-447
+  s_66212c309e21f0::t_47683fd59bfab2 448-459
+atlassian/client.py
+  s_66212c309e21f0::t_b693fd98c85bee 6,14-31
+  s_66212c309e21f0::t_3898caac8464bc 32-33
+atlassian/bitbucket.py
+  s_66212c309e21f0::t_a6cc4095826e1e 6,69,104,123,147,167,187,242-243,275-276,418,436,454,472,490,516,539,588,607,647,697,735-736,791,820,849,878,913-919,943-945,956,986,1005,1032,1058,1082,1106,1130,1166,1195,1216,1240,1271
+atlassian/confluence.py
+  s_66212c309e21f0::t_9704df6859ca43 6,101-102,108,127,139,151,180,247,260,272,285,299,347,373
+atlassian/jira.py
+  s_66212c309e21f0::t_f2c9084bb6438b 6,33,45,65,103,137,161,183,197,231,396,417,433,453,466,532,544-545,565-571,581,593,615,632,645,657
+tests/test_bitbucket.py
+  s_66212c309e21f0::t_7043978809a0a3 228,461,648,956-957,985-986,1054-1056,1095-1103
+tests/test_jira.py
+  s_66212c309e21f0::t_ae895cc7145955 303,308-313,319-324
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "71e100df62b5e59ec264d201e7d5174813f144b7",
+  "prompts": {},
+  "sessions": {
+    "s_66212c309e21f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8763d161-5362-48a1-ae9b-11f7bcd83469",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}
