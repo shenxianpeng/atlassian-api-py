@@ -1,0 +1,27 @@
+.github/copilot-instructions.md
+  s_66212c309e21f0::t_005e4eb2037c79 33-34
+.github/workflows/main.yml
+  s_66212c309e21f0::t_7e1063ae231f72 49
+README.rst
+  s_66212c309e21f0::t_fcb73822a934e9 62
+noxfile.py
+  s_66212c309e21f0::t_f30f37a0b838bd 31
+pyproject.toml
+  s_66212c309e21f0::t_0f8db65b39189b 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a3c12ff592e5c6a89972100772d89c147e6380a9",
+  "prompts": {},
+  "sessions": {
+    "s_66212c309e21f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8763d161-5362-48a1-ae9b-11f7bcd83469",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}
