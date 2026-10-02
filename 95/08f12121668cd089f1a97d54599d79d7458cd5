@@ -1,0 +1,23 @@
+.github/workflows/codeql.yml
+  s_66212c309e21f0::t_0d4221336b28fe 33-34
+.github/workflows/main.yml
+  s_66212c309e21f0::t_b1f422614930af 18,30-31
+.github/workflows/publish-pypi.yml
+  s_66212c309e21f0::t_15a78b9fb3c796 30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9508f12121668cd089f1a97d54599d79d7458cd5",
+  "prompts": {},
+  "sessions": {
+    "s_66212c309e21f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8763d161-5362-48a1-ae9b-11f7bcd83469",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}
