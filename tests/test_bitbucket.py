@@ -816,3 +816,299 @@ class TestBitbucket:
         bitbucket.create_tag("PROJ", "repo", "v2.0.0", "def456", message="Release 2.0")
         args, kwargs = bitbucket.post.call_args
         assert kwargs["json"]["message"] == "Release 2.0"
+
+    @staticmethod
+    def _serve_pages(pages):
+        """Fake ``get`` that serves ``pages`` and snapshots each call's params."""
+        calls = []
+
+        def fake_get(url, params=None):
+            calls.append((url, dict(params or {})))
+            return pages[len(calls) - 1]
+
+        return fake_get, calls
+
+    def test_get_paged_requests_next_page_start(self, bitbucket):
+        fake_get, calls = self._serve_pages(
+            [
+                SimpleNamespace(values=[1, 2], isLastPage=False, nextPageStart=2),
+                SimpleNamespace(values=[3], isLastPage=True),
+            ]
+        )
+        bitbucket.get = fake_get
+
+        result = bitbucket._get_paged("/test/url", {"limit": 10})
+
+        assert result == [1, 2, 3]
+        assert calls == [
+            ("/test/url", {"limit": 10}),
+            ("/test/url", {"limit": 8, "start": 2}),
+        ]
+
+    def test_get_paged_stops_when_next_page_is_not_json(self, bitbucket):
+        fake_get, calls = self._serve_pages(
+            [
+                SimpleNamespace(values=[1], isLastPage=False, nextPageStart=1),
+                "<html>proxy error</html>",
+            ]
+        )
+        bitbucket.get = fake_get
+
+        assert bitbucket._get_paged("/test/url", {}) == [1]
+        assert len(calls) == 2
+
+    def test_get_paged_tolerates_empty_next_page(self, bitbucket):
+        fake_get, _ = self._serve_pages(
+            [
+                SimpleNamespace(values=[1], isLastPage=False, nextPageStart=1),
+                SimpleNamespace(values=None, isLastPage=True),
+            ]
+        )
+        bitbucket.get = fake_get
+
+        assert bitbucket._get_paged("/test/url", {}) == [1]
+
+    def test_get_merged_branch_request(self, bitbucket):
+        bitbucket._get_paged = MagicMock(return_value=[])
+        bitbucket.get_merged_branch("PROJ", "repo")
+        bitbucket._get_paged.assert_called_once_with(
+            "/rest/api/latest/projects/PROJ/repos/repo/branches"
+            "?base=refs/heads/master&details=true",
+            params={},
+        )
+
+    def test_get_merged_branch_skips_open_pull_request(self, bitbucket):
+        metadata_key = "com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata"
+        open_branch = SimpleNamespace(
+            displayId="feature-open",
+            metadata=SimpleNamespace(
+                **{
+                    metadata_key: SimpleNamespace(
+                        pullRequest=SimpleNamespace(state="OPEN"), merged=False
+                    )
+                }
+            ),
+        )
+        bitbucket._get_paged = MagicMock(return_value=[open_branch])
+
+        assert bitbucket.get_merged_branch("PROJ", "repo") == []
+
+    @pytest.mark.parametrize(
+        "method, ref",
+        [
+            ("get_pull_request_destination_branch_name", "toRef"),
+            ("get_pull_request_source_branch_name", "fromRef"),
+        ],
+    )
+    def test_pull_request_branch_name_without_pull_requests(
+        self, bitbucket, method, ref
+    ):
+        bitbucket.get_pull_request = MagicMock(return_value=[])
+
+        assert getattr(bitbucket, method)("PROJ", "repo", 1) is None
+        bitbucket.get_pull_request.assert_called_once_with("PROJ", "repo", limit=25)
+
+    @pytest.mark.parametrize(
+        "method, expected",
+        [
+            ("get_pull_request_destination_branch_name", "main"),
+            ("get_pull_request_source_branch_name", "feature/TEST-1"),
+        ],
+    )
+    def test_pull_request_branch_name_found_on_second_attempt(
+        self, bitbucket, method, expected
+    ):
+        others = [SimpleNamespace(id=i) for i in range(25)]
+        target = SimpleNamespace(
+            id=99,
+            toRef=SimpleNamespace(displayId="main"),
+            fromRef=SimpleNamespace(displayId="feature/TEST-1"),
+        )
+        bitbucket.get_pull_request = MagicMock(side_effect=[others, others + [target]])
+
+        # The ID may be given as a string; it is compared as an integer.
+        assert getattr(bitbucket, method)("PROJ", "repo", "99") == expected
+        limits = [c.kwargs["limit"] for c in bitbucket.get_pull_request.call_args_list]
+        assert limits == [25, 50]
+
+    @pytest.mark.parametrize(
+        "method",
+        [
+            "get_pull_request_destination_branch_name",
+            "get_pull_request_source_branch_name",
+        ],
+    )
+    def test_pull_request_branch_name_gives_up_after_max_attempts(
+        self, bitbucket, method
+    ):
+        def full_page(project_key, repo_slug, limit):
+            return [SimpleNamespace(id=-1)] * limit
+
+        bitbucket.get_pull_request = MagicMock(side_effect=full_page)
+
+        assert getattr(bitbucket, method)("PROJ", "repo", 1) is None
+        assert bitbucket.get_pull_request.call_count == 100
+
+    def test_get_pull_request_request(self, bitbucket):
+        bitbucket._get_paged = MagicMock(return_value=["pr"])
+        assert bitbucket.get_pull_request("PROJ", "repo") == ["pr"]
+        bitbucket._get_paged.assert_called_once_with(
+            "/rest/api/latest/projects/PROJ/repos/repo/pull-requests?state=ALL",
+            params={},
+        )
+
+    def test_get_pull_request_id_passes_filters(self, bitbucket):
+        bitbucket.get_pull_request = MagicMock(return_value=[])
+        bitbucket.get_pull_request_id("PROJ", "repo", "MERGED", start=5, limit=10)
+        bitbucket.get_pull_request.assert_called_once_with(
+            "PROJ", "repo", pr_state="MERGED", start=5, limit=10
+        )
+
+    def test_get_project_repo_request(self, bitbucket):
+        bitbucket._get_paged = MagicMock(return_value=[])
+        bitbucket.get_project_repo("PROJ")
+        bitbucket._get_paged.assert_called_once_with(
+            "/rest/api/latest/projects/PROJ/repos/", params={}
+        )
+
+    def test_get_repo_branch_request(self, bitbucket):
+        bitbucket._get_paged = MagicMock(return_value=[])
+        bitbucket.get_repo_branch("PROJ", "repo")
+        bitbucket._get_paged.assert_called_once_with(
+            "/rest/api/latest/projects/PROJ/repos/repo/branches", params={}
+        )
+
+    def test_get_branch_commits_request(self, bitbucket):
+        bitbucket._get_paged = MagicMock(return_value=[])
+        bitbucket.get_branch_commits("PROJ", "repo", "master")
+        bitbucket._get_paged.assert_called_once_with(
+            "/rest/api/latest/projects/PROJ/repos/repo/commits/?until=master",
+            params={},
+        )
+
+    def test_get_pull_request_activities_request(self, bitbucket):
+        bitbucket._get_paged = MagicMock(return_value=[])
+        bitbucket.get_pull_request_activities("PROJ", "repo", 7)
+        bitbucket._get_paged.assert_called_once_with(
+            "/rest/api/latest/projects/PROJ/repos/repo/pull-requests/7/activities",
+            params={},
+        )
+
+    def test_get_branch_committer_info_passes_paging(self, bitbucket):
+        bitbucket.get_branch_commits = MagicMock(return_value=[])
+        assert bitbucket.get_branch_committer_info("P", "r", "main", 5, 10) == []
+        bitbucket.get_branch_commits.assert_called_once_with(
+            "P", "r", "main", start=5, limit=10
+        )
+
+    def test_create_and_delete_branch_requests(self, bitbucket):
+        bitbucket.create_branch("PROJ", "repo", "feature-x", "main")
+        bitbucket.post.assert_called_once_with(
+            "/rest/branch-utils/1.0/projects/PROJ/repos/repo/branches",
+            json={"name": "feature-x", "startPoint": "main"},
+        )
+        bitbucket.delete_branch("PROJ", "repo", "feature-x", "abc123")
+        bitbucket.delete.assert_called_once_with(
+            "/rest/branch-utils/latest/projects/PROJ/repos/repo/branches",
+            json={"name": "feature-x", "endPoint": "abc123"},
+        )
+
+    @staticmethod
+    def _activity(text, comment_id, version=1, severity="NORMAL", state="OPEN"):
+        return SimpleNamespace(
+            comment=SimpleNamespace(
+                text=text,
+                id=comment_id,
+                version=version,
+                severity=severity,
+                state=state,
+            )
+        )
+
+    def test_update_pull_request_comment_skips_other_comments(self, bitbucket):
+        bitbucket.get_pull_request_activities = MagicMock(
+            return_value=[
+                SimpleNamespace(action="OPENED"),
+                self._activity("unrelated", 1),
+                self._activity("the old text here", 2, version=4),
+            ]
+        )
+
+        bitbucket.update_pull_request_comment("PROJ", "repo", 9, "old text", "new")
+
+        bitbucket.put.assert_called_once_with(
+            "/rest/api/latest/projects/PROJ/repos/repo/pull-requests/9/comments/2",
+            json={"version": 4, "text": "new", "severity": "NORMAL", "state": "OPEN"},
+        )
+
+    def test_delete_pull_request_comment_requires_exact_text(self, bitbucket):
+        bitbucket.get_pull_request_activities = MagicMock(
+            return_value=[
+                self._activity("Delete me too", 1),
+                self._activity("Delete me", 2, version=3),
+            ]
+        )
+
+        bitbucket.delete_pull_request_comment("PROJ", "repo", 9, "Delete me")
+
+        args, kwargs = bitbucket.delete.call_args
+        assert args[0].startswith(
+            "/rest/api/1.0/projects/PROJ/repos/repo/pull-requests/9/comments/2"
+        )
+        assert args[0].endswith("version=3")
+
+    def test_find_comment_in_activities_skips_other_comments(self, bitbucket):
+        bitbucket.get_pull_request_activities = MagicMock(
+            return_value=[self._activity("first", 1), self._activity("second", 2)]
+        )
+
+        found = bitbucket._find_comment_in_activities("PROJ", "repo", 9, "second")
+
+        assert found == {
+            "id": 2,
+            "version": 1,
+            "text": "second",
+            "severity": "NORMAL",
+            "state": "OPEN",
+        }
+
+    @pytest.mark.parametrize(
+        "method, value",
+        [
+            ("update_pull_request_description", "description"),
+            ("update_pull_request_title", "title"),
+            ("update_pull_request_reviewers", [{"user": {"name": "alice"}}]),
+            ("update_pull_request_destination", "main"),
+        ],
+    )
+    @pytest.mark.parametrize("overview", [None, "<html>not json</html>"])
+    def test_update_pull_request_needs_overview(
+        self, bitbucket, method, value, overview
+    ):
+        bitbucket.get_pull_request_overview = MagicMock(return_value=overview)
+
+        assert getattr(bitbucket, method)("PROJ", "repo", 1, value) is None
+        bitbucket.put.assert_not_called()
+
+    def test_get_file_change_history_request(self, bitbucket):
+        bitbucket._get_paged = MagicMock(return_value=[])
+        bitbucket.get_file_change_history("PROJ", "repo", "main", "src/a.py")
+        url = bitbucket._get_paged.call_args.args[0]
+        assert url.startswith("/rest/api/latest/projects/PROJ/repos/repo/commits?")
+        assert "path=src/a.py" in url
+        assert "until=refs%2Fheads%2Fmain" in url
+
+    def test_update_build_status_payload(self, bitbucket):
+        bitbucket.update_build_status(
+            "abc123", "FAILED", "ci", "CI build", "https://ci.example.com/1"
+        )
+        bitbucket.post.assert_called_once_with(
+            "/rest/build-status/latest/commits/abc123",
+            json={
+                "state": "FAILED",
+                "key": "ci",
+                "name": "CI build",
+                "url": "https://ci.example.com/1",
+                "description": "ManuallyCheckBuildPass",
+            },
+        )

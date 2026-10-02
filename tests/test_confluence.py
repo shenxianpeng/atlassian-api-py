@@ -2,6 +2,7 @@ import pytest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from atlassian.confluence import Confluence
+from atlassian.error import APIError
 
 
 class TestConfluence:
@@ -218,3 +219,54 @@ class TestConfluence:
                 },
             },
         )
+
+    @pytest.mark.parametrize("current", [None, "<html>not json</html>"])
+    def test_update_content_without_readable_version(self, confluence, current):
+        confluence.get = MagicMock(return_value=current)
+
+        confluence.update_content(123, "Title", "Body", type="blogpost")
+
+        confluence.put.assert_called_once_with(
+            "/rest/api/content/123",
+            json={
+                "version": {"number": 1},
+                "title": "Title",
+                "type": "blogpost",
+                "body": {"storage": {"value": "Body", "representation": "storage"}},
+            },
+        )
+
+    def test_upload_attachment_request(self, confluence):
+        seen_headers = {}
+
+        def fake_post(url, **kwargs):
+            seen_headers.update(confluence._session.headers)
+            response = MagicMock(status_code=200)
+            response.json.return_value = {"results": [{"id": "att1"}]}
+            return response
+
+        confluence._session.post = MagicMock(side_effect=fake_post)
+
+        result = confluence.upload_attachment(123, "test.txt", b"hello", "text/plain")
+
+        assert result == {"results": [{"id": "att1"}]}
+        confluence._session.post.assert_called_once_with(
+            "https://fake_url/rest/api/content/123/child/attachment",
+            files={"file": ("test.txt", b"hello", "text/plain")},
+            data={"comment": ""},
+            timeout=60,
+        )
+        # The XSRF bypass header is only present for the upload request.
+        assert seen_headers["X-Atlassian-Token"] == "nocheck"
+        assert "X-Atlassian-Token" not in confluence._session.headers
+
+    def test_upload_attachment_error_raises_and_resets_header(self, confluence):
+        response = MagicMock(status_code=413, text="Request Entity Too Large")
+        confluence._session.post = MagicMock(return_value=response)
+
+        with pytest.raises(APIError) as exc_info:
+            confluence.upload_attachment(123, "big.bin", b"x")
+
+        assert exc_info.value.code == 413
+        assert exc_info.value.message == "Request Entity Too Large"
+        assert "X-Atlassian-Token" not in confluence._session.headers

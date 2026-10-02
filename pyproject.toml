@@ -46,7 +46,7 @@ download = "https://pypi.org/project/atlassian-api-py/#files"
 
 [project.optional-dependencies]
 dev = ["nox", "pre-commit", "mypy", "twine"]
-test = ["pytest", "coverage"]
+test = ["pytest", "coverage", "responses"]
 docs = ["myst-parser", "sphinx", "sphinx_rtd_theme", "sphinx-autobuild"]
 
 [tool.setuptools]
