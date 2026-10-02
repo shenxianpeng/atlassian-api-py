@@ -1,6 +1,11 @@
+import base64
+import logging
+
 import pytest
 from unittest.mock import MagicMock, patch, Mock
 import requests
+import responses
+from responses import matchers
 from types import SimpleNamespace
 from atlassian.client import AtlassianAPI
 from atlassian.error import APIError
@@ -375,3 +380,162 @@ class TestAtlassianAPI:
 
         assert exc_info.value.code == 403
         assert '{"message": "You do not have permission"}' in exc_info.value.message
+
+
+BASE_URL = "https://jira.example.com"
+
+
+# requests lets these variables override session settings, so clear them.
+_TRANSPORT_ENV_VARS = (
+    "REQUESTS_CA_BUNDLE",
+    "CURL_CA_BUNDLE",
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY",
+    "NO_PROXY",
+)
+
+
+@pytest.fixture
+def http(monkeypatch):
+    """Intercept HTTP at the transport adapter; unexpected requests fail."""
+    for name in _TRANSPORT_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+        monkeypatch.delenv(name.lower(), raising=False)
+    with responses.RequestsMock() as rsps:
+        yield rsps
+
+
+class TestAtlassianAPIOverHTTP:
+    """Exercise the client through a real ``requests`` session."""
+
+    def test_get_decodes_json_into_namespaces(self, http):
+        http.get(
+            f"{BASE_URL}/rest/api/2/issue/TEST-1",
+            json={"key": "TEST-1", "fields": {"status": {"name": "Open"}}},
+        )
+        api = AtlassianAPI(url=f"{BASE_URL}/")
+
+        issue = api.get("/rest/api/2/issue/TEST-1")
+
+        assert issue.key == "TEST-1"
+        assert issue.fields.status.name == "Open"
+
+    def test_secure_transport_defaults(self, http):
+        http.get(f"{BASE_URL}/rest/api/2/myself", json={})
+        AtlassianAPI(url=BASE_URL).get("/rest/api/2/myself")
+
+        sent = http.calls[0].request
+        assert sent.req_kwargs["verify"] is True
+        assert sent.req_kwargs["timeout"] == 60
+        assert "Authorization" not in sent.headers
+
+    @pytest.mark.parametrize(
+        "kwargs, expected",
+        [
+            ({"verify": False}, {"verify": False}),
+            ({"verify": "/etc/ssl/ca.pem"}, {"verify": "/etc/ssl/ca.pem"}),
+            ({"timeout": 5}, {"timeout": 5}),
+            (
+                {"proxies": {"https": "http://proxy.example.com:8080"}},
+                {"proxies": {"https": "http://proxy.example.com:8080"}},
+            ),
+        ],
+    )
+    def test_transport_options_are_forwarded(self, http, kwargs, expected):
+        http.get(f"{BASE_URL}/rest/api/2/myself", json={})
+        AtlassianAPI(url=BASE_URL, **kwargs).get("/rest/api/2/myself")
+
+        sent = http.calls[0].request.req_kwargs
+        for key, value in expected.items():
+            if key == "proxies":
+                assert dict(sent[key]).items() >= value.items()
+            else:
+                assert sent[key] == value
+
+    def test_token_authentication_header(self, http):
+        http.get(f"{BASE_URL}/rest/api/2/myself", json={})
+        AtlassianAPI(url=BASE_URL, token="tok3n").get("/rest/api/2/myself")
+
+        assert http.calls[0].request.headers["Authorization"] == "Bearer tok3n"
+
+    def test_basic_authentication_header(self, http):
+        http.get(f"{BASE_URL}/rest/api/2/myself", json={})
+        AtlassianAPI(url=BASE_URL, username="alice", password="s3cr3t").get(
+            "/rest/api/2/myself"
+        )
+
+        expected = "Basic " + base64.b64encode(b"alice:s3cr3t").decode()
+        assert http.calls[0].request.headers["Authorization"] == expected
+
+    @pytest.mark.parametrize("status", [400, 401, 403, 404, 409, 500, 503])
+    def test_error_status_raises_api_error_with_body(self, http, status):
+        http.get(f"{BASE_URL}/rest/api/2/issue/NOPE-1", status=status, body="boom")
+
+        with pytest.raises(APIError) as exc_info:
+            AtlassianAPI(url=BASE_URL).get("/rest/api/2/issue/NOPE-1")
+
+        assert exc_info.value.code == status
+        assert exc_info.value.message == "boom"
+        assert str(exc_info.value) == f"Error [{status}] : boom"
+
+    @pytest.mark.parametrize(
+        "body, expected",
+        [("", None), ("plain text", "plain text"), ("[1, 2]", [1, 2])],
+    )
+    def test_get_non_object_bodies(self, http, body, expected):
+        http.get(f"{BASE_URL}/rest/api/2/thing", body=body)
+
+        assert AtlassianAPI(url=BASE_URL).get("/rest/api/2/thing") == expected
+
+    @pytest.mark.parametrize("method", ["post", "put", "delete"])
+    def test_mutating_helpers_decode_json(self, http, method):
+        http.add(
+            method.upper(),
+            f"{BASE_URL}/rest/api/2/thing",
+            json={"id": "10000"},
+            match=[
+                matchers.json_params_matcher({"name": "x"}),
+                matchers.query_param_matcher({"notify": "false"}),
+            ],
+        )
+        api = AtlassianAPI(url=BASE_URL)
+
+        result = getattr(api, method)(
+            "/rest/api/2/thing", json={"name": "x"}, params={"notify": "false"}
+        )
+
+        assert result == {"id": "10000"}
+
+    @pytest.mark.parametrize("method", ["post", "put", "delete"])
+    def test_mutating_helpers_return_none_for_empty_body(self, http, method):
+        http.add(method.upper(), f"{BASE_URL}/rest/api/2/thing", status=204)
+
+        assert getattr(AtlassianAPI(url=BASE_URL), method)("/rest/api/2/thing") is None
+
+    def test_form_data_is_sent_as_body(self, http):
+        http.post(
+            f"{BASE_URL}/rest/api/2/thing",
+            match=[matchers.urlencoded_params_matcher({"a": "1"})],
+        )
+
+        AtlassianAPI(url=BASE_URL).post("/rest/api/2/thing", data={"a": "1"})
+
+    def test_debug_log_does_not_contain_credentials(self, http, caplog, monkeypatch):
+        from atlassian import client
+
+        http.get(f"{BASE_URL}/rest/api/2/myself", json={})
+        monkeypatch.setattr(client.logger, "disabled", False)
+        client.logger.addHandler(caplog.handler)
+        try:
+            with caplog.at_level(logging.DEBUG, logger=client.logger.name):
+                AtlassianAPI(url=BASE_URL, username="alice", password="s3cr3t").get(
+                    "/rest/api/2/myself"
+                )
+                AtlassianAPI(url=BASE_URL, token="tok3n")
+        finally:
+            client.logger.removeHandler(caplog.handler)
+
+        assert "HTTP: GET -> 200 OK" in caplog.text
+        assert "s3cr3t" not in caplog.text
+        assert "tok3n" not in caplog.text

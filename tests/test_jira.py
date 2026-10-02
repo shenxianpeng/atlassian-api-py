@@ -368,3 +368,100 @@ class TestJira:
         assert kwargs["json"]["released"] is True
         assert kwargs["json"]["startDate"] == "2024-01-01"
         assert kwargs["json"]["releaseDate"] == "2024-06-01"
+
+    def test_search_issue_with_jql_pagination_keeps_fields(self, jira):
+        jira.post = MagicMock(
+            side_effect=[
+                {
+                    "total": 3,
+                    "maxResults": 2,
+                    "issues": [{"key": "A-1"}, {"key": "A-2"}],
+                },
+                {"total": 3, "maxResults": 2, "issues": [{"key": "A-3"}]},
+            ]
+        )
+
+        result = jira.search_issue_with_jql(
+            "project=A", max_result=2, fields=["summary"]
+        )
+
+        assert result == [{"key": "A-1"}, {"key": "A-2"}, {"key": "A-3"}]
+        assert [c.kwargs["json"] for c in jira.post.call_args_list] == [
+            {"jql": "project=A", "startAt": 0, "maxResults": 2, "fields": ["summary"]},
+            {"jql": "project=A", "startAt": 2, "maxResults": 2, "fields": ["summary"]},
+        ]
+
+    def test_search_issue_with_jql_none_response(self, jira):
+        jira.post = MagicMock(return_value=None)
+        assert jira.search_issue_with_jql("project=NONE") == []
+
+    @pytest.mark.parametrize(
+        "add, remove, expected",
+        [
+            (["a"], None, [{"add": "a"}]),
+            (None, ["r"], [{"remove": "r"}]),
+            (["a", "b"], ["r"], [{"remove": "r"}, {"add": "a"}, {"add": "b"}]),
+        ],
+    )
+    def test_update_issue_label_payload(self, jira, add, remove, expected):
+        jira.update_issue_label("TEST-1", add_labels=add, remove_labels=remove)
+        jira.put.assert_called_once_with(
+            "/rest/api/2/issue/TEST-1", json={"update": {"labels": expected}}
+        )
+
+    @pytest.mark.parametrize(
+        "add, remove, expected",
+        [
+            (["a"], None, [{"add": {"name": "a"}}]),
+            (None, ["r"], [{"remove": {"name": "r"}}]),
+            (["a"], ["r"], [{"add": {"name": "a"}}, {"remove": {"name": "r"}}]),
+        ],
+    )
+    def test_update_issue_component_payload(self, jira, add, remove, expected):
+        jira.update_issue_component(
+            "TEST-2", add_components=add, remove_components=remove
+        )
+        jira.put.assert_called_once_with(
+            "/rest/api/2/issue/TEST-2", json={"update": {"components": expected}}
+        )
+
+    def test_update_field_payload(self, jira):
+        jira.update_field("TEST-4", "fixVersions", add="2.0", remove="1.0")
+        jira.put.assert_called_once_with(
+            "/rest/api/2/issue/TEST-4",
+            json={
+                "update": {
+                    "fixVersions": [
+                        {"add": {"name": "2.0"}},
+                        {"remove": {"name": "1.0"}},
+                    ]
+                }
+            },
+        )
+
+    def test_create_task_payload(self, jira):
+        with pytest.warns(DeprecationWarning):
+            jira.create_task("PROJ", "Summary", "bob", "carol", ["l"], ["c"])
+        jira.post.assert_called_once_with(
+            "/rest/api/2/issue",
+            json={
+                "fields": {
+                    "project": {"key": "PROJ"},
+                    "summary": "Summary",
+                    "issuetype": {"id": 10},
+                    "assignee": {"key": "bob", "name": "bob"},
+                    "customfield_11386": {"key": "carol", "name": "carol"},
+                    "priority": {"id": "4"},
+                    "labels": ["l"],
+                    "components": ["c"],
+                }
+            },
+        )
+
+    def test_create_sub_task_without_team_omits_team_field(self, jira):
+        with pytest.warns(DeprecationWarning):
+            jira.create_sub_task("PROJ", "PROJ-1", "Sub", "1.0")
+        fields = jira.post.call_args.kwargs["json"]["fields"]
+        assert "customfield_11360" not in fields
+        assert fields["issuetype"] == {"id": 20}
+        assert fields["fixVersions"] == [{"name": "1.0"}]
