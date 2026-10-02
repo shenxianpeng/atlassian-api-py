@@ -1,0 +1,20 @@
+.github/workflows/main.yml
+  h_20d8fd5fdd9091 49
+README.rst
+  h_20d8fd5fdd9091 62
+noxfile.py
+  h_20d8fd5fdd9091 31
+pyproject.toml
+  h_20d8fd5fdd9091 18,29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "bd89b6fd8aa93c4d4a212d33ad66348a916722ed",
+  "prompts": {},
+  "humans": {
+    "h_20d8fd5fdd9091": {
+      "author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}
