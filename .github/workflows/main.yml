@@ -20,6 +20,28 @@ jobs:
       uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  lint:
+    # black >= 26 and the docs build need Python >= 3.10, so the non-test
+    # sessions run once on a single interpreter instead of once per matrix entry.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install nox
+      - name: Lint, build, install and measure coverage with nox
+        run: nox -s lint build install coverage docs
+      - name: Upload coverage report
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: ./coverage.xml
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -38,12 +60,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install nox
       - name: Test with nox
-        run: nox
-      - name: Upload coverage report
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          files: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        # Only the session for this matrix entry; the other interpreters are
+        # not installed on the runner and nox errors on missing interpreters in CI.
+        run: nox -s "test-${{ matrix.python-version }}"
