@@ -78,6 +78,10 @@ omit = [
 branch = true
 
 [tool.coverage.report]
+# The whole package is covered; keep it that way: `coverage report` (run by
+# the nox coverage session in CI) fails below 100% lines and branches.
+fail_under = 100
+show_missing = true
 exclude_lines = [
     "pragma: no cover",
     "if __name__ == '__main__':",
