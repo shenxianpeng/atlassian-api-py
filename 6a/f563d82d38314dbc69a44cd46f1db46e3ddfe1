@@ -1,0 +1,21 @@
+.github/workflows/codeql.yml
+  s_6535937731a8c8::t_1ed0f3e6835ff9 25-27,32-35
+.github/workflows/main.yml
+  s_6535937731a8c8::t_70936039b188dc 11-13,17-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6af563d82d38314dbc69a44cd46f1db46e3ddfe1",
+  "prompts": {},
+  "sessions": {
+    "s_6535937731a8c8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7be933fd-3555-4179-bf89-3d88091b3193",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Xianpeng Shen <xianpeng.shen@gmail.com>"
+    }
+  }
+}
