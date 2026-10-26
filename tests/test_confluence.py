@@ -1,8 +1,8 @@
 import pytest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
-from atlassian.confluence import Confluence
-from atlassian.error import APIError
+from atlassian_api.confluence import Confluence
+from atlassian_api.error import APIError
 
 
 class TestConfluence:

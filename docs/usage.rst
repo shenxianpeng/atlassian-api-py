@@ -27,7 +27,7 @@ Username and password:
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(
        url="https://jira.company.com",
@@ -39,7 +39,7 @@ Bearer token:
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(url="https://jira.company.com", token="your_token")
 
@@ -58,7 +58,7 @@ Configuration file:
 
    import configparser
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    config = configparser.ConfigParser()
    config.read("config.ini")
@@ -96,7 +96,7 @@ HTTP ``4xx`` and ``5xx`` responses raise ``APIError``:
 
 .. code-block:: python
 
-   from atlassian.error import APIError
+   from atlassian_api.error import APIError
 
    try:
        issue = jira.issue("MISSING-1")
@@ -108,7 +108,7 @@ Clients also work as context managers when you want the underlying
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    with Jira(url="https://jira.company.com", token="your_token") as jira:
        issue = jira.issue("TEST-1")
@@ -121,7 +121,7 @@ Read an issue:
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(url="https://jira.company.com", token="your_token")
    issue = jira.issue("TEST-1")
@@ -180,7 +180,7 @@ Create a Bitbucket client:
 
 .. code-block:: python
 
-   from atlassian import Bitbucket
+   from atlassian_api import Bitbucket
 
    bitbucket = Bitbucket(
        url="https://bitbucket.company.com",
@@ -239,7 +239,7 @@ Create a Confluence client:
 
 .. code-block:: python
 
-   from atlassian import Confluence
+   from atlassian_api import Confluence
 
    confluence = Confluence(
        url="https://confluence.company.com",

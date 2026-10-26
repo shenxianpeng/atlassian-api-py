@@ -5,8 +5,8 @@ from types import SimpleNamespace
 from typing import Any
 from urllib.parse import quote
 
-from atlassian.client import AtlassianAPI
-from atlassian.logger import get_logger
+from atlassian_api.client import AtlassianAPI
+from atlassian_api.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -222,7 +222,7 @@ class Bitbucket(AtlassianAPI):
             if pull_request:
                 d_metadata = branch.metadata.__dict__
                 metadata = d_metadata[
-                    "com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata"
+                    "com.atlassian_api.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata"
                 ]
                 try:
                     state = metadata.pullRequest.state

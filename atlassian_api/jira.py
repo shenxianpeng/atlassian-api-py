@@ -3,8 +3,8 @@ from __future__ import annotations
 import warnings
 from types import SimpleNamespace
 
-from atlassian.client import AtlassianAPI
-from atlassian.logger import get_logger
+from atlassian_api.client import AtlassianAPI
+from atlassian_api.logger import get_logger
 
 logger = get_logger(__name__)
 

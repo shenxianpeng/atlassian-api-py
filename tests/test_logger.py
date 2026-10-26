@@ -5,7 +5,7 @@ import sys
 import os
 import tempfile
 from unittest.mock import patch, MagicMock
-from atlassian.logger import (
+from atlassian_api.logger import (
     get_console_handler,
     get_file_handler,
     get_logger,
@@ -49,6 +49,6 @@ class TestLogger:
         assert len(logger.handlers) == 1
 
     def test_records_reach_application_handlers(self, caplog):
-        with caplog.at_level(logging.DEBUG, logger="atlassian"):
-            get_logger("atlassian.example").debug("hello")
+        with caplog.at_level(logging.DEBUG, logger="atlassian_api"):
+            get_logger("atlassian_api.example").debug("hello")
         assert "hello" in caplog.text

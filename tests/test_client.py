@@ -7,8 +7,8 @@ import requests
 import responses
 from responses import matchers
 from types import SimpleNamespace
-from atlassian.client import AtlassianAPI
-from atlassian.error import APIError
+from atlassian_api.client import AtlassianAPI
+from atlassian_api.error import APIError
 
 
 class TestAtlassianAPI:
@@ -522,7 +522,7 @@ class TestAtlassianAPIOverHTTP:
         AtlassianAPI(url=BASE_URL).post("/rest/api/2/thing", data={"a": "1"})
 
     def test_debug_log_does_not_contain_credentials(self, http, caplog, monkeypatch):
-        from atlassian import client
+        from atlassian_api import client
 
         http.get(f"{BASE_URL}/rest/api/2/myself", json={})
         monkeypatch.setattr(client.logger, "disabled", False)

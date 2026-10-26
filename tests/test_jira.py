@@ -1,7 +1,7 @@
 import pytest
 from types import SimpleNamespace
 from unittest.mock import MagicMock
-from atlassian.jira import Jira
+from atlassian_api.jira import Jira
 
 
 class TestJira:

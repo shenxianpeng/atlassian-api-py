@@ -14,7 +14,7 @@ class AtlassianAPI:
 
     The client stores a ``requests.Session``, applies either basic auth or a
     bearer token, appends endpoint paths to the configured base URL, and raises
-    :class:`atlassian.error.APIError` for HTTP ``4xx`` and ``5xx`` responses.
+    :class:`atlassian_api.error.APIError` for HTTP ``4xx`` and ``5xx`` responses.
 
     ``get()`` parses JSON into nested ``SimpleNamespace`` objects. Mutating
     helpers return decoded JSON dictionaries when available.

@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any
 from types import SimpleNamespace
 
-from atlassian.client import AtlassianAPI
-from atlassian.logger import get_logger
+from atlassian_api.client import AtlassianAPI
+from atlassian_api.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -341,7 +341,7 @@ class Confluence(AtlassianAPI):
         :return: Decoded API response, or ``None`` when Confluence returns no body.
         :rtype: dict or None
         """
-        from atlassian.error import APIError
+        from atlassian_api.error import APIError
 
         url = f"/rest/api/content/{page_id}/child/attachment"
         full_url = self.url + url

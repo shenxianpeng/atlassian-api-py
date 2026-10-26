@@ -44,7 +44,7 @@ def get_logger(name):
 
         logging.basicConfig(level=logging.DEBUG)
 
-    or attach :func:`get_console_handler` to ``logging.getLogger("atlassian")``.
+    or attach :func:`get_console_handler` to ``logging.getLogger("atlassian_api")``.
 
     :param name: Logger name, usually ``__name__``.
     :type name: str

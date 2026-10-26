@@ -83,7 +83,7 @@ method that matches the operation.
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(
        url="https://jira.company.com",
@@ -99,7 +99,7 @@ bearer token authentication:
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(url="https://jira.company.com", token="your_token")
 
@@ -114,7 +114,7 @@ Using username and password
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(
        url="https://jira.company.com",
@@ -127,7 +127,7 @@ Using a token
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(url="https://jira.company.com", token="your_token")
 
@@ -150,7 +150,7 @@ local ``config.ini`` file that is excluded from version control.
 
    import configparser
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    config = configparser.ConfigParser()
    config.read('config.ini')
@@ -200,7 +200,7 @@ Common Bitbucket tasks
 
 .. code-block:: python
 
-   from atlassian import Bitbucket
+   from atlassian_api import Bitbucket
 
    bitbucket = Bitbucket(
        url="https://bitbucket.company.com",
@@ -226,7 +226,7 @@ Common Confluence tasks
 
 .. code-block:: python
 
-   from atlassian import Confluence
+   from atlassian_api import Confluence
 
    confluence = Confluence(
        url="https://confluence.company.com",
@@ -262,7 +262,7 @@ Use ``APIError`` to handle unsuccessful HTTP responses:
 
 .. code-block:: python
 
-   from atlassian.error import APIError
+   from atlassian_api.error import APIError
 
    try:
        jira.issue("MISSING-1")
