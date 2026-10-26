@@ -223,7 +223,12 @@ class TestJira:
         jira.assign_issue("TEST-8")
         args, kwargs = jira.put.call_args
         assert args[0] == "/rest/api/2/issue/TEST-8/assignee"
-        assert kwargs["json"]["name"] == -1
+        # Jira unassigns on a null name; "-1" would mean automatic assignee.
+        assert kwargs["json"] == {"name": None}
+
+    def test_assign_issue_automatic(self, jira):
+        jira.assign_issue("TEST-8", "-1")
+        assert jira.put.call_args.kwargs["json"] == {"name": "-1"}
 
     def test_add_issue_watcher(self, jira):
         jira.add_issue_watcher("TEST-9", "watcher1")
@@ -300,18 +305,28 @@ class TestJira:
 
     def test_user(self, jira):
         jira.user("testuser")
-        jira.get.assert_called_with("/rest/api/2/user?username=testuser")
+        jira.get.assert_called_with("/rest/api/2/user", params={"username": "testuser"})
 
     def test_get_dev_status(self, jira):
         jira.get_dev_status("12345")
         jira.get.assert_called_with(
-            "/rest/dev-status/1.0/issue/detail?issueId=12345&applicationType=stash&dataType=repository"
+            "/rest/dev-status/1.0/issue/detail",
+            params={
+                "issueId": "12345",
+                "applicationType": "stash",
+                "dataType": "repository",
+            },
         )
 
     def test_get_dev_status_custom_params(self, jira):
         jira.get_dev_status("12345", app_type="custom", data_type="branch")
         jira.get.assert_called_with(
-            "/rest/dev-status/1.0/issue/detail?issueId=12345&applicationType=custom&dataType=branch"
+            "/rest/dev-status/1.0/issue/detail",
+            params={
+                "issueId": "12345",
+                "applicationType": "custom",
+                "dataType": "branch",
+            },
         )
 
     def test_delete_issue(self, jira):

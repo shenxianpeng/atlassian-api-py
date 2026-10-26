@@ -408,16 +408,15 @@ class Jira(AtlassianAPI):
 
         :param issue_key: The key of the issue to assign.
         :type issue_key: str
-        :param assignee: Username to assign. When omitted, ``-1`` is sent to
-            unassign the issue.
+        :param assignee: Username to assign. When omitted, the issue is
+            unassigned. Pass ``"-1"`` to use the project's automatic assignee.
         :type assignee: str, optional
         :return: Decoded API response, or ``None`` when Jira returns no body.
         :rtype: dict or None
         """
         url = f"/rest/api/2/issue/{issue_key}/assignee"
-        # Pass -1 to unassign; JIRA API accepts either a username string or -1
-        name: str | int = assignee if assignee is not None else -1
-        json = {"name": name}
+        # Jira: a null name unassigns the issue, "-1" picks the automatic assignee.
+        json = {"name": assignee}
         return self.put(url, json=json)
 
     def add_issue_watcher(self, issue_key: str, watcher: str) -> dict | None:
@@ -471,7 +470,7 @@ class Jira(AtlassianAPI):
         jql: str,
         max_result: int = 1000,
         fields: list[str] | None = None,
-    ) -> list:
+    ) -> list[dict]:
         """Search issues using JQL.
 
         :param jql: The JQL query string.
@@ -488,7 +487,7 @@ class Jira(AtlassianAPI):
         """
         url = "/rest/api/2/search"
         start_at = 0
-        issues: list[str] = []
+        issues: list[dict] = []
         payload: dict = {
             "jql": jql,
             "startAt": start_at,
@@ -541,8 +540,8 @@ class Jira(AtlassianAPI):
             ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
-        url = f"/rest/api/2/user?username={username}"
-        return self.get(url)
+        url = "/rest/api/2/user"
+        return self.get(url, params={"username": username})
 
     def get_dev_status(
         self,
@@ -562,8 +561,13 @@ class Jira(AtlassianAPI):
             responses, or ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
-        url = f"/rest/dev-status/1.0/issue/detail?issueId={issue_id}&applicationType={app_type}&dataType={data_type}"
-        return self.get(url)
+        url = "/rest/dev-status/1.0/issue/detail"
+        params = {
+            "issueId": issue_id,
+            "applicationType": app_type,
+            "dataType": data_type,
+        }
+        return self.get(url, params=params)
 
     def delete_issue(self, issue_key: str) -> dict | None:
         """Delete an issue by key.

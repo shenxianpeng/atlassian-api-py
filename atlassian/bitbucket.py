@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 from types import SimpleNamespace
+from typing import Any
+from urllib.parse import quote
 
 from atlassian.client import AtlassianAPI
 from atlassian.logger import get_logger
@@ -25,7 +27,8 @@ class Bitbucket(AtlassianAPI):
 
         :param url: Endpoint path to request.
         :type url: str
-        :param params: Query parameters for pagination.
+        :param params: Query parameters. ``limit``, when present, caps the
+            total number of values returned across all pages.
         :type params: dict
         :return: Combined values from each page. Returns an empty list when the
             response is missing ``values`` or cannot be parsed.
@@ -38,18 +41,20 @@ class Bitbucket(AtlassianAPI):
             or not response.values
         ):
             return []
-        values = response.values
+        values = list(response.values)
         limit = params.get("limit")
-        while not response.isLastPage:
+        while not getattr(response, "isLastPage", True) and (
+            limit is None or len(values) < limit
+        ):
             if limit is not None:
                 params["limit"] = limit - len(values)
-                if params["limit"] < 0:
-                    break
             params["start"] = response.nextPageStart
             response = self.get(url, params=params)
             if not isinstance(response, SimpleNamespace):
                 break
-            values += response.values or []
+            values += getattr(response, "values", None) or []
+        if limit is not None:
+            return values[:limit]
         return values
 
     def get_project_repo(
@@ -171,7 +176,12 @@ class Bitbucket(AtlassianAPI):
         return self.delete(url, json=payload)
 
     def get_merged_branch(
-        self, project_key: str, repo_slug: str, start: int = 0, limit: int | None = None
+        self,
+        project_key: str,
+        repo_slug: str,
+        start: int = 0,
+        limit: int | None = None,
+        base_branch: str | None = None,
     ) -> list[str]:
         """Return branch names that Bitbucket marks as merged.
 
@@ -183,11 +193,19 @@ class Bitbucket(AtlassianAPI):
         :type start: int, optional
         :param limit: The maximum number of results to return (optional).
         :type limit: int, optional
+        :param base_branch: Branch to compare against, for example ``main``
+            or ``refs/heads/develop``. When omitted, Bitbucket uses the
+            repository's default branch.
+        :type base_branch: str, optional
         :return: Merged branch display names.
         :rtype: list
         """
-        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/branches?base=refs/heads/master&details=true"
-        params = {}
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/branches"
+        params: dict[str, Any] = {"details": "true"}
+        if base_branch:
+            if not base_branch.startswith("refs/"):
+                base_branch = f"refs/heads/{base_branch}"
+            params["base"] = base_branch
         if start:
             params["start"] = start
         if limit is not None:
@@ -241,8 +259,8 @@ class Bitbucket(AtlassianAPI):
         :return: Commit objects from the paginated ``values`` response.
         :rtype: list
         """
-        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/commits/?until={branch_name}"
-        params = {}
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/commits"
+        params: dict[str, Any] = {"until": branch_name}
         if start:
             params["start"] = start
         if limit is not None:
@@ -274,8 +292,8 @@ class Bitbucket(AtlassianAPI):
         :return: Pull request objects from the paginated ``values`` response.
         :rtype: list
         """
-        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests?state={pr_state}"
-        params = {}
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/pull-requests"
+        params: dict[str, Any] = {"state": pr_state}
         if start:
             params["start"] = start
         if limit is not None:
@@ -909,11 +927,13 @@ class Bitbucket(AtlassianAPI):
         :return: Commit history objects from the paginated ``values`` response.
         :rtype: list
         """
-        url = (
-            f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/commits?followRenames=true&path={file_path}&"
-            f"until=refs%2Fheads%2F{branch_name}&start=0&avatarSize=32"
-        )
-        params = {}
+        url = f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}/commits"
+        params: dict[str, Any] = {
+            "followRenames": "true",
+            "path": file_path,
+            "until": f"refs/heads/{branch_name}",
+            "avatarSize": 32,
+        }
         if start:
             params["start"] = start
         if limit is not None:
@@ -937,8 +957,8 @@ class Bitbucket(AtlassianAPI):
             ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
-        url = f"/projects/{project_key}/repos/{repo_slug}/raw/{file_path}?at={branch_name}"
-        return self.get(url)
+        url = f"/projects/{project_key}/repos/{repo_slug}/raw/{quote(file_path)}"
+        return self.get(url, params={"at": branch_name})
 
     def get_build_status(self, commit_id: str) -> SimpleNamespace | str | None:
         """Return build status for a commit.

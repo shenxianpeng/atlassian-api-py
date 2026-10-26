@@ -345,20 +345,19 @@ class Confluence(AtlassianAPI):
 
         url = f"/rest/api/content/{page_id}/child/attachment"
         full_url = self.url + url
-        self._session.headers["X-Atlassian-Token"] = "nocheck"
-        try:
-            response = self._session.post(
-                full_url,
-                files={"file": (filename, file_data, content_type)},
-                data={"comment": ""},
-                timeout=self.timeout,
-            )
-            response.encoding = "utf-8"
-            if response.status_code >= 400:
-                raise APIError(response.status_code, response.text)
-            return self._response_handler(response)
-        finally:
-            self._session.headers.pop("X-Atlassian-Token", None)
+        # Send the CSRF bypass header with this request only, so concurrent
+        # requests on the shared session never see it.
+        response = self._session.post(
+            full_url,
+            files={"file": (filename, file_data, content_type)},
+            data={"comment": ""},
+            headers={"X-Atlassian-Token": "nocheck"},
+            timeout=self.timeout,
+        )
+        response.encoding = "utf-8"
+        if response.status_code >= 400:
+            raise APIError(response.status_code, response.text)
+        return self._response_handler(response)
 
     def get_comments(self, page_id: int) -> SimpleNamespace | str | None:
         """Return comments for a page.

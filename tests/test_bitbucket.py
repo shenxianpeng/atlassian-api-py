@@ -1,4 +1,8 @@
+import json
+from urllib.parse import parse_qs, urlsplit
+
 import pytest
+import responses as responses_lib
 from unittest.mock import MagicMock
 from types import SimpleNamespace
 from atlassian.bitbucket import Bitbucket
@@ -69,10 +73,29 @@ class TestBitbucket:
         ]
         bitbucket.get = MagicMock(side_effect=responses)
 
-        # Request only 2 items
+        # Request only 2 items: the first page already has 3, so no second
+        # request is made and the result is trimmed to the limit.
         result = bitbucket._get_paged("/test/url", {"limit": 2})
-        # Should stop when limit would go negative
-        assert len(result) == 3
+        assert result == [{"key": "val0"}, {"key": "val1"}]
+        bitbucket.get.assert_called_once()
+
+    def test_get_paged_limit_spans_pages(self, bitbucket):
+        responses = [
+            SimpleNamespace(values=[1, 2], isLastPage=False, nextPageStart=2),
+            SimpleNamespace(values=[3, 4], isLastPage=False, nextPageStart=4),
+            SimpleNamespace(values=[5, 6], isLastPage=True),
+        ]
+        bitbucket.get = MagicMock(side_effect=responses)
+        params = {"limit": 3}
+        assert bitbucket._get_paged("/test/url", params) == [1, 2, 3]
+        assert bitbucket.get.call_count == 2
+        # The second page only asks for what is still missing.
+        assert params == {"limit": 1, "start": 2}
+
+    def test_get_paged_missing_is_last_page(self, bitbucket):
+        bitbucket.get = MagicMock(return_value=SimpleNamespace(values=[1]))
+        assert bitbucket._get_paged("/test/url", {}) == [1]
+        bitbucket.get.assert_called_once()
 
     def test_get_paged_none_response(self, bitbucket):
         """Test that _get_paged returns empty list when get() returns None."""
@@ -225,7 +248,7 @@ class TestBitbucket:
         bitbucket._get_paged = MagicMock(return_value=[])
         bitbucket.get_pull_request("PROJ", "repo", pr_state="OPEN")
         args, kwargs = bitbucket._get_paged.call_args
-        assert "state=OPEN" in args[0]
+        assert kwargs["params"]["state"] == "OPEN"
 
     def test_get_pull_request_with_params(self, bitbucket):
         bitbucket._get_paged = MagicMock(return_value=[])
@@ -645,7 +668,14 @@ class TestBitbucket:
     def test_get_file_content(self, bitbucket):
         bitbucket.get_file_content("PROJ", "repo", "master", "README.md")
         bitbucket.get.assert_called_with(
-            "/projects/PROJ/repos/repo/raw/README.md?at=master"
+            "/projects/PROJ/repos/repo/raw/README.md", params={"at": "master"}
+        )
+
+    def test_get_file_content_quotes_path(self, bitbucket):
+        bitbucket.get_file_content("PROJ", "repo", "feature/x", "docs/my file#1.md")
+        bitbucket.get.assert_called_with(
+            "/projects/PROJ/repos/repo/raw/docs/my%20file%231.md",
+            params={"at": "feature/x"},
         )
 
     def test_get_build_status(self, bitbucket):
@@ -871,11 +901,23 @@ class TestBitbucket:
     def test_get_merged_branch_request(self, bitbucket):
         bitbucket._get_paged = MagicMock(return_value=[])
         bitbucket.get_merged_branch("PROJ", "repo")
+        # No hard-coded base: Bitbucket compares against the default branch.
         bitbucket._get_paged.assert_called_once_with(
-            "/rest/api/latest/projects/PROJ/repos/repo/branches"
-            "?base=refs/heads/master&details=true",
-            params={},
+            "/rest/api/latest/projects/PROJ/repos/repo/branches",
+            params={"details": "true"},
         )
+
+    @pytest.mark.parametrize(
+        "base, expected",
+        [("main", "refs/heads/main"), ("refs/heads/develop", "refs/heads/develop")],
+    )
+    def test_get_merged_branch_base_branch(self, bitbucket, base, expected):
+        bitbucket._get_paged = MagicMock(return_value=[])
+        bitbucket.get_merged_branch("PROJ", "repo", base_branch=base)
+        assert bitbucket._get_paged.call_args.kwargs["params"] == {
+            "details": "true",
+            "base": expected,
+        }
 
     def test_get_merged_branch_skips_open_pull_request(self, bitbucket):
         metadata_key = "com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata"
@@ -953,8 +995,8 @@ class TestBitbucket:
         bitbucket._get_paged = MagicMock(return_value=["pr"])
         assert bitbucket.get_pull_request("PROJ", "repo") == ["pr"]
         bitbucket._get_paged.assert_called_once_with(
-            "/rest/api/latest/projects/PROJ/repos/repo/pull-requests?state=ALL",
-            params={},
+            "/rest/api/latest/projects/PROJ/repos/repo/pull-requests",
+            params={"state": "ALL"},
         )
 
     def test_get_pull_request_id_passes_filters(self, bitbucket):
@@ -982,8 +1024,8 @@ class TestBitbucket:
         bitbucket._get_paged = MagicMock(return_value=[])
         bitbucket.get_branch_commits("PROJ", "repo", "master")
         bitbucket._get_paged.assert_called_once_with(
-            "/rest/api/latest/projects/PROJ/repos/repo/commits/?until=master",
-            params={},
+            "/rest/api/latest/projects/PROJ/repos/repo/commits",
+            params={"until": "master"},
         )
 
     def test_get_pull_request_activities_request(self, bitbucket):
@@ -1093,10 +1135,15 @@ class TestBitbucket:
     def test_get_file_change_history_request(self, bitbucket):
         bitbucket._get_paged = MagicMock(return_value=[])
         bitbucket.get_file_change_history("PROJ", "repo", "main", "src/a.py")
-        url = bitbucket._get_paged.call_args.args[0]
-        assert url.startswith("/rest/api/latest/projects/PROJ/repos/repo/commits?")
-        assert "path=src/a.py" in url
-        assert "until=refs%2Fheads%2Fmain" in url
+        bitbucket._get_paged.assert_called_once_with(
+            "/rest/api/latest/projects/PROJ/repos/repo/commits",
+            params={
+                "followRenames": "true",
+                "path": "src/a.py",
+                "until": "refs/heads/main",
+                "avatarSize": 32,
+            },
+        )
 
     def test_update_build_status_payload(self, bitbucket):
         bitbucket.update_build_status(
@@ -1112,3 +1159,29 @@ class TestBitbucket:
                 "description": "ManuallyCheckBuildPass",
             },
         )
+
+
+class TestBitbucketPaginationHTTP:
+    """Pagination against a mocked server, through the real HTTP stack."""
+
+    @responses_lib.activate
+    def test_file_change_history_advances_pages(self):
+        url = "https://bb.example.com/rest/api/latest/projects/P/repos/r/commits"
+
+        def page(request):
+            query = parse_qs(urlsplit(request.url).query)
+            # A single ``start`` is sent; the server reads it to pick the page.
+            assert len(query.get("start", ["0"])) == 1
+            start = int(query.get("start", ["0"])[0])
+            body = {
+                "values": [start],
+                "isLastPage": start >= 2,
+                "nextPageStart": start + 1,
+            }
+            return 200, {}, json.dumps(body)
+
+        responses_lib.add_callback(responses_lib.GET, url, callback=page)
+        bitbucket = Bitbucket(url="https://bb.example.com", token="t")
+        result = bitbucket.get_file_change_history("P", "r", "main", "a.py")
+        assert result == [0, 1, 2]
+        assert len(responses_lib.calls) == 3

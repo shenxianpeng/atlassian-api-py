@@ -7,7 +7,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - Unreleased
+## [1.0.1] - Unreleased
+
+### Fixed
+- `Bitbucket.get_file_change_history()` no longer loops forever on multi-page results: the URL hard-coded `start=0`, so every follow-up request asked for the first page again.
+- `Bitbucket.get_merged_branch()` no longer compares against a hard-coded `master`; it uses the repository's default branch, or the new `base_branch` argument.
+- `limit` on paginated Bitbucket methods is now a real cap on the number of results (it could return more, and sent `limit=0` requests).
+- Query parameters are URL-encoded: branch names, usernames, PR states and issue IDs containing `+`, `&`, `#` or spaces were sent mangled (`Bitbucket.get_branch_commits()`, `get_pull_request()`, `get_file_change_history()`, `get_file_content()`, `Jira.user()`, `Jira.get_dev_status()`).
+- `Jira.assign_issue(key)` without an assignee now unassigns the issue as documented; it used to send `-1`, which Jira treats as "automatic assignee". Pass `"-1"` explicitly for that.
+- The library no longer prints log lines to stdout by itself, and its records now reach the application's logging configuration (`logging.basicConfig(level=logging.DEBUG)` shows request logs). Only a `NullHandler` is attached.
+- `Confluence.upload_attachment()` sends `X-Atlassian-Token` on the upload request only, instead of setting it on the shared session, so concurrent requests are not affected.
+
+## [1.0.0] - 2026-04-11
 
 ### Added
 - `atlassian.__version__` attribute for runtime version inspection (PEP 396).
