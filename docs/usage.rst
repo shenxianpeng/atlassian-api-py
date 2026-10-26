@@ -74,6 +74,58 @@ Configuration file:
 Keep local configuration files out of version control when they contain
 credentials.
 
+Atlassian Cloud
+---------------
+
+Jira and Confluence clients work against Atlassian Cloud with the same method
+calls. Cloud is detected from ``*.atlassian.net`` URLs; pass ``cloud=True`` for
+a custom domain, or ``cloud=False`` to force Server/Data Center behaviour.
+
+Authenticate with your account email and an
+`API token <https://id.atlassian.com/manage-profile/security/api-tokens>`_ as
+``username`` and ``password``. ``token=`` sends a bearer token, which Cloud
+accepts only for OAuth 2.0 access tokens.
+
+.. code-block:: python
+
+   from atlassian_api import Jira
+
+   jira = Jira(
+       url="https://your-site.atlassian.net",
+       username="you@example.com",
+       password="your_api_token",
+   )
+
+What changes on Cloud:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Method
+     - Server / Data Center
+     - Cloud
+   * - ``Jira.search_issue_with_jql()``
+     - ``/rest/api/2/search``, ``startAt`` paging
+     - ``/rest/api/2/search/jql``, ``nextPageToken`` paging. The JQL must be
+       bounded (for example restrict ``project``).
+   * - ``Jira.assign_issue()``, ``user()``, ``add_issue_watcher()``
+     - username
+     - ``accountId``
+   * - ``Jira.get_projects()``
+     - ``/rest/api/2/project``
+     - all pages of ``/rest/api/2/project/search``
+   * - Confluence pages, spaces, child pages, comments, labels, attachments
+     - REST API v1
+     - REST API v2 (``/wiki/api/v2``). Lists keep ``results``/``start``/
+       ``limit``/``size``; items are v2 objects (a page has ``spaceId``).
+   * - ``Confluence.search_content()``, ``add_label()``,
+       ``remove_label()``, ``upload_attachment()``
+     - REST API v1
+     - REST API v1 (still the Cloud endpoint)
+
+Bitbucket support targets Bitbucket Server/Data Center; a ``bitbucket.org``
+URL raises ``ValueError``.
+
 Working With Responses
 ----------------------
 

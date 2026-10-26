@@ -41,6 +41,16 @@ It provides ready-to-use clients for Jira, Bitbucket, and Confluence so you
 can automate common Atlassian tasks without rewriting endpoint and session
 handling code.
 
+* **One script for Data Center and Cloud.** Jira and Confluence clients detect
+  Atlassian Cloud from the URL (``*.atlassian.net``) and switch to the Cloud
+  endpoints where they differ: Jira's ``/search/jql`` with ``nextPageToken``
+  paging, ``accountId`` instead of usernames, and the Confluence REST API v2.
+  Code written against Data Center keeps working after a move to Cloud.
+* **Installs next to** ``atlassian-python-api``. The import package is
+  ``atlassian_api``, so both libraries can live in the same environment.
+* **One runtime dependency** (``requests``) and inline type hints.
+* Bitbucket support targets Bitbucket Server/Data Center.
+
 The clients are intentionally lightweight:
 
 * ``GET`` helpers return nested ``SimpleNamespace`` objects, so response fields
@@ -102,6 +112,57 @@ bearer token authentication:
    from atlassian_api import Jira
 
    jira = Jira(url="https://jira.company.com", token="your_token")
+
+Atlassian Cloud
+~~~~~~~~~~~~~~~
+
+Use your account email and an
+`API token <https://id.atlassian.com/manage-profile/security/api-tokens>`_
+as username and password. The same methods work as on Data Center:
+
+.. code-block:: python
+
+   from atlassian_api import Confluence, Jira
+
+   jira = Jira(
+       url="https://your-site.atlassian.net",
+       username="you@example.com",
+       password="your_api_token",
+   )
+   issues = jira.search_issue_with_jql("project = TEST AND status = Open")
+
+   confluence = Confluence(
+       url="https://your-site.atlassian.net",  # "/wiki" is added for you
+       username="you@example.com",
+       password="your_api_token",
+   )
+   page = confluence.get_page_by_title("SPACE", "Release notes")
+
+Cloud identifies users by ``accountId``: pass it wherever a method takes a
+username (``assign_issue``, ``add_issue_watcher``, ``user``). For a site on a
+custom domain, pass ``cloud=True``.
+
+Upgrading from 1.x
+~~~~~~~~~~~~~~~~~~
+
+2.0 renames the import package from ``atlassian`` to ``atlassian_api``, because
+``atlassian-python-api`` also installs a package named ``atlassian`` and the
+two overwrote each other. Update your imports:
+
+.. code-block:: python
+
+   # 1.x
+   from atlassian import Jira
+   from atlassian.error import APIError
+
+   # 2.x
+   from atlassian_api import Jira
+   from atlassian_api.error import APIError
+
+The deprecated ``Jira.create_task()`` and ``Jira.create_sub_task()`` are
+removed; use ``Jira.create_issue()``. See the
+`changelog <https://atlassian-api-py.readthedocs.io/en/latest/changelog.html>`_
+for the full list.
 
 Usage
 -----

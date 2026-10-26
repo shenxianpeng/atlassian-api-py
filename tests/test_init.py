@@ -18,7 +18,12 @@ class TestPackage:
         importlib.reload(atlassian_api)
 
     def test_public_api(self):
-        assert atlassian_api.__all__ == ["Jira", "Bitbucket", "Confluence", "__version__"]
+        assert atlassian_api.__all__ == [
+            "Jira",
+            "Bitbucket",
+            "Confluence",
+            "__version__",
+        ]
         assert atlassian_api.Jira is Jira
         assert atlassian_api.Bitbucket is Bitbucket
         assert atlassian_api.Confluence is Confluence

@@ -146,55 +146,6 @@ class TestJira:
         assert kwargs["json"]["fields"] == fields
         assert kwargs["json"]["update"] == update
 
-    def test_create_task(self, jira):
-        with pytest.warns(DeprecationWarning, match="create_task"):
-            jira.create_task(
-                project_key="PROJ",
-                summary="Task summary",
-                assignee="user1",
-                owner="owner1",
-                labels=["label1"],
-                components=[{"name": "comp1"}],
-                issue_type=10,
-            )
-        args, kwargs = jira.post.call_args
-        assert args[0] == "/rest/api/2/issue"
-        assert kwargs["json"]["fields"]["project"]["key"] == "PROJ"
-        assert kwargs["json"]["fields"]["summary"] == "Task summary"
-
-    def test_create_sub_task(self, jira):
-        with pytest.warns(DeprecationWarning, match="create_sub_task"):
-            jira.create_sub_task(
-                project_key="PROJ",
-                parent_issue_key="PROJ-1",
-                summary="Subtask summary",
-                fix_version="1.0",
-                assignee="user1",
-                description="Description",
-                labels=["label1"],
-                issue_type=20,
-            )
-        args, kwargs = jira.post.call_args
-        assert args[0] == "/rest/api/2/issue"
-        assert kwargs["json"]["fields"]["project"]["key"] == "PROJ"
-        assert kwargs["json"]["fields"]["parent"]["key"] == "PROJ-1"
-
-    def test_create_sub_task_with_team(self, jira):
-        with pytest.warns(DeprecationWarning, match="create_sub_task"):
-            jira.create_sub_task(
-                project_key="PROJ",
-                parent_issue_key="PROJ-1",
-                summary="Subtask summary",
-                fix_version="1.0",
-                assignee="user1",
-                description="Description",
-                labels=["label1"],
-                team="TeamA",
-                issue_type=20,
-            )
-        args, kwargs = jira.post.call_args
-        assert "customfield_11360" in kwargs["json"]["fields"]
-
     def test_update_custom_field_single_arg(self, jira):
         jira.update_custom_field("TEST-7", "customfield_123", "value1")
         args, kwargs = jira.put.call_args
@@ -453,30 +404,3 @@ class TestJira:
                 }
             },
         )
-
-    def test_create_task_payload(self, jira):
-        with pytest.warns(DeprecationWarning):
-            jira.create_task("PROJ", "Summary", "bob", "carol", ["l"], ["c"])
-        jira.post.assert_called_once_with(
-            "/rest/api/2/issue",
-            json={
-                "fields": {
-                    "project": {"key": "PROJ"},
-                    "summary": "Summary",
-                    "issuetype": {"id": 10},
-                    "assignee": {"key": "bob", "name": "bob"},
-                    "customfield_11386": {"key": "carol", "name": "carol"},
-                    "priority": {"id": "4"},
-                    "labels": ["l"],
-                    "components": ["c"],
-                }
-            },
-        )
-
-    def test_create_sub_task_without_team_omits_team_field(self, jira):
-        with pytest.warns(DeprecationWarning):
-            jira.create_sub_task("PROJ", "PROJ-1", "Sub", "1.0")
-        fields = jira.post.call_args.kwargs["json"]["fields"]
-        assert "customfield_11360" not in fields
-        assert fields["issuetype"] == {"id": 20}
-        assert fields["fixVersions"] == [{"name": "1.0"}]
