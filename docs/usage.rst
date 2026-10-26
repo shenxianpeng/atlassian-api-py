@@ -351,8 +351,26 @@ Paths are appended to the base URL exactly as provided.
 Troubleshooting
 ---------------
 
+Every error is an ``APIError`` subclass from ``atlassian_api.error``:
+``AuthenticationError`` (401), ``PermissionDeniedError`` (403),
+``NotFoundError`` (404), ``ConflictError`` (409), ``RateLimitError`` (429, with
+``retry_after``) and ``ServerError`` (5xx).
+
 ``401`` or ``403`` errors usually mean the credentials are invalid or the
-authenticated user does not have permission for that resource.
+authenticated user does not have permission for that resource. On Cloud, a
+``401`` with ``token=`` usually means an API token was sent as a bearer token;
+pass it as ``password`` with your email as ``username``.
+
+An ``APIError`` saying an HTML page was received means the server answered with
+a web page instead of the REST API, usually a login or SSO redirect. Check the
+base URL and the credentials.
+
+Requests rejected with ``429 Too Many Requests`` are retried automatically.
+Tune this with ``max_retries`` (``0`` disables it) and ``max_retry_wait``:
+
+.. code-block:: python
+
+   jira = Jira(url=..., username=..., password=..., max_retries=5, max_retry_wait=30)
 
 ``404`` errors usually mean the base URL, project key, repository slug, issue
 key, or page ID does not match the target Atlassian instance.

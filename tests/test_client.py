@@ -141,7 +141,10 @@ class TestAtlassianAPI:
             data=None,
             json=None,
             params=None,
+            files=None,
+            headers=None,
             timeout=60,
+            stream=False,
         )
         assert result.encoding == "utf-8"
 
@@ -160,7 +163,10 @@ class TestAtlassianAPI:
             data=None,
             json=None,
             params=None,
+            files=None,
+            headers=None,
             timeout=60,
+            stream=False,
         )
 
     def test_request_with_all_params(self):
@@ -184,7 +190,10 @@ class TestAtlassianAPI:
             data={"key": "value"},
             json={"json_key": "json_value"},
             params={"param": "value"},
+            files=None,
+            headers=None,
             timeout=60,
+            stream=False,
         )
 
     def test_get_with_response(self):

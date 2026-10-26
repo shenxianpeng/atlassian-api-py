@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.0] - Unreleased
 
 ### Changed
+- `GET` responses that are HTML pages where JSON was expected (login or SSO redirects) now raise `APIError` instead of returning the page as a string.
 - **Breaking**: the import package is now `atlassian_api` (was `atlassian`). `atlassian-python-api` also ships a top-level `atlassian` package, so installing one library overwrote the other's files and uninstalling it broke the remaining one. Replace `from atlassian import ...` with `from atlassian_api import ...`.
 
 ### Added
@@ -20,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Confluence page, space, child-page, comment, label-listing and attachment-listing methods use the REST API v2 on Cloud, where the v1 endpoints were removed. List methods keep the v1 envelope (`results`, `start`, `limit`, `size`) and map `start`/`limit` onto v2 cursors. `/wiki` is appended to Cloud URLs.
   - A 401 on Cloud with `token=` explains that Cloud API tokens use basic auth.
 - `Confluence.delete_content()` accepts `type=` (`page` or `blogpost`), used on Cloud.
+- Errors raise status-specific subclasses of `APIError` (all still caught by `except APIError`): `AuthenticationError`, `PermissionDeniedError`, `NotFoundError`, `ConflictError`, `RateLimitError` (with `retry_after`) and `ServerError`.
+- Automatic retries for HTTP 429 (any method) and 503 (`GET`), honouring `Retry-After` (seconds or HTTP date). New `max_retries` (default 3) and `max_retry_wait` (default 60 s) arguments; a longer `Retry-After` raises `RateLimitError` instead of sleeping.
+- `AtlassianAPI.request()` accepts `files=`, `headers=` (per request) and `stream=`.
+- Jira: `iter_issues()` (generator over all pages, Server and Cloud), `count_issues()`, `update_issue()`, `get_fields()`, `get_field_id()`, `search_users()`, `add_worklog()`, `get_worklogs()`, `add_attachment()`, `get_attachment()`, `download_attachment()`, `delete_attachment()`.
+- Confluence: `iter_search()` (CQL over all pages), `create_or_update_page()`, `download_attachment()`, `export_page_pdf()` (Server/Data Center).
+- Bitbucket: `get_default_branch()`, `get_webhooks()`, `create_webhook()`, `delete_webhook()`, `get_repo_permissions()`, `set_repo_permission()`, `revoke_repo_permission()`, `list_files()`, `compare_commits()`, `compare_changes()`.
+- Downloads can stream to a file (`path=`) instead of loading the whole file into memory.
 
 ### Removed
 - `Jira.create_task()` and `Jira.create_sub_task()` (deprecated in 1.0.0); use `Jira.create_issue()`.

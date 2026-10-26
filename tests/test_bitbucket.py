@@ -665,15 +665,30 @@ class TestBitbucket:
         assert kwargs["params"]["start"] == 5
         assert kwargs["params"]["limit"] == 100
 
-    def test_get_file_content(self, bitbucket):
-        bitbucket.get_file_content("PROJ", "repo", "master", "README.md")
-        bitbucket.get.assert_called_with(
-            "/projects/PROJ/repos/repo/raw/README.md", params={"at": "master"}
+    @pytest.mark.parametrize(
+        "body, expected",
+        [
+            ("", None),
+            ("# Title", "# Title"),
+            ('{"a": 1}', SimpleNamespace(a=1)),
+            ("<html>page</html>", "<html>page</html>"),
+        ],
+    )
+    def test_get_file_content(self, bitbucket, body, expected):
+        bitbucket.request = MagicMock(return_value=MagicMock(text=body))
+        assert (
+            bitbucket.get_file_content("PROJ", "repo", "master", "README.md")
+            == expected
+        )
+        bitbucket.request.assert_called_once_with(
+            "GET", "/projects/PROJ/repos/repo/raw/README.md", params={"at": "master"}
         )
 
     def test_get_file_content_quotes_path(self, bitbucket):
+        bitbucket.request = MagicMock(return_value=MagicMock(text=""))
         bitbucket.get_file_content("PROJ", "repo", "feature/x", "docs/my file#1.md")
-        bitbucket.get.assert_called_with(
+        bitbucket.request.assert_called_once_with(
+            "GET",
             "/projects/PROJ/repos/repo/raw/docs/my%20file%231.md",
             params={"at": "feature/x"},
         )

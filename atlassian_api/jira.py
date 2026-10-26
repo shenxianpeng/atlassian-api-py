@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 from atlassian_api.client import AtlassianAPI
+from atlassian_api.error import APIError
 from atlassian_api.logger import get_logger
 
 logger = get_logger(__name__)
@@ -357,11 +361,8 @@ class Jira(AtlassianAPI):
     ) -> list[dict]:
         """Search issues using JQL and return every matching issue.
 
-        All result pages are fetched. On Server/Data Center this uses
-        ``/rest/api/2/search``; on Cloud, where that endpoint was removed
-        (HTTP 410), it uses ``/rest/api/2/search/jql`` and follows
-        ``nextPageToken``. Cloud requires a *bounded* query, for example one
-        that restricts ``project``.
+        All result pages are fetched; see :meth:`iter_issues` to process
+        issues as they arrive instead of holding them all in memory.
 
         :param jql: The JQL query string.
         :type jql: str
@@ -375,64 +376,287 @@ class Jira(AtlassianAPI):
         :return: Issues matching the query.
         :rtype: list
         """
-        if self.cloud:
-            return self._search_issue_with_jql_cloud(jql, max_result, fields)
-        url = "/rest/api/2/search"
-        start_at = 0
-        issues: list[dict] = []
-        payload: dict = {
-            "jql": jql,
-            "startAt": start_at,
-            "maxResults": max_result,
-        }
-        if fields is not None:
-            payload["fields"] = fields
-        response = self.post(url, json=payload) or {}
-        try:
-            total = response["total"]
-        except KeyError:
-            return issues
-        max_results = response["maxResults"]
-        for issue in response["issues"]:
-            issues.append(issue)
+        return list(self.iter_issues(jql, fields=fields, page_size=max_result))
 
-        while total > max_results:
-            start_at = start_at + max_results
-            payload = {
-                "jql": jql,
-                "startAt": start_at,
-                "maxResults": max_result,
-            }
+    def iter_issues(
+        self,
+        jql: str,
+        fields: list[str] | None = None,
+        page_size: int = 100,
+    ) -> Iterator[dict]:
+        """Yield every issue matching a JQL query, one page at a time.
+
+        On Server/Data Center this pages ``/rest/api/2/search`` with
+        ``startAt``. On Cloud, where that endpoint was removed (HTTP 410), it
+        uses ``/rest/api/2/search/jql`` and follows ``nextPageToken``; Cloud
+        requires a *bounded* query, for example one that restricts
+        ``project``.
+
+        .. code-block:: python
+
+            for issue in jira.iter_issues("project = TEST", fields=["summary"]):
+                print(issue["key"], issue["fields"]["summary"])
+
+        :param jql: The JQL query string.
+        :type jql: str
+        :param fields: Fields to return. ``None`` returns navigable fields.
+        :type fields: list[str], optional
+        :param page_size: Issues requested per API call.
+        :type page_size: int, optional
+        :return: Issue dictionaries.
+        :rtype: Iterator[dict]
+        """
+        if self.cloud:
+            yield from self._iter_issues_cloud(jql, fields, page_size)
+            return
+        start_at = 0
+        while True:
+            payload: dict = {"jql": jql, "startAt": start_at, "maxResults": page_size}
             if fields is not None:
                 payload["fields"] = fields
-            response = self.post(url, json=payload) or {}
-            total = total - max_results
-            for issue in response["issues"]:
-                issues.append(issue)
-        return issues
+            response = self.post("/rest/api/2/search", json=payload) or {}
+            page = response.get("issues") or []
+            yield from page
+            start_at += len(page)
+            if not page or start_at >= response.get("total", 0):
+                return
 
-    def _search_issue_with_jql_cloud(
-        self, jql: str, max_result: int, fields: list[str] | None
-    ) -> list[dict]:
-        """Run a JQL search on Jira Cloud's enhanced search endpoint."""
-        url = "/rest/api/2/search/jql"
+    def _iter_issues_cloud(
+        self, jql: str, fields: list[str] | None, page_size: int
+    ) -> Iterator[dict]:
+        """Page through Jira Cloud's enhanced search endpoint."""
         payload: dict = {
             "jql": jql,
-            "maxResults": max_result,
+            "maxResults": page_size,
             # The enhanced endpoint returns only issue IDs unless asked.
             "fields": fields if fields is not None else ["*navigable"],
         }
-        issues: list[dict] = []
         while True:
-            response = self.post(url, json=payload) or {}
+            response = self.post("/rest/api/2/search/jql", json=payload) or {}
             page = response.get("issues") or []
-            issues.extend(page)
+            yield from page
             token = response.get("nextPageToken")
             # Stop on the last page; also guard against a token that keeps
             # coming back with no issues.
             if response.get("isLast") or not token or not page:
-                return issues
+                return
             payload["nextPageToken"] = token
+
+    def count_issues(self, jql: str) -> int:
+        """Return how many issues match a JQL query.
+
+        Cloud's search no longer reports a total, so this uses
+        ``/rest/api/2/search/approximate-count`` there (the count can lag
+        recent changes by a few seconds). Server/Data Center reads ``total``
+        from a search that returns no issues.
+
+        :param jql: The JQL query string.
+        :type jql: str
+        :return: Number of matching issues.
+        :rtype: int
+        """
+        if self.cloud:
+            response = self.post(
+                "/rest/api/2/search/approximate-count", json={"jql": jql}
+            )
+            return int((response or {}).get("count", 0))
+        payload = {"jql": jql, "maxResults": 0, "fields": ["id"]}
+        response = self.post("/rest/api/2/search", json=payload)
+        return int((response or {}).get("total", 0))
+
+    def update_issue(
+        self,
+        issue_key: str,
+        fields: dict | None = None,
+        update: dict | None = None,
+        notify_users: bool = True,
+    ) -> dict | None:
+        """Edit an issue with Jira's ``fields`` and/or ``update`` payloads.
+
+        .. code-block:: python
+
+            jira.update_issue(
+                "TEST-1",
+                fields={"summary": "New title", jira.get_field_id("Story Points"): 3},
+                update={"labels": [{"add": "triaged"}]},
+            )
+
+        :param issue_key: The key of the issue to edit.
+        :type issue_key: str
+        :param fields: Field values to set, keyed by field ID.
+        :type fields: dict, optional
+        :param update: Jira update operations, for example ``add``/``remove``.
+        :type update: dict, optional
+        :param notify_users: Send notification emails. Turning this off needs
+            admin or project-admin permission.
+        :type notify_users: bool, optional
+        :return: Decoded API response, or ``None`` when Jira returns no body.
+        :rtype: dict or None
+        """
+        payload: dict = {}
+        if fields:
+            payload["fields"] = fields
+        if update:
+            payload["update"] = update
+        params = None if notify_users else {"notifyUsers": "false"}
+        return self.put(f"/rest/api/2/issue/{issue_key}", json=payload, params=params)
+
+    def get_fields(self) -> list | SimpleNamespace | str | None:
+        """Return all system and custom fields.
+
+        :return: Field objects with ``id``, ``name``, ``custom`` and ``schema``.
+        :rtype: list or SimpleNamespace or str or None
+        """
+        return self.get("/rest/api/2/field")
+
+    def get_field_id(self, name: str) -> str:
+        """Return the ID of a field from its display name.
+
+        Useful for custom fields, whose IDs (``customfield_10016``) differ
+        between sites. Matching ignores case.
+
+        :param name: Field name as shown in Jira, for example ``"Story Points"``.
+        :type name: str
+        :return: The field ID.
+        :rtype: str
+        :raises ValueError: If no field, or more than one field, has this name.
+        """
+        fields = self.get_fields()
+        wanted = name.casefold()
+        matches = [
+            f.id
+            for f in (fields if isinstance(fields, list) else [])
+            if str(getattr(f, "name", "")).casefold() == wanted
+        ]
+        if len(matches) != 1:
+            found = "No field" if not matches else f"{len(matches)} fields"
+            raise ValueError(f"{found} named {name!r}: {matches}")
+        return matches[0]
+
+    def search_users(
+        self, query: str, max_results: int = 50
+    ) -> list | SimpleNamespace | str | None:
+        """Find users by name, username or email.
+
+        On Cloud the result contains ``accountId`` values to pass to
+        :meth:`assign_issue` or :meth:`add_issue_watcher`.
+
+        :param query: Text to match.
+        :type query: str
+        :param max_results: Maximum number of users to return.
+        :type max_results: int, optional
+        :return: Matching users.
+        :rtype: list or SimpleNamespace or str or None
+        """
+        key = "query" if self.cloud else "username"
+        params = {key: query, "maxResults": max_results}
+        return self.get("/rest/api/2/user/search", params=params)
+
+    def add_worklog(
+        self,
+        issue_key: str,
+        time_spent: str,
+        comment: str | None = None,
+        started: str | None = None,
+    ) -> dict | None:
+        """Log work on an issue.
+
+        :param issue_key: The key of the issue.
+        :type issue_key: str
+        :param time_spent: Duration in Jira format, for example ``"1h 30m"``.
+        :type time_spent: str
+        :param comment: Optional worklog comment.
+        :type comment: str, optional
+        :param started: Start time, for example
+            ``"2026-10-26T09:00:00.000+0000"``. Defaults to now.
+        :type started: str, optional
+        :return: The created worklog.
+        :rtype: dict or None
+        """
+        payload: dict[str, Any] = {"timeSpent": time_spent}
+        if comment is not None:
+            payload["comment"] = comment
+        if started is not None:
+            payload["started"] = started
+        return self.post(f"/rest/api/2/issue/{issue_key}/worklog", json=payload)
+
+    def get_worklogs(self, issue_key: str) -> SimpleNamespace | str | None:
+        """Return worklogs of an issue.
+
+        :param issue_key: The key of the issue.
+        :type issue_key: str
+        :return: Worklog page with a ``worklogs`` list.
+        :rtype: SimpleNamespace or str or None
+        """
+        return self.get(f"/rest/api/2/issue/{issue_key}/worklog")
+
+    def add_attachment(
+        self,
+        issue_key: str,
+        filename: str,
+        file_data: bytes,
+        content_type: str = "application/octet-stream",
+    ) -> list | dict | None:
+        """Attach a file to an issue.
+
+        :param issue_key: The key of the issue.
+        :type issue_key: str
+        :param filename: Attachment file name.
+        :type filename: str
+        :param file_data: File contents.
+        :type file_data: bytes
+        :param content_type: MIME type of the file.
+        :type content_type: str, optional
+        :return: The created attachment objects.
+        :rtype: list or dict or None
+        """
+        response = self.request(
+            "POST",
+            f"/rest/api/2/issue/{issue_key}/attachments",
+            files={"file": (filename, file_data, content_type)},
+            # Jira rejects multipart uploads without this CSRF bypass header.
+            headers={"X-Atlassian-Token": "no-check"},
+        )
+        return self._response_handler(response)
+
+    def get_attachment(self, attachment_id: str) -> SimpleNamespace | str | None:
+        """Return attachment metadata, including the ``content`` download URL.
+
+        :param attachment_id: The attachment ID.
+        :type attachment_id: str
+        :return: Attachment metadata.
+        :rtype: SimpleNamespace or str or None
+        """
+        return self.get(f"/rest/api/2/attachment/{attachment_id}")
+
+    def download_attachment(
+        self, attachment_id: str, path: str | Path | None = None
+    ) -> bytes | Path:
+        """Download an attachment's contents.
+
+        :param attachment_id: The attachment ID.
+        :type attachment_id: str
+        :param path: Where to write the file. The download is streamed to disk
+            in chunks, so large files are not held in memory.
+        :type path: str or pathlib.Path, optional
+        :return: The file contents, or ``path`` when one was given.
+        :rtype: bytes or pathlib.Path
+        """
+        meta = self.get_attachment(attachment_id)
+        content_url = getattr(meta, "content", None)
+        if not content_url:
+            raise APIError(None, f"Attachment {attachment_id} has no content URL")
+        return self._download(content_url, path)
+
+    def delete_attachment(self, attachment_id: str) -> dict | None:
+        """Delete an attachment.
+
+        :param attachment_id: The attachment ID.
+        :type attachment_id: str
+        :return: Decoded API response, or ``None`` when Jira returns no body.
+        :rtype: dict or None
+        """
+        return self.delete(f"/rest/api/2/attachment/{attachment_id}")
 
     def get_project_components(self, project_id: str) -> SimpleNamespace | str | None:
         """Return components configured for a Jira project.

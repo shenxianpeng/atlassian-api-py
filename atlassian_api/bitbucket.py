@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import json
 import re
 from types import SimpleNamespace
 from typing import Any
 from urllib.parse import quote, urlsplit
 
 from atlassian_api.client import AtlassianAPI
+from atlassian_api.error import NotFoundError
 from atlassian_api.logger import get_logger
 
 logger = get_logger(__name__)
+
+#: Repository permissions accepted by :meth:`Bitbucket.set_repo_permission`.
+REPO_PERMISSIONS = ("REPO_READ", "REPO_WRITE", "REPO_ADMIN")
 
 
 class Bitbucket(AtlassianAPI):
@@ -974,7 +979,14 @@ class Bitbucket(AtlassianAPI):
         :rtype: SimpleNamespace or str or None
         """
         url = f"/projects/{project_key}/repos/{repo_slug}/raw/{quote(file_path)}"
-        return self.get(url, params={"at": branch_name})
+        # Read the body directly: a raw file may legitimately be HTML.
+        response = self.request("GET", url, params={"at": branch_name})
+        if not response.text:
+            return None
+        try:
+            return json.loads(response.text, object_hook=lambda d: SimpleNamespace(**d))
+        except ValueError:
+            return response.text
 
     def get_build_status(self, commit_id: str) -> SimpleNamespace | str | None:
         """Return build status for a commit.
@@ -1305,3 +1317,284 @@ class Bitbucket(AtlassianAPI):
         if message is not None:
             payload["message"] = message
         return self.post(url, json=payload)
+
+    # ------------------------------------------------------------------
+    # Repository settings and browsing
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _repo_path(project_key: str, repo_slug: str) -> str:
+        """Return the REST path of a repository."""
+        return f"/rest/api/latest/projects/{project_key}/repos/{repo_slug}"
+
+    @staticmethod
+    def _paged_params(limit: int | None, **params: Any) -> dict[str, Any]:
+        """Build query parameters, dropping ``None`` values."""
+        query = {k: v for k, v in params.items() if v is not None}
+        if limit is not None:
+            query["limit"] = limit
+        return query
+
+    def get_default_branch(
+        self, project_key: str, repo_slug: str
+    ) -> SimpleNamespace | str | None:
+        """Return the repository's default branch.
+
+        Uses ``/default-branch`` and falls back to the older
+        ``/branches/default`` endpoint on servers that lack it.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :return: Branch object with ``id`` and ``displayId``.
+        :rtype: SimpleNamespace or str or None
+        """
+        repo = self._repo_path(project_key, repo_slug)
+        try:
+            return self.get(f"{repo}/default-branch")
+        except NotFoundError:
+            return self.get(f"{repo}/branches/default")
+
+    def get_webhooks(
+        self, project_key: str, repo_slug: str, limit: int | None = None
+    ) -> list:
+        """Return the repository's webhooks.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param limit: Maximum number of webhooks to return.
+        :type limit: int, optional
+        :return: Webhook objects.
+        :rtype: list
+        """
+        url = f"{self._repo_path(project_key, repo_slug)}/webhooks"
+        return self._get_paged(url, params=self._paged_params(limit))
+
+    def create_webhook(
+        self,
+        project_key: str,
+        repo_slug: str,
+        name: str,
+        url: str,
+        events: list[str],
+        active: bool = True,
+    ) -> dict | None:
+        """Create a repository webhook.
+
+        .. code-block:: python
+
+            bitbucket.create_webhook(
+                "PROJ", "repo", "CI", "https://ci.example.com/hook",
+                events=["repo:refs_changed", "pr:opened"],
+            )
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param name: Webhook name.
+        :type name: str
+        :param url: URL that receives the events.
+        :type url: str
+        :param events: Event keys, for example ``repo:refs_changed``.
+        :type events: list[str]
+        :param active: Whether the webhook is enabled.
+        :type active: bool, optional
+        :return: The created webhook.
+        :rtype: dict or None
+        """
+        payload = {"name": name, "url": url, "events": events, "active": active}
+        return self.post(
+            f"{self._repo_path(project_key, repo_slug)}/webhooks", json=payload
+        )
+
+    def delete_webhook(
+        self, project_key: str, repo_slug: str, webhook_id: int | str
+    ) -> dict | None:
+        """Delete a repository webhook.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param webhook_id: The webhook ID.
+        :type webhook_id: int or str
+        :return: Decoded API response, or ``None`` for an empty body.
+        :rtype: dict or None
+        """
+        return self.delete(
+            f"{self._repo_path(project_key, repo_slug)}/webhooks/{webhook_id}"
+        )
+
+    def get_repo_permissions(
+        self,
+        project_key: str,
+        repo_slug: str,
+        principal: str = "users",
+        limit: int | None = None,
+    ) -> list:
+        """Return users or groups with explicit repository permissions.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param principal: ``"users"`` or ``"groups"``.
+        :type principal: str, optional
+        :param limit: Maximum number of entries to return.
+        :type limit: int, optional
+        :return: Objects with ``user`` or ``group`` and ``permission``.
+        :rtype: list
+        """
+        url = self._permissions_path(project_key, repo_slug, principal)
+        return self._get_paged(url, params=self._paged_params(limit))
+
+    def set_repo_permission(
+        self,
+        project_key: str,
+        repo_slug: str,
+        name: str,
+        permission: str,
+        principal: str = "users",
+    ) -> dict | None:
+        """Grant a user or group a repository permission.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param name: User slug or group name.
+        :type name: str
+        :param permission: ``REPO_READ``, ``REPO_WRITE`` or ``REPO_ADMIN``.
+        :type permission: str
+        :param principal: ``"users"`` or ``"groups"``.
+        :type principal: str, optional
+        :return: Decoded API response, or ``None`` for an empty body.
+        :rtype: dict or None
+        :raises ValueError: For an unknown permission or principal.
+        """
+        if permission not in REPO_PERMISSIONS:
+            raise ValueError(
+                f"Unknown permission {permission!r}; use one of {', '.join(REPO_PERMISSIONS)}"
+            )
+        url = self._permissions_path(project_key, repo_slug, principal)
+        return self.put(url, params={"name": name, "permission": permission})
+
+    def revoke_repo_permission(
+        self,
+        project_key: str,
+        repo_slug: str,
+        name: str,
+        principal: str = "users",
+    ) -> dict | None:
+        """Remove a user's or group's explicit repository permission.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param name: User slug or group name.
+        :type name: str
+        :param principal: ``"users"`` or ``"groups"``.
+        :type principal: str, optional
+        :return: Decoded API response, or ``None`` for an empty body.
+        :rtype: dict or None
+        """
+        url = self._permissions_path(project_key, repo_slug, principal)
+        return self.delete(url, params={"name": name})
+
+    def _permissions_path(
+        self, project_key: str, repo_slug: str, principal: str
+    ) -> str:
+        """Return the permissions endpoint for users or groups."""
+        if principal not in ("users", "groups"):
+            raise ValueError(
+                f"principal must be 'users' or 'groups', not {principal!r}"
+            )
+        return f"{self._repo_path(project_key, repo_slug)}/permissions/{principal}"
+
+    def list_files(
+        self,
+        project_key: str,
+        repo_slug: str,
+        path: str = "",
+        at: str | None = None,
+        limit: int | None = None,
+    ) -> list[str]:
+        """Return file paths in the repository, recursively.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param path: Directory to list; the repository root by default.
+        :type path: str, optional
+        :param at: Branch, tag or commit; the default branch by default.
+        :type at: str, optional
+        :param limit: Maximum number of paths to return.
+        :type limit: int, optional
+        :return: File paths relative to ``path``.
+        :rtype: list[str]
+        """
+        url = f"{self._repo_path(project_key, repo_slug)}/files"
+        path = path.strip("/")
+        if path:
+            url += "/" + quote(path)
+        return self._get_paged(url, params=self._paged_params(limit, at=at))
+
+    def compare_commits(
+        self,
+        project_key: str,
+        repo_slug: str,
+        from_ref: str,
+        to_ref: str,
+        limit: int | None = None,
+    ) -> list:
+        """Return commits reachable from ``from_ref`` but not from ``to_ref``.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param from_ref: Source branch, tag or commit, for example ``feature/x``.
+        :type from_ref: str
+        :param to_ref: Target branch, tag or commit, for example ``main``.
+        :type to_ref: str
+        :param limit: Maximum number of commits to return.
+        :type limit: int, optional
+        :return: Commit objects.
+        :rtype: list
+        """
+        url = f"{self._repo_path(project_key, repo_slug)}/compare/commits"
+        params = self._paged_params(limit, **{"from": from_ref, "to": to_ref})
+        return self._get_paged(url, params=params)
+
+    def compare_changes(
+        self,
+        project_key: str,
+        repo_slug: str,
+        from_ref: str,
+        to_ref: str,
+        limit: int | None = None,
+    ) -> list:
+        """Return files changed between ``to_ref`` and ``from_ref``.
+
+        :param project_key: The key of the project.
+        :type project_key: str
+        :param repo_slug: The slug of the repository.
+        :type repo_slug: str
+        :param from_ref: Source branch, tag or commit.
+        :type from_ref: str
+        :param to_ref: Target branch, tag or commit.
+        :type to_ref: str
+        :param limit: Maximum number of changes to return.
+        :type limit: int, optional
+        :return: Change objects with ``path`` and ``type``.
+        :rtype: list
+        """
+        url = f"{self._repo_path(project_key, repo_slug)}/compare/changes"
+        params = self._paged_params(limit, **{"from": from_ref, "to": to_ref})
+        return self._get_paged(url, params=params)
