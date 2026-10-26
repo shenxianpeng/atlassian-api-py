@@ -7,7 +7,6 @@ from .error import APIError
 from .logger import get_logger
 
 logger = get_logger(__name__)
-logger.disabled = True
 
 
 class AtlassianAPI:

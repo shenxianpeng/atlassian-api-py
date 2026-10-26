@@ -38,6 +38,17 @@ class TestLogger:
         logger = get_logger("test_logger")
         assert isinstance(logger, logging.Logger)
         assert logger.name == "test_logger"
-        assert logger.level == logging.DEBUG
-        assert logger.propagate is False
-        assert len(logger.handlers) > 0
+        # A library must not print on its own or hide records from the app.
+        assert logger.propagate is True
+        assert logger.level == logging.NOTSET
+        assert [type(h) for h in logger.handlers] == [logging.NullHandler]
+
+    def test_get_logger_is_idempotent(self):
+        get_logger("test_logger_twice")
+        logger = get_logger("test_logger_twice")
+        assert len(logger.handlers) == 1
+
+    def test_records_reach_application_handlers(self, caplog):
+        with caplog.at_level(logging.DEBUG, logger="atlassian"):
+            get_logger("atlassian.example").debug("hello")
+        assert "hello" in caplog.text

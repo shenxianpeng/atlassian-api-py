@@ -36,20 +36,22 @@ def get_file_handler():
 
 
 def get_logger(name):
-    """Return a package logger with the project formatter attached.
+    """Return a package logger that follows the application's logging setup.
+
+    The library never prints on its own: it only attaches a
+    :class:`logging.NullHandler`, and records propagate to the handlers the
+    application configures. To see request logs, for example::
+
+        logging.basicConfig(level=logging.DEBUG)
+
+    or attach :func:`get_console_handler` to ``logging.getLogger("atlassian")``.
 
     :param name: Logger name, usually ``__name__``.
     :type name: str
-    :return: Configured logger instance.
+    :return: Logger instance.
     :rtype: Logger
     """
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-
-    # comment out this code if needs to print log in console.
-    # os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
-    logger.addHandler(get_console_handler())
-
-    logger.propagate = False
-
+    if not any(isinstance(h, logging.NullHandler) for h in logger.handlers):
+        logger.addHandler(logging.NullHandler())
     return logger

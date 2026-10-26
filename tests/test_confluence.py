@@ -254,10 +254,12 @@ class TestConfluence:
             "https://fake_url/rest/api/content/123/child/attachment",
             files={"file": ("test.txt", b"hello", "text/plain")},
             data={"comment": ""},
+            headers={"X-Atlassian-Token": "nocheck"},
             timeout=60,
         )
-        # The XSRF bypass header is only present for the upload request.
-        assert seen_headers["X-Atlassian-Token"] == "nocheck"
+        # The XSRF bypass header is sent per request and never set on the
+        # shared session, so concurrent requests cannot pick it up.
+        assert "X-Atlassian-Token" not in seen_headers
         assert "X-Atlassian-Token" not in confluence._session.headers
 
     def test_upload_attachment_error_raises_and_resets_header(self, confluence):
