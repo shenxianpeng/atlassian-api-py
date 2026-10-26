@@ -86,9 +86,7 @@ class TestCloudDetection:
         ],
     )
     def test_401_without_hint(self, http, kwargs):
-        http.get(
-            f"{kwargs['url']}/rest/api/2/myself", status=401, body="Unauthorized"
-        )
+        http.get(f"{kwargs['url']}/rest/api/2/myself", status=401, body="Unauthorized")
         with pytest.raises(APIError) as exc:
             AtlassianAPI(**kwargs).get("/rest/api/2/myself")
         assert exc.value.message == "Unauthorized"
@@ -110,12 +108,25 @@ class TestJiraCloudSearch:
     def test_follows_next_page_token(self, http, jira):
         http.post(
             self.URL,
-            match=[matchers.json_params_matcher({"jql": "project = A", "maxResults": 2, "fields": ["*navigable"]})],
+            match=[
+                matchers.json_params_matcher(
+                    {"jql": "project = A", "maxResults": 2, "fields": ["*navigable"]}
+                )
+            ],
             json={"issues": [{"key": "A-1"}, {"key": "A-2"}], "nextPageToken": "t1"},
         )
         http.post(
             self.URL,
-            match=[matchers.json_params_matcher({"jql": "project = A", "maxResults": 2, "fields": ["*navigable"], "nextPageToken": "t1"})],
+            match=[
+                matchers.json_params_matcher(
+                    {
+                        "jql": "project = A",
+                        "maxResults": 2,
+                        "fields": ["*navigable"],
+                        "nextPageToken": "t1",
+                    }
+                )
+            ],
             json={"issues": [{"key": "A-3"}], "isLast": True},
         )
         issues = jira.search_issue_with_jql("project = A", max_result=2)
