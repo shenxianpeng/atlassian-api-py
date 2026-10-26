@@ -5,6 +5,7 @@ transport, so payloads, query strings and headers are checked as sent.
 """
 
 import json
+from itertools import islice
 
 import pytest
 import responses
@@ -146,7 +147,8 @@ class TestIterIssuesCloud:
             self.URL,
             json={"issues": issues("A-1"), "isLast": True, "nextPageToken": "t1"},
         )
-        assert len(list(cloud.iter_issues("x"))) == 1
+        # Bounded, so a regression fails instead of looping forever.
+        assert len(list(islice(cloud.iter_issues("x"), 5))) == 1
         assert len(http.calls) == 1
 
     def test_missing_token_ends_listing(self, http, cloud):
