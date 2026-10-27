@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Breaking**: the import package is now `atlassian_api` (was `atlassian`). `atlassian-python-api` also ships a top-level `atlassian` package, so installing one library overwrote the other's files and uninstalling it broke the remaining one. Replace `from atlassian import ...` with `from atlassian_api import ...`. If `atlassian-python-api` is installed too, run `pip install --force-reinstall --no-deps atlassian-python-api` after upgrading, because uninstalling 1.x removes the files the two packages shared.
+- **Breaking**: Python 3.10 or newer is required. Python 3.9 reached end of life in October 2025 and is no longer tested. Python 3.15 is now tested and listed.
 - `Bitbucket` now raises `ValueError` for Bitbucket Cloud (`bitbucket.org`) URLs instead of sending Server API calls there.
 - Responses that are HTML pages where JSON was expected (login or SSO redirects) now raise `APIError` instead of returning the page as a string.
 
