@@ -70,7 +70,7 @@ Documentation: `atlassian-api-py.readthedocs.io <https://atlassian-api-py.readth
 Installation
 ------------
 
-Python 3.9 or newer is required.
+Python 3.10 or newer is required (tested on 3.10 to 3.15).
 
 Install from PyPI:
 
