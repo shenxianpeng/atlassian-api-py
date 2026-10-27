@@ -27,7 +27,7 @@ Username and password:
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(
        url="https://jira.company.com",
@@ -39,7 +39,7 @@ Bearer token:
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(url="https://jira.company.com", token="your_token")
 
@@ -58,7 +58,7 @@ Configuration file:
 
    import configparser
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    config = configparser.ConfigParser()
    config.read("config.ini")
@@ -73,6 +73,58 @@ Configuration file:
 
 Keep local configuration files out of version control when they contain
 credentials.
+
+Atlassian Cloud
+---------------
+
+Jira and Confluence clients work against Atlassian Cloud with the same method
+calls. Cloud is detected from ``*.atlassian.net`` URLs; pass ``cloud=True`` for
+a custom domain, or ``cloud=False`` to force Server/Data Center behaviour.
+
+Authenticate with your account email and an
+`API token <https://id.atlassian.com/manage-profile/security/api-tokens>`_ as
+``username`` and ``password``. ``token=`` sends a bearer token, which Cloud
+accepts only for OAuth 2.0 access tokens.
+
+.. code-block:: python
+
+   from atlassian_api import Jira
+
+   jira = Jira(
+       url="https://your-site.atlassian.net",
+       username="you@example.com",
+       password="your_api_token",
+   )
+
+What changes on Cloud:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Method
+     - Server / Data Center
+     - Cloud
+   * - ``Jira.search_issue_with_jql()``
+     - ``/rest/api/2/search``, ``startAt`` paging
+     - ``/rest/api/2/search/jql``, ``nextPageToken`` paging. The JQL must be
+       bounded (for example restrict ``project``).
+   * - ``Jira.assign_issue()``, ``user()``, ``add_issue_watcher()``
+     - username
+     - ``accountId``
+   * - ``Jira.get_projects()``
+     - ``/rest/api/2/project``
+     - all pages of ``/rest/api/2/project/search``
+   * - Confluence pages, spaces, child pages, comments, labels, attachments
+     - REST API v1
+     - REST API v2 (``/wiki/api/v2``). Lists keep ``results``/``start``/
+       ``limit``/``size``; items are v2 objects (a page has ``spaceId``).
+   * - ``Confluence.search_content()``, ``add_label()``,
+       ``remove_label()``, ``upload_attachment()``
+     - REST API v1
+     - REST API v1 (still the Cloud endpoint)
+
+Bitbucket support targets Bitbucket Server/Data Center; a ``bitbucket.org``
+URL raises ``ValueError``.
 
 Working With Responses
 ----------------------
@@ -96,7 +148,7 @@ HTTP ``4xx`` and ``5xx`` responses raise ``APIError``:
 
 .. code-block:: python
 
-   from atlassian.error import APIError
+   from atlassian_api.error import APIError
 
    try:
        issue = jira.issue("MISSING-1")
@@ -108,7 +160,7 @@ Clients also work as context managers when you want the underlying
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    with Jira(url="https://jira.company.com", token="your_token") as jira:
        issue = jira.issue("TEST-1")
@@ -121,7 +173,7 @@ Read an issue:
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(url="https://jira.company.com", token="your_token")
    issue = jira.issue("TEST-1")
@@ -180,7 +232,7 @@ Create a Bitbucket client:
 
 .. code-block:: python
 
-   from atlassian import Bitbucket
+   from atlassian_api import Bitbucket
 
    bitbucket = Bitbucket(
        url="https://bitbucket.company.com",
@@ -239,7 +291,7 @@ Create a Confluence client:
 
 .. code-block:: python
 
-   from atlassian import Confluence
+   from atlassian_api import Confluence
 
    confluence = Confluence(
        url="https://confluence.company.com",

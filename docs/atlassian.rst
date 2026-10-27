@@ -2,61 +2,61 @@ API documentation
 =================
 
 This page lists the public clients and lower-level helpers exposed by the
-``atlassian`` package.
+``atlassian_api`` package.
 
-Most scripts should import one of the product clients from ``atlassian``:
+Most scripts should import one of the product clients from ``atlassian_api``:
 
 .. code-block:: python
 
-   from atlassian import Jira, Bitbucket, Confluence
+   from atlassian_api import Jira, Bitbucket, Confluence
 
-Use ``atlassian.client.AtlassianAPI`` directly only when you need to call an
+Use ``atlassian_api.client.AtlassianAPI`` directly only when you need to call an
 endpoint that does not yet have a convenience method.
 
-atlassian.jira module
----------------------
+atlassian_api.jira module
+-------------------------
 
-.. automodule:: atlassian.jira
+.. automodule:: atlassian_api.jira
    :members:
    :undoc-members:
    :show-inheritance:
 
-atlassian.bitbucket module
---------------------------
+atlassian_api.bitbucket module
+------------------------------
 
-.. automodule:: atlassian.bitbucket
+.. automodule:: atlassian_api.bitbucket
    :members:
    :undoc-members:
    :show-inheritance:
 
-atlassian.confluence module
+atlassian_api.confluence module
+-------------------------------
+
+.. automodule:: atlassian_api.confluence
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+atlassian_api.client module
 ---------------------------
 
-.. automodule:: atlassian.confluence
+.. automodule:: atlassian_api.client
    :members:
    :undoc-members:
    :show-inheritance:
 
-atlassian.client module
------------------------
+atlassian_api.error module
+--------------------------
 
-.. automodule:: atlassian.client
+.. automodule:: atlassian_api.error
    :members:
    :undoc-members:
    :show-inheritance:
 
-atlassian.error module
-----------------------
+atlassian_api.logger module
+---------------------------
 
-.. automodule:: atlassian.error
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-atlassian.logger module
------------------------
-
-.. automodule:: atlassian.logger
+.. automodule:: atlassian_api.logger
    :members:
    :undoc-members:
    :show-inheritance:

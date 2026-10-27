@@ -1,7 +1,7 @@
 """Import Jira, Bitbucket, Confluence"""
 
-from atlassian.jira import Jira
-from atlassian.bitbucket import Bitbucket
-from atlassian.confluence import Confluence
+from atlassian_api.jira import Jira
+from atlassian_api.bitbucket import Bitbucket
+from atlassian_api.confluence import Confluence
 
 __all__ = ["Jira", "Bitbucket", "Confluence"]

@@ -3,10 +3,35 @@ from __future__ import annotations
 import requests  # type: ignore
 import json
 from types import SimpleNamespace, TracebackType
+from urllib.parse import urlsplit
+
 from .error import APIError
 from .logger import get_logger
 
 logger = get_logger(__name__)
+
+#: Host name suffixes of Atlassian Cloud sites.
+CLOUD_HOST_SUFFIXES = (".atlassian.net", ".jira.com")
+
+_CLOUD_TOKEN_HINT = (
+    "\nHint: Atlassian Cloud API tokens use basic authentication. Pass "
+    "username=<your account email> and password=<API token> instead of token=."
+)
+
+
+def is_cloud_url(url: str) -> bool:
+    """Return ``True`` when ``url`` points at an Atlassian Cloud site.
+
+    Cloud sites live under ``*.atlassian.net`` (or the legacy ``*.jira.com``),
+    and OAuth 2.0 / scoped-token requests go through ``api.atlassian.com``.
+
+    :param url: Base URL of the Atlassian product.
+    :type url: str
+    :return: Whether the URL is an Atlassian Cloud URL.
+    :rtype: bool
+    """
+    host = (urlsplit(url).hostname or "").lower()
+    return host.endswith(CLOUD_HOST_SUFFIXES) or host == "api.atlassian.com"
 
 
 class AtlassianAPI:
@@ -14,7 +39,7 @@ class AtlassianAPI:
 
     The client stores a ``requests.Session``, applies either basic auth or a
     bearer token, appends endpoint paths to the configured base URL, and raises
-    :class:`atlassian.error.APIError` for HTTP ``4xx`` and ``5xx`` responses.
+    :class:`atlassian_api.error.APIError` for HTTP ``4xx`` and ``5xx`` responses.
 
     ``get()`` parses JSON into nested ``SimpleNamespace`` objects. Mutating
     helpers return decoded JSON dictionaries when available.
@@ -32,6 +57,7 @@ class AtlassianAPI:
         token: str | None = None,
         verify: bool | str = True,
         proxies: dict | None = None,
+        cloud: bool | None = None,
     ) -> None:
         """Create a client session for an Atlassian REST API.
 
@@ -58,11 +84,24 @@ class AtlassianAPI:
         :param proxies: Dictionary mapping protocol names to proxy URLs, for
             example ``{"https": "http://proxy.example.com:8080"}``.
         :type proxies: dict, optional
+        :param cloud: Whether the server is Atlassian Cloud. When omitted, it
+            is detected from the URL (``*.atlassian.net``). Cloud and
+            Server/Data Center expose different endpoints for some operations;
+            the product clients pick the right one.
+        :type cloud: bool, optional
         """
         self.url = url.strip("/")
         self.username = username
         self.password = password
         self.timeout = int(timeout)
+        self.cloud = is_cloud_url(self.url) if cloud is None else cloud
+        # Site URLs take API tokens as basic auth; api.atlassian.com takes
+        # OAuth bearer tokens, so the 401 hint only applies to site URLs.
+        self._bearer_auth = (
+            token is not None
+            and not (username and password)
+            and (urlsplit(self.url).hostname or "").lower() != "api.atlassian.com"
+        )
         if session is None:
             self._session = requests.Session()
         else:
@@ -194,7 +233,10 @@ class AtlassianAPI:
         response.encoding = "utf-8"
         logger.debug(f"HTTP: {method} -> {response.status_code} {response.reason}")
         if response.status_code >= 400:
-            raise APIError(response.status_code, response.text)
+            message = response.text
+            if response.status_code == 401 and self.cloud and self._bearer_auth:
+                message += _CLOUD_TOKEN_HINT
+            raise APIError(response.status_code, message)
         return response
 
     def get(

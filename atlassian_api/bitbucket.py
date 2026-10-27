@@ -3,10 +3,10 @@ from __future__ import annotations
 import re
 from types import SimpleNamespace
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
-from atlassian.client import AtlassianAPI
-from atlassian.logger import get_logger
+from atlassian_api.client import AtlassianAPI
+from atlassian_api.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -21,6 +21,22 @@ class Bitbucket(AtlassianAPI):
     .. seealso::
         `Bitbucket REST API Documentation <https://docs.atlassian.com/bitbucket-server/rest/7.12.1/bitbucket-rest.html>`_
     """
+
+    def __init__(self, url: str, *args: Any, **kwargs: Any) -> None:
+        """Create a Bitbucket Server/Data Center client.
+
+        Accepts the same arguments as :class:`atlassian_api.client.AtlassianAPI`.
+
+        :raises ValueError: If ``url`` points at Bitbucket Cloud
+            (``bitbucket.org``), whose REST API is different and not supported.
+        """
+        host = (urlsplit(url).hostname or "").lower()
+        if host == "bitbucket.org" or host.endswith(".bitbucket.org"):
+            raise ValueError(
+                "Bitbucket Cloud (bitbucket.org) is not supported: this client "
+                "targets the Bitbucket Server/Data Center REST API."
+            )
+        super().__init__(url, *args, **kwargs)
 
     def _get_paged(self, url: str, params: dict) -> list:
         """Collect all ``values`` from a paginated Bitbucket endpoint.

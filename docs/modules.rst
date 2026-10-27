@@ -1,5 +1,5 @@
-atlassian
-=========
+atlassian_api
+=============
 
 .. toctree::
    :maxdepth: 4

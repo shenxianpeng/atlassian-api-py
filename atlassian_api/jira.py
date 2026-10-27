@@ -1,21 +1,25 @@
 from __future__ import annotations
 
-import warnings
 from types import SimpleNamespace
 
-from atlassian.client import AtlassianAPI
-from atlassian.logger import get_logger
+from atlassian_api.client import AtlassianAPI
+from atlassian_api.logger import get_logger
 
 logger = get_logger(__name__)
 
 
 class Jira(AtlassianAPI):
-    """Client for Jira REST API operations.
+    """Client for Jira REST API operations on Cloud and Server/Data Center.
 
     Use this class for issue lookup, issue updates, JQL searches, comments,
     watchers, transitions, projects, and versions. Responses from read methods
     are usually nested ``SimpleNamespace`` objects; methods that mutate Jira
     return decoded JSON dictionaries or ``None`` for empty responses.
+
+    The same calls work on both deployments. On Jira Cloud (detected from a
+    ``*.atlassian.net`` URL, or ``cloud=True``) the client uses the Cloud
+    endpoints where they differ, and users are identified by ``accountId``
+    instead of username.
 
     .. seealso::
         `Jira REST API Documentation <https://docs.atlassian.com/software/jira/docs/api/REST/7.6.1/>`_
@@ -250,133 +254,6 @@ class Jira(AtlassianAPI):
             data["update"] = update
         return self.post(url, json=data)
 
-    # TODO: replace by create_issue, will remove it in the future
-    def create_task(
-        self,
-        project_key: str | None = None,
-        summary: str | None = None,
-        assignee: str | None = None,
-        owner: str | None = None,
-        labels: list[str] | None = None,
-        components: list[str] | None = None,
-        issue_type: int = 10,
-    ) -> dict | None:
-        """Create a task with the legacy project-specific payload.
-
-        .. deprecated::
-            Use :meth:`create_issue` instead. ``create_task()`` contains
-            hard-coded private custom fields (``customfield_11386``) that are
-            not portable across Jira projects and will be removed in a future
-            version.
-
-        :param project_key: The key of the project.
-        :type project_key: str
-        :param summary: The summary of the issue.
-        :type summary: str
-        :param assignee: The assignee of the issue.
-        :type assignee: str
-        :param owner: The owner of the issue.
-        :type owner: str
-        :param labels: A list of labels for the issue.
-        :type labels: list[str], optional
-        :param components: A list of components for the issue.
-        :type components: list[str], optional
-        :param issue_type: The issue type ID (default is 10).
-        :type issue_type: int, optional
-        :return: Decoded API response, or ``None`` when Jira returns no body.
-        :rtype: dict or None
-        """
-        warnings.warn(
-            "create_task() is deprecated and will be removed in a future version. "
-            "Use create_issue() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        url = "/rest/api/2/issue"
-        json = {
-            "fields": {
-                "project": {"key": project_key},
-                "summary": summary,
-                "issuetype": {"id": issue_type},
-                "assignee": {"key": assignee, "name": assignee},
-                "customfield_11386": {"key": owner, "name": owner},
-                "priority": {"id": "4"},  # "name": "3 - Medium"
-                "labels": labels,
-                "components": components,
-            }
-        }
-
-        return self.post(url, json=json)
-
-    # TODO: replace by create_issue, will remove it in the future
-    def create_sub_task(
-        self,
-        project_key: str | None = None,
-        parent_issue_key: str | None = None,
-        summary: str | None = None,
-        fix_version: str | None = None,
-        assignee: str | None = None,
-        description: str | None = None,
-        labels: list[str] | None = None,
-        team: str | None = None,
-        issue_type: int = 20,
-    ) -> dict | None:
-        """Create a sub-task with the legacy project-specific payload.
-
-        .. deprecated::
-            Use :meth:`create_issue` instead. ``create_sub_task()`` contains
-            hard-coded private custom fields (``customfield_13430``,
-            ``customfield_11360``) that are not portable across Jira projects
-            and will be removed in a future version.
-
-        :param project_key: The key of the project.
-        :type project_key: str
-        :param parent_issue_key: The key of the parent issue.
-        :type parent_issue_key: str
-        :param summary: The summary of the issue.
-        :type summary: str
-        :param fix_version: The fix version of the issue.
-        :type fix_version: str
-        :param assignee: The assignee of the issue.
-        :type assignee: str
-        :param description: The description of the issue.
-        :type description: str
-        :param labels: A list of labels for the issue.
-        :type labels: list[str], optional
-        :param team: The team of the issue.
-        :type team: str, optional
-        :param issue_type: The issue type ID (default is 20).
-        :type issue_type: int, optional
-        :return: Decoded API response, or ``None`` when Jira returns no body.
-        :rtype: dict or None
-        """
-        warnings.warn(
-            "create_sub_task() is deprecated and will be removed in a future version. "
-            "Use create_issue() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        url = "/rest/api/2/issue"
-        json = {
-            "fields": {
-                "project": {"key": project_key},
-                "parent": {"key": parent_issue_key},
-                "summary": summary,
-                "issuetype": {"id": issue_type},
-                "assignee": {"key": assignee, "name": assignee},
-                "priority": {"id": "4"},
-                "description": description,
-                "labels": labels,
-                "customfield_13430": {"value": "Testing / Debugging"},
-                "customfield_11360": {"value": team},
-                "fixVersions": [{"name": fix_version}],
-            }
-        }
-        if team is None:
-            del json["fields"]["customfield_11360"]
-
-        return self.post(url, json=json)
-
     def update_custom_field(
         self, issue_key: str, field_id: str, *field_args: object
     ) -> dict | None:
@@ -408,23 +285,30 @@ class Jira(AtlassianAPI):
 
         :param issue_key: The key of the issue to assign.
         :type issue_key: str
-        :param assignee: Username to assign. When omitted, the issue is
-            unassigned. Pass ``"-1"`` to use the project's automatic assignee.
+        :param assignee: Username (Server/Data Center) or ``accountId``
+            (Cloud) to assign. When omitted, the issue is unassigned. Pass
+            ``"-1"`` to use the project's automatic assignee.
         :type assignee: str, optional
         :return: Decoded API response, or ``None`` when Jira returns no body.
         :rtype: dict or None
         """
         url = f"/rest/api/2/issue/{issue_key}/assignee"
         # Jira: a null name unassigns the issue, "-1" picks the automatic assignee.
-        json = {"name": assignee}
+        json = {self._user_field: assignee}
         return self.put(url, json=json)
+
+    @property
+    def _user_field(self) -> str:
+        """Payload key that identifies a user: ``accountId`` on Cloud."""
+        return "accountId" if self.cloud else "name"
 
     def add_issue_watcher(self, issue_key: str, watcher: str) -> dict | None:
         """Add a user as an issue watcher.
 
         :param issue_key: The key of the issue to add a watcher to.
         :type issue_key: str
-        :param watcher: The username of the watcher.
+        :param watcher: Username (Server/Data Center) or ``accountId``
+            (Cloud) of the watcher.
         :type watcher: str
         :return: Decoded API response, or ``None`` when Jira returns no body.
         :rtype: dict or None
@@ -471,20 +355,28 @@ class Jira(AtlassianAPI):
         max_result: int = 1000,
         fields: list[str] | None = None,
     ) -> list[dict]:
-        """Search issues using JQL.
+        """Search issues using JQL and return every matching issue.
+
+        All result pages are fetched. On Server/Data Center this uses
+        ``/rest/api/2/search``; on Cloud, where that endpoint was removed
+        (HTTP 410), it uses ``/rest/api/2/search/jql`` and follows
+        ``nextPageToken``. Cloud requires a *bounded* query, for example one
+        that restricts ``project``.
 
         :param jql: The JQL query string.
         :type jql: str
         :param max_result: Page size requested from Jira for each API call.
         :type max_result: int, optional
         :param fields: List of field names to return for each issue. When
-            ``None`` (the default), all fields are returned. Pass an explicit
-            list to restrict the response, for example
-            ``["summary", "status", "assignee"]``.
+            ``None`` (the default), Jira's navigable fields are returned on
+            both deployments. Pass an explicit list to restrict the response,
+            for example ``["summary", "status", "assignee"]``.
         :type fields: list[str], optional
         :return: Issues matching the query.
         :rtype: list
         """
+        if self.cloud:
+            return self._search_issue_with_jql_cloud(jql, max_result, fields)
         url = "/rest/api/2/search"
         start_at = 0
         issues: list[dict] = []
@@ -519,6 +411,29 @@ class Jira(AtlassianAPI):
                 issues.append(issue)
         return issues
 
+    def _search_issue_with_jql_cloud(
+        self, jql: str, max_result: int, fields: list[str] | None
+    ) -> list[dict]:
+        """Run a JQL search on Jira Cloud's enhanced search endpoint."""
+        url = "/rest/api/2/search/jql"
+        payload: dict = {
+            "jql": jql,
+            "maxResults": max_result,
+            # The enhanced endpoint returns only issue IDs unless asked.
+            "fields": fields if fields is not None else ["*navigable"],
+        }
+        issues: list[dict] = []
+        while True:
+            response = self.post(url, json=payload) or {}
+            page = response.get("issues") or []
+            issues.extend(page)
+            token = response.get("nextPageToken")
+            # Stop on the last page; also guard against a token that keeps
+            # coming back with no issues.
+            if response.get("isLast") or not token or not page:
+                return issues
+            payload["nextPageToken"] = token
+
     def get_project_components(self, project_id: str) -> SimpleNamespace | str | None:
         """Return components configured for a Jira project.
 
@@ -532,16 +447,18 @@ class Jira(AtlassianAPI):
         return self.get(url)
 
     def user(self, username: str) -> SimpleNamespace | str | None:
-        """Return Jira user information by username.
+        """Return Jira user information.
 
-        :param username: The username of the user to retrieve.
+        :param username: Username (Server/Data Center) or ``accountId``
+            (Cloud) of the user to retrieve.
         :type username: str
         :return: User data, raw response text for non-JSON responses, or
             ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         url = "/rest/api/2/user"
-        return self.get(url, params={"username": username})
+        key = "accountId" if self.cloud else "username"
+        return self.get(url, params={key: username})
 
     def get_dev_status(
         self,
@@ -592,15 +509,28 @@ class Jira(AtlassianAPI):
         url = f"/rest/api/2/project/{project_key}"
         return self.get(url)
 
-    def get_projects(self) -> SimpleNamespace | str | None:
+    def get_projects(self) -> list | SimpleNamespace | str | None:
         """Return projects visible to the current user.
+
+        On Cloud, where the unpaginated endpoint is deprecated, all pages of
+        ``/rest/api/2/project/search`` are collected into one list so the
+        result has the same shape as on Server/Data Center.
 
         :return: Project list, raw response text for non-JSON responses, or
             ``None`` for an empty body.
-        :rtype: SimpleNamespace or str or None
+        :rtype: list or SimpleNamespace or str or None
         """
-        url = "/rest/api/2/project"
-        return self.get(url)
+        if not self.cloud:
+            return self.get("/rest/api/2/project")
+        projects: list = []
+        params: dict = {"startAt": 0, "maxResults": 50}
+        while True:
+            page = self.get("/rest/api/2/project/search", params=params)
+            values = getattr(page, "values", None) or []
+            projects.extend(values)
+            if not values or getattr(page, "isLast", True):
+                return projects
+            params["startAt"] += len(values)
 
     def get_issue_comments(self, issue_key: str) -> SimpleNamespace | str | None:
         """Return comments for an issue.
@@ -683,7 +613,13 @@ class Jira(AtlassianAPI):
         :rtype: dict or None
         """
         url = "/rest/api/2/version"
-        payload: dict = {"project": project_key, "name": name, "released": released}
+        payload: dict = {"name": name, "released": released}
+        if self.cloud:
+            # Cloud dropped the project key here; it needs the numeric ID.
+            project = self.get_project(project_key)
+            payload["projectId"] = int(getattr(project, "id"))
+        else:
+            payload["project"] = project_key
         if description is not None:
             payload["description"] = description
         if start_date is not None:

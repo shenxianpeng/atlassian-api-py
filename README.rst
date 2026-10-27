@@ -41,6 +41,17 @@ It provides ready-to-use clients for Jira, Bitbucket, and Confluence so you
 can automate common Atlassian tasks without rewriting endpoint and session
 handling code.
 
+* **One script for Data Center and Cloud.** Jira and Confluence clients detect
+  Atlassian Cloud from the URL (``*.atlassian.net``) and switch to the Cloud
+  endpoints where they differ: Jira's ``/search/jql`` with ``nextPageToken``
+  paging, ``accountId`` instead of usernames, and the Confluence REST API v2.
+  Method names and arguments stay the same; returned items are Cloud objects
+  (for example a Confluence page has ``spaceId`` instead of ``space.key``).
+* **Installs next to** ``atlassian-python-api``. The import package is
+  ``atlassian_api``, so both libraries can live in the same environment.
+* **One runtime dependency** (``requests``) and inline type hints.
+* Bitbucket support targets Bitbucket Server/Data Center.
+
 The clients are intentionally lightweight:
 
 * ``GET`` helpers return nested ``SimpleNamespace`` objects, so response fields
@@ -83,7 +94,7 @@ method that matches the operation.
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(
        url="https://jira.company.com",
@@ -99,9 +110,69 @@ bearer token authentication:
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(url="https://jira.company.com", token="your_token")
+
+Atlassian Cloud
+~~~~~~~~~~~~~~~
+
+Use your account email and an
+`API token <https://id.atlassian.com/manage-profile/security/api-tokens>`_
+as username and password. The same methods work as on Data Center:
+
+.. code-block:: python
+
+   from atlassian_api import Confluence, Jira
+
+   jira = Jira(
+       url="https://your-site.atlassian.net",
+       username="you@example.com",
+       password="your_api_token",
+   )
+   issues = jira.search_issue_with_jql("project = TEST AND status = Open")
+
+   confluence = Confluence(
+       url="https://your-site.atlassian.net",  # "/wiki" is added for you
+       username="you@example.com",
+       password="your_api_token",
+   )
+   page = confluence.get_page_by_title("SPACE", "Release notes")
+
+Cloud identifies users by ``accountId``: pass it wherever a method takes a
+username (``assign_issue``, ``add_issue_watcher``, ``user``). For a site on a
+custom domain, pass ``cloud=True``.
+
+Upgrading from 1.x
+~~~~~~~~~~~~~~~~~~
+
+2.0 renames the import package from ``atlassian`` to ``atlassian_api``, because
+``atlassian-python-api`` also installs a package named ``atlassian`` and the
+two overwrote each other. Update your imports:
+
+.. code-block:: python
+
+   # 1.x
+   from atlassian import Jira
+   from atlassian.error import APIError
+
+   # 2.x
+   from atlassian_api import Jira
+   from atlassian_api.error import APIError
+
+If ``atlassian-python-api`` is installed in the same environment, reinstall it
+after upgrading. Uninstalling 1.x removes the ``atlassian`` files the two
+packages shared:
+
+.. code-block:: bash
+
+   pip install --upgrade atlassian-api-py
+   pip install --force-reinstall --no-deps atlassian-python-api
+
+The deprecated ``Jira.create_task()`` and ``Jira.create_sub_task()`` are
+removed; use ``Jira.create_issue()``. See the
+`changelog <https://atlassian-api-py.readthedocs.io/en/latest/changelog.html>`_
+for the full list.
 
 Usage
 -----
@@ -114,7 +185,7 @@ Using username and password
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(
        url="https://jira.company.com",
@@ -127,7 +198,7 @@ Using a token
 
 .. code-block:: python
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    jira = Jira(url="https://jira.company.com", token="your_token")
 
@@ -150,7 +221,7 @@ local ``config.ini`` file that is excluded from version control.
 
    import configparser
 
-   from atlassian import Jira
+   from atlassian_api import Jira
 
    config = configparser.ConfigParser()
    config.read('config.ini')
@@ -200,7 +271,7 @@ Common Bitbucket tasks
 
 .. code-block:: python
 
-   from atlassian import Bitbucket
+   from atlassian_api import Bitbucket
 
    bitbucket = Bitbucket(
        url="https://bitbucket.company.com",
@@ -226,7 +297,7 @@ Common Confluence tasks
 
 .. code-block:: python
 
-   from atlassian import Confluence
+   from atlassian_api import Confluence
 
    confluence = Confluence(
        url="https://confluence.company.com",
@@ -262,7 +333,7 @@ Use ``APIError`` to handle unsuccessful HTTP responses:
 
 .. code-block:: python
 
-   from atlassian.error import APIError
+   from atlassian_api.error import APIError
 
    try:
        jira.issue("MISSING-1")

@@ -5,7 +5,7 @@ import pytest
 import responses as responses_lib
 from unittest.mock import MagicMock
 from types import SimpleNamespace
-from atlassian.bitbucket import Bitbucket
+from atlassian_api.bitbucket import Bitbucket
 
 
 class TestBitbucket:

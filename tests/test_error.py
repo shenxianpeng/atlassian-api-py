@@ -1,5 +1,5 @@
 import pytest
-from atlassian.error import APIError
+from atlassian_api.error import APIError
 
 
 class TestAPIError:
