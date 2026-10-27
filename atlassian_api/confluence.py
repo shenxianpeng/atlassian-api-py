@@ -141,7 +141,7 @@ class Confluence(AtlassianAPI):
         :rtype: SimpleNamespace or str or None
         """
         if self.cloud:
-            return self._v2_list(f"{V2}/pages")
+            return self._v2_list(f"{V2}/pages", params={"status": "current"})
         url = "/rest/api/content"
         return self.get(url)
 
@@ -364,8 +364,12 @@ class Confluence(AtlassianAPI):
         if self.cloud:
             collection = self._v2_collection(content_type)
             space_id = self._space_id(space_key)
+            # v2 lists archived pages too unless asked for current ones.
             return self._v2_list(
-                f"{V2}/spaces/{space_id}/{collection}", start=start, limit=limit
+                f"{V2}/spaces/{space_id}/{collection}",
+                params={"status": "current"},
+                start=start,
+                limit=limit,
             )
         url = "/rest/api/content"
         params: dict[str, Any] = {
@@ -392,6 +396,9 @@ class Confluence(AtlassianAPI):
         :rtype: SimpleNamespace or str or None
         """
         url = "/rest/api/content/search"
+        if self.cloud:
+            # Cloud ignores ``start`` here and pages with cursors instead.
+            return self._v2_list(url, params={"cql": cql}, start=start, limit=limit)
         params: dict[str, Any] = {"cql": cql, "start": start, "limit": limit}
         return self.get(url, params=params)
 
@@ -436,7 +443,7 @@ class Confluence(AtlassianAPI):
         :rtype: SimpleNamespace or str or None
         """
         if self.cloud:
-            return self.get(f"{V2}/pages/{page_id}/attachments")
+            return self._v2_list(f"{V2}/pages/{page_id}/attachments", limit=50)
         url = f"/rest/api/content/{page_id}/child/attachment"
         return self.get(url)
 
@@ -450,7 +457,7 @@ class Confluence(AtlassianAPI):
         :rtype: SimpleNamespace or str or None
         """
         if self.cloud:
-            return self.get(f"{V2}/pages/{page_id}/labels")
+            return self._v2_list(f"{V2}/pages/{page_id}/labels")
         url = f"/rest/api/content/{page_id}/label"
         return self.get(url)
 
@@ -499,9 +506,10 @@ class Confluence(AtlassianAPI):
             params: dict[str, Any] = {
                 "space-id": self._space_id(space_key),
                 "title": title,
+                "status": "current",
                 "body-format": "storage",
             }
-            return self.get(f"{V2}/pages", params=params)
+            return self._v2_list(f"{V2}/pages", params=params)
         url = "/rest/api/content"
         params = {
             "spaceKey": space_key,
@@ -557,7 +565,7 @@ class Confluence(AtlassianAPI):
         :rtype: SimpleNamespace or str or None
         """
         if self.cloud:
-            return self.get(
+            return self._v2_list(
                 f"{V2}/pages/{page_id}/footer-comments",
                 params={"body-format": "storage"},
             )

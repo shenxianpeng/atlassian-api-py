@@ -83,6 +83,8 @@ class TestCloudDetection:
         [
             {"url": SITE, "username": "me@acme.com", "password": "api-token"},
             {"url": "https://jira.company.com", "token": "pat"},
+            # OAuth bearer tokens through the API gateway are valid.
+            {"url": "https://api.atlassian.com/ex/jira/abc-123", "token": "oauth"},
         ],
     )
     def test_401_without_hint(self, http, kwargs):
@@ -238,7 +240,11 @@ class TestConfluenceCloudSetup:
 
 class TestConfluenceCloudPages:
     def test_get_content(self, http, confluence):
-        http.get(f"{WIKI}/api/v2/pages", json={"results": [{"id": "1"}], "_links": {}})
+        http.get(
+            f"{WIKI}/api/v2/pages",
+            match=[matchers.query_param_matcher({"status": "current", "limit": "25"})],
+            json={"results": [{"id": "1"}], "_links": {}},
+        )
         result = confluence.get_content()
         assert [p.id for p in result.results] == ["1"]
         assert (result.start, result.limit, result.size) == (0, 25, 1)
@@ -312,12 +318,25 @@ class TestConfluenceCloudPages:
             f"{WIKI}/api/v2/pages",
             match=[
                 matchers.query_param_matcher(
-                    {"space-id": "98306", "title": "Home", "body-format": "storage"}
+                    {
+                        "space-id": "98306",
+                        "title": "Home",
+                        "status": "current",
+                        "body-format": "storage",
+                        "limit": "25",
+                    }
                 )
             ],
             json={"results": [{"id": "1", "title": "Home"}]},
         )
-        assert confluence.get_page_by_title("DOC", "Home").results[0].id == "1"
+        result = confluence.get_page_by_title("DOC", "Home")
+        assert result.results[0].id == "1"
+        assert result.size == 1
+
+    def test_get_page_by_title_not_found_has_size_zero(self, http, confluence):
+        spaces_lookup(http)
+        http.get(f"{WIKI}/api/v2/pages", json={"results": []})
+        assert confluence.get_page_by_title("DOC", "Nope").size == 0
 
 
 class TestConfluenceCloudSpaces:
@@ -367,7 +386,11 @@ class TestConfluenceCloudSpaces:
 
     def test_space_id_is_cached(self, http, confluence):
         spaces_lookup(http)
-        http.get(f"{WIKI}/api/v2/spaces/98306/pages", json={"results": [{"id": "1"}]})
+        http.get(
+            f"{WIKI}/api/v2/spaces/98306/pages",
+            match=[matchers.query_param_matcher({"status": "current", "limit": "25"})],
+            json={"results": [{"id": "1"}]},
+        )
         http.get(f"{WIKI}/api/v2/spaces/98306/blogposts", json={"results": []})
         assert confluence.get_content_by_space("DOC").results[0].id == "1"
         confluence.get_content_by_space("DOC", content_type="blogpost")
@@ -389,12 +412,20 @@ class TestConfluenceCloudSpaces:
 
 class TestConfluenceCloudExtras:
     def test_attachments(self, http, confluence):
-        http.get(f"{WIKI}/api/v2/pages/5/attachments", json={"results": [{"id": "a"}]})
-        assert confluence.get_attachments(5).results[0].id == "a"
+        http.get(
+            f"{WIKI}/api/v2/pages/5/attachments",
+            match=[matchers.query_param_matcher({"limit": "50"})],
+            json={"results": [{"id": "a"}]},
+        )
+        result = confluence.get_attachments(5)
+        assert result.results[0].id == "a"
+        assert (result.start, result.limit, result.size) == (0, 50, 1)
 
     def test_labels(self, http, confluence):
         http.get(f"{WIKI}/api/v2/pages/5/labels", json={"results": [{"name": "x"}]})
-        assert confluence.get_labels(5).results[0].name == "x"
+        result = confluence.get_labels(5)
+        assert result.results[0].name == "x"
+        assert result.size == 1
 
     def test_add_label_still_uses_v1(self, http, confluence):
         http.post(f"{WIKI}/rest/api/content/5/label", json={"results": []})
@@ -404,13 +435,42 @@ class TestConfluenceCloudExtras:
         http.get(f"{WIKI}/rest/api/content/search", json={"results": []})
         assert confluence.search_content("type=page").results == []
 
+    def test_search_pages_with_cursor_not_start(self, http, confluence):
+        # Cloud's content/search takes ``cursor``, not ``start``.
+        http.get(
+            f"{WIKI}/rest/api/content/search",
+            match=[matchers.query_param_matcher({"cql": "type=page", "limit": "3"})],
+            json={
+                "results": [{"id": "1"}, {"id": "2"}],
+                "_links": {
+                    "next": "/rest/api/content/search?cql=type%3Dpage&limit=3&cursor=n1"
+                },
+            },
+        )
+        http.get(
+            f"{WIKI}/rest/api/content/search",
+            match=[
+                matchers.query_param_matcher(
+                    {"cql": "type=page", "limit": "3", "cursor": "n1"}
+                )
+            ],
+            json={"results": [{"id": "3"}, {"id": "4"}], "_links": {}},
+        )
+        result = confluence.search_content("type=page", start=2, limit=1)
+        assert [r.id for r in result.results] == ["3"]
+        assert (result.start, result.limit, result.size) == (2, 1, 1)
+
     def test_comments(self, http, confluence):
         http.get(
             f"{WIKI}/api/v2/pages/5/footer-comments",
-            match=[matchers.query_param_matcher({"body-format": "storage"})],
+            match=[
+                matchers.query_param_matcher({"body-format": "storage", "limit": "25"})
+            ],
             json={"results": [{"id": "c"}]},
         )
-        assert confluence.get_comments(5).results[0].id == "c"
+        result = confluence.get_comments(5)
+        assert result.results[0].id == "c"
+        assert result.size == 1
 
     def test_add_comment(self, http, confluence):
         http.post(f"{WIKI}/api/v2/footer-comments", json={"id": "c"})

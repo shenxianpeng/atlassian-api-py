@@ -10,22 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.0] - Unreleased
 
 ### Changed
-- **Breaking**: the import package is now `atlassian_api` (was `atlassian`). `atlassian-python-api` also ships a top-level `atlassian` package, so installing one library overwrote the other's files and uninstalling it broke the remaining one. Replace `from atlassian import ...` with `from atlassian_api import ...`.
+- **Breaking**: the import package is now `atlassian_api` (was `atlassian`). `atlassian-python-api` also ships a top-level `atlassian` package, so installing one library overwrote the other's files and uninstalling it broke the remaining one. Replace `from atlassian import ...` with `from atlassian_api import ...`. If `atlassian-python-api` is installed too, run `pip install --force-reinstall --no-deps atlassian-python-api` after upgrading, because uninstalling 1.x removes the files the two packages shared.
+- `Bitbucket` now raises `ValueError` for Bitbucket Cloud (`bitbucket.org`) URLs instead of sending Server API calls there.
 
 ### Added
 - Atlassian Cloud support for Jira and Confluence, detected from `*.atlassian.net` / `*.jira.com` / `api.atlassian.com` URLs, or forced with the new `cloud=` argument.
   - `Jira.search_issue_with_jql()` uses `/rest/api/2/search/jql` with `nextPageToken` on Cloud (the old `/search` returns HTTP 410 there) and requests navigable fields by default, matching Server.
   - `Jira.assign_issue()` and `Jira.user()` send `accountId` on Cloud.
   - `Jira.get_projects()` collects all pages of `/project/search` on Cloud; `Jira.create_version()` sends `projectId`.
-  - Confluence page, space, child-page, comment, label-listing and attachment-listing methods use the REST API v2 on Cloud, where the v1 endpoints were removed. List methods keep the v1 envelope (`results`, `start`, `limit`, `size`) and map `start`/`limit` onto v2 cursors. `/wiki` is appended to Cloud URLs.
+  - Confluence page, space, child-page, comment, label-listing and attachment-listing methods use the REST API v2 on Cloud, where the v1 endpoints were removed. List methods, including `get_page_by_title()` and `search_content()`, keep the v1 envelope (`results`, `start`, `limit`, `size`) and map `start`/`limit` onto cursors. Page lists contain current pages only, as on Data Center. `/wiki` is appended to Cloud URLs.
   - A 401 on Cloud with `token=` explains that Cloud API tokens use basic auth.
 - `Confluence.delete_content()` accepts `type=` (`page` or `blogpost`), used on Cloud.
 
 ### Removed
 - `Jira.create_task()` and `Jira.create_sub_task()` (deprecated in 1.0.0); use `Jira.create_issue()`.
-- `Bitbucket` now raises `ValueError` for Bitbucket Cloud (`bitbucket.org`) URLs instead of sending Server API calls there.
 
-## [1.0.1] - Unreleased
+## [1.0.1] - 2026-10-27
 
 ### Fixed
 - `Bitbucket.get_file_change_history()` no longer loops forever on multi-page results: the URL hard-coded `start=0`, so every follow-up request asked for the first page again.

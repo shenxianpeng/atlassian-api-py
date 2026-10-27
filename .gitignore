@@ -1,6 +1,6 @@
 .idea/
 .vscode/
-atlassian/__pycache__/
+atlassian_api/__pycache__/
 build/
 dist/
 logs/
