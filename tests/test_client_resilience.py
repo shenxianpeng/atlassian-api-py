@@ -6,6 +6,7 @@ the client would have slept.
 """
 
 from datetime import datetime, timedelta, timezone
+import io
 from email.utils import format_datetime
 from unittest.mock import MagicMock
 
@@ -171,6 +172,43 @@ class TestRetries:
         http.get(URL, json={"ok": True})
         assert client.get("/rest/api/2/thing").ok is True
         assert slept(no_retry_sleep) == [1.0]
+
+    def test_retried_upload_resends_file_object_contents(
+        self, http, client, no_retry_sleep
+    ):
+        http.post(URL, status=429)
+        http.post(URL, json={"id": 1})
+        upload = io.BytesIO(b"HELLO-CONTENT")
+        client.request("POST", "/rest/api/2/thing", files={"file": ("a.txt", upload)})
+        bodies = [call.request.body for call in http.calls]
+        assert all(b"HELLO-CONTENT" in body for body in bodies)
+
+    def test_retried_request_rewinds_raw_data_stream(
+        self, http, client, no_retry_sleep
+    ):
+        http.post(URL, status=429)
+        http.post(URL, json={})
+        stream = io.BytesIO(b"skip|payload")
+        stream.seek(5)
+        client.request("POST", "/rest/api/2/thing", data=stream)
+        assert stream.tell() == len(b"skip|payload")  # read twice, from 5
+        assert len(http.calls) == 2
+
+    def test_unrewindable_stream_is_sent_once(self, http, client, no_retry_sleep):
+        class Pipe:
+            def read(self, *args):
+                return b"x"
+
+            def tell(self):
+                raise OSError("not seekable")
+
+        http.post(URL, status=429, body="slow down")
+        with pytest.raises(RateLimitError):
+            client.request(
+                "POST", "/rest/api/2/thing", files={"file": ("a.bin", Pipe())}
+            )
+        assert len(http.calls) == 1
+        no_retry_sleep.assert_not_called()
 
     def test_503_is_not_retried_for_post(self, http, client, no_retry_sleep):
         http.post(URL, status=503, body="down")
@@ -382,6 +420,45 @@ class TestResolveUrl:
             api.get(url)
         assert len(http.calls) == 0  # nothing was sent, so no credentials leaked
 
+    @pytest.mark.parametrize(
+        "path, expected",
+        [
+            ("rest/api/2/x", f"{BASE}/rest/api/2/x"),
+            ("@evil.example.org/steal", f"{BASE}/@evil.example.org/steal"),
+            (".evil.example.org/steal", f"{BASE}/.evil.example.org/steal"),
+        ],
+    )
+    def test_relative_path_cannot_change_the_host(self, path, expected):
+        assert AtlassianAPI(BASE)._resolve_url(path) == expected
+
+    def test_uppercase_scheme_is_checked(self, http):
+        with pytest.raises(ValueError, match="another host"):
+            AtlassianAPI(BASE, token="t").get("HTTPS://evil.example.org/x")
+
+    @pytest.mark.parametrize(
+        "base, url",
+        [
+            (BASE, "https://jira.example.com:443/a"),
+            ("https://jira.example.com:443", "https://jira.example.com/a"),
+            ("http://jira.example.com", "https://jira.example.com/a"),
+            ("http://jira.example.com:80", "https://jira.example.com:443/a"),
+            ("http://jira.example.com:8080", "http://jira.example.com:8080/a"),
+        ],
+    )
+    def test_equivalent_origin_is_accepted(self, base, url):
+        assert AtlassianAPI(base)._resolve_url(url) == url
+
+    @pytest.mark.parametrize(
+        "base, url",
+        [
+            ("http://jira.example.com:8080", "https://jira.example.com/a"),
+            ("https://jira.example.com:8443", "https://jira.example.com/a"),
+        ],
+    )
+    def test_https_upgrade_needs_default_ports(self, base, url):
+        with pytest.raises(ValueError, match="another host"):
+            AtlassianAPI(base)._resolve_url(url)
+
     def test_same_host_absolute_url_is_requested(self, http, client):
         target = f"{BASE}/rest/api/2/other"
         http.get(target, json={"ok": True})
@@ -432,6 +509,22 @@ class TestDownload:
         target = tmp_path / "page.html"
         client._download("/page", path=target)
         assert target.read_text() == LOGIN_PAGE
+
+    def test_failed_stream_keeps_existing_file(self, client, tmp_path):
+        def broken_stream(chunk_size):
+            yield b"part1"
+            raise ConnectionError("connection reset")
+
+        response = MagicMock(status_code=200)
+        response.iter_content.side_effect = broken_stream
+        client.request = MagicMock(return_value=response)
+        target = tmp_path / "out.bin"
+        target.write_bytes(b"OLD GOOD CONTENT")
+        with pytest.raises(ConnectionError):
+            client._download("/file", path=target)
+        response.close.assert_called_once()
+        assert target.read_bytes() == b"OLD GOOD CONTENT"
+        assert [p.name for p in tmp_path.iterdir()] == ["out.bin"]  # no temp left
 
     def test_http_errors_are_typed(self, http, client):
         http.get(f"{BASE}/file", status=404)

@@ -455,6 +455,55 @@ class TestAttachmentDownload:
             server.download_attachment("10")
         assert len(http.calls) == 1  # no request (and no credentials) went out
 
+    @pytest.mark.parametrize(
+        "client_url",
+        ["http://jira.internal:8080", "https://10.0.0.5/jira"],
+    )
+    def test_content_url_from_jira_base_url_is_moved_to_client_host(
+        self, http, client_url
+    ):
+        # Jira builds ``content`` from its configured base URL, which is not
+        # always the URL the script uses.
+        jira = Jira(url=client_url, token="t")
+        http.get(
+            f"{client_url}/rest/api/2/attachment/10",
+            json={
+                "content": "https://jira.company.com/jira/secure/attachment/10/a.txt"
+            },
+        )
+        http.get(f"{client_url}/secure/attachment/10/a.txt", body=b"data")
+        assert jira.download_attachment("10") == b"data"
+
+    def test_rest_content_url_keeps_query(self, http):
+        gateway = "https://api.atlassian.com/ex/jira/abc"
+        jira = Jira(url=gateway, token="t")
+        http.get(
+            f"{gateway}/rest/api/2/attachment/10",
+            json={
+                "content": f"{CLOUD}/rest/api/2/attachment/content/10?redirect=false"
+            },
+        )
+        http.get(
+            f"{gateway}/rest/api/2/attachment/content/10",
+            match=[matchers.query_param_matcher({"redirect": "false"})],
+            body=b"data",
+        )
+        assert jira.download_attachment("10") == b"data"
+
+    def test_login_page_instead_of_attachment_raises(self, http, server, tmp_path):
+        http.get(
+            self.META, json={"content": self.CONTENT, "mimeType": "application/pdf"}
+        )
+        http.get(self.CONTENT, body="<html>Login</html>", content_type="text/html")
+        with pytest.raises(APIError, match="HTML page"):
+            server.download_attachment("10", tmp_path / "r.pdf")
+        assert not (tmp_path / "r.pdf").exists()
+
+    def test_html_attachment_is_downloaded(self, http, server):
+        http.get(self.META, json={"content": self.CONTENT, "mimeType": "text/html"})
+        http.get(self.CONTENT, body="<html>doc</html>", content_type="text/html")
+        assert server.download_attachment("10") == b"<html>doc</html>"
+
     def test_download_error_status_raises(self, http, server, tmp_path):
         http.get(self.META, json={"content": self.CONTENT})
         http.get(self.CONTENT, status=404, body="gone")

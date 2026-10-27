@@ -4,8 +4,9 @@ from collections.abc import Iterator
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
+from urllib.parse import urlsplit
 
-from atlassian_api.client import AtlassianAPI
+from atlassian_api.client import AtlassianAPI, _same_origin
 from atlassian_api.error import APIError
 from atlassian_api.logger import get_logger
 
@@ -646,7 +647,30 @@ class Jira(AtlassianAPI):
         content_url = getattr(meta, "content", None)
         if not content_url:
             raise APIError(None, f"Attachment {attachment_id} has no content URL")
-        return self._download(content_url, path)
+        mime = str(getattr(meta, "mimeType", "") or "")
+        return self._download(
+            self._on_client_host(content_url),
+            path,
+            reject_html=bool(mime) and not mime.startswith("text/html"),
+        )
+
+    def _on_client_host(self, url: str) -> str:
+        """Point an attachment URL from Jira at the URL this client uses.
+
+        Jira builds ``content`` links from its configured base URL, which can
+        differ from the URL a script reaches it on (an internal host name,
+        another port, the Cloud API gateway). The path from
+        ``/secure/attachment/`` or ``/rest/`` on is kept.
+        """
+        parts = urlsplit(url)
+        if not parts.scheme or _same_origin(parts, urlsplit(self.url)):
+            return url
+        for marker in ("/secure/attachment/", "/rest/"):
+            index = parts.path.find(marker)
+            if index != -1:
+                rest = parts.path[index:]
+                return self.url + rest + (f"?{parts.query}" if parts.query else "")
+        return url
 
     def delete_attachment(self, attachment_id: str) -> dict | None:
         """Delete an attachment.

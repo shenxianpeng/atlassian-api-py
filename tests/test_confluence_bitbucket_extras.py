@@ -380,6 +380,35 @@ class TestDownloadAttachment:
         )
         assert cloud.download_attachment(5, "a.txt") == b"cloud"
 
+    @pytest.mark.parametrize(
+        "item",
+        [
+            {
+                "_links": {"download": "/download/attachments/5/a.pdf"},
+                "extensions": {"mediaType": "application/pdf"},
+            },
+            {
+                "downloadLink": "/download/attachments/5/a.pdf",
+                "mediaType": "application/pdf",
+            },
+        ],
+    )
+    def test_login_page_instead_of_file_raises(self, http, server, cloud, item):
+        client = cloud if "downloadLink" in item else server
+        listing = (
+            f"{CLOUD_WIKI}/api/v2/pages/5/attachments"
+            if client is cloud
+            else self.LISTING
+        )
+        http.get(listing, json={"results": [item]})
+        http.get(
+            f"{client.url}/download/attachments/5/a.pdf",
+            body="<html>Login</html>",
+            content_type="text/html",
+        )
+        with pytest.raises(APIError, match="HTML page"):
+            client.download_attachment(5, "a.pdf")
+
     @pytest.mark.parametrize("as_str", [False, True])
     def test_streams_to_path_and_returns_it(self, http, server, tmp_path, as_str):
         data = bytes(range(256)) * 1000  # larger than one 64 KiB chunk

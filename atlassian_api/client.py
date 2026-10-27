@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import requests  # type: ignore
 import json
+import os
+import tempfile
 import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from types import SimpleNamespace, TracebackType
-from urllib.parse import urlsplit
+from typing import Any
+from urllib.parse import SplitResult, urlsplit
 
 from .error import APIError, error_for_status
 from .logger import get_logger
@@ -50,6 +53,47 @@ def _retry_after_seconds(response: requests.Response) -> float | None:
 def _is_html(response: requests.Response) -> bool:
     """Return whether the response declares an HTML body."""
     return "text/html" in response.headers.get("Content-Type", "").lower()
+
+
+_DEFAULT_PORTS = {"http": 80, "https": 443}
+
+
+def _same_origin(target: SplitResult, base: SplitResult) -> bool:
+    """Return ``True`` when ``target`` is on the same server as ``base``.
+
+    Explicit default ports match implicit ones, and an ``https`` link on a
+    client configured with ``http`` is accepted (never the other way round).
+    """
+    if (target.hostname or "").lower() != (base.hostname or "").lower():
+        return False
+    target_scheme, base_scheme = target.scheme.lower(), base.scheme.lower()
+    target_port = target.port or _DEFAULT_PORTS.get(target_scheme)
+    base_port = base.port or _DEFAULT_PORTS.get(base_scheme)
+    if target_scheme == base_scheme:
+        return target_port == base_port
+    return target_scheme == "https" and target_port == 443 and base.port in (None, 80)
+
+
+def _body_positions(files: dict | None, data: object) -> list[tuple[Any, int]] | None:
+    """Return the stream positions of file objects in a request body.
+
+    Retries rewind them so a resent upload is not empty. ``None`` means a
+    stream cannot be rewound, so the request must not be retried.
+    """
+    values: list = list((files or {}).values()) + [data]
+    streams = []
+    for value in values:
+        if isinstance(value, (tuple, list)) and len(value) > 1:
+            value = value[1]
+        if hasattr(value, "read"):
+            streams.append(value)
+    positions = []
+    for stream in streams:
+        try:
+            positions.append((stream, stream.tell()))
+        except (AttributeError, OSError, ValueError):
+            return None
+    return positions
 
 
 def is_cloud_url(url: str) -> bool:
@@ -252,10 +296,11 @@ class AtlassianAPI:
         API) are accepted only on the same scheme and host as the client, so
         credentials are never sent to another server.
         """
-        if not path.startswith(("http://", "https://")):
-            return self.url + path
-        target, base = urlsplit(path), urlsplit(self.url)
-        if (target.scheme, target.netloc.lower()) != (base.scheme, base.netloc.lower()):
+        if not path.lower().startswith(("http://", "https://")):
+            # A leading slash keeps ``path`` from changing the host
+            # (``@other.host/...`` or ``.other.host/...``).
+            return self.url + "/" + path.lstrip("/") if path else self.url
+        if not _same_origin(urlsplit(path), urlsplit(self.url)):
             raise ValueError(f"Refusing to send credentials to another host: {path}")
         return path
 
@@ -305,8 +350,9 @@ class AtlassianAPI:
         :type json: object or None
         :param params: Query string parameters.
         :type params: dict or None
-        :param files: Multipart files, as accepted by ``requests``. Pass file
-            contents as ``bytes`` so a retried request can resend them.
+        :param files: Multipart files, as accepted by ``requests``. File
+            objects are rewound before a retry; a stream that cannot be
+            rewound is sent once.
         :type files: dict or None
         :param headers: Extra headers for this request only.
         :type headers: dict or None
@@ -318,6 +364,7 @@ class AtlassianAPI:
         :raises ValueError: If ``path`` is an absolute URL on another host.
         """
         url = self._resolve_url(path)
+        positions = _body_positions(files, data)
         attempt = 0
         while True:
             response = self._session.request(
@@ -334,7 +381,7 @@ class AtlassianAPI:
             response.encoding = "utf-8"
             logger.debug(f"HTTP: {method} -> {response.status_code} {response.reason}")
             delay = self._retry_delay(method, response, attempt)
-            if delay is None:
+            if delay is None or positions is None:
                 break
             logger.warning(
                 "HTTP %s from %s %s; retrying in %.1fs",
@@ -345,6 +392,8 @@ class AtlassianAPI:
             )
             response.close()
             time.sleep(delay)
+            for body, position in positions:
+                body.seek(position)
             attempt += 1
         if response.status_code >= 400:
             message = response.text
@@ -389,10 +438,19 @@ class AtlassianAPI:
         if path is None:
             return response.content
         target = Path(path)
+        # Write next to the target and rename at the end, so a failed
+        # download never leaves a partial file or replaces a good one.
+        handle = tempfile.NamedTemporaryFile(
+            dir=target.parent, prefix=f".{target.name}.", delete=False
+        )
         try:
-            with target.open("wb") as handle:
+            with handle:
                 for chunk in response.iter_content(chunk_size=64 * 1024):
                     handle.write(chunk)
+            os.replace(handle.name, target)
+        except BaseException:
+            os.unlink(handle.name)
+            raise
         finally:
             response.close()
         return target

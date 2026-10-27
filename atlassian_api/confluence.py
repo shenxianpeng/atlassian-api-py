@@ -702,7 +702,15 @@ class Confluence(AtlassianAPI):
             link = getattr(getattr(attachment, "_links", None), "download", None)
         if not link:
             raise APIError(None, f"Attachment {filename!r} has no download link")
-        return self._download(link, path)
+        media = str(
+            getattr(attachment, "mediaType", None)
+            or getattr(getattr(attachment, "extensions", None), "mediaType", None)
+            or ""
+        )
+        # A login page instead of a non-HTML file is an error, not the file.
+        return self._download(
+            link, path, reject_html=bool(media) and not media.startswith("text/html")
+        )
 
     def export_page_pdf(
         self, page_id: int | str, path: str | Path | None = None
