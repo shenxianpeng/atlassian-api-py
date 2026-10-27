@@ -268,7 +268,16 @@ class TestCreateOrUpdatePage:
             f"{CLOUD_WIKI}/api/v2/pages",
             json={"results": results},
             match=[
-                query({"space-id": "100", "title": "Report", "body-format": "storage"})
+                query(
+                    {
+                        "space-id": "100",
+                        "title": "Report",
+                        # Archived pages with the same title are not updated.
+                        "status": "current",
+                        "body-format": "storage",
+                        "limit": "25",
+                    }
+                )
             ],
         )
 

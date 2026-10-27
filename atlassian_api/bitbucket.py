@@ -243,7 +243,7 @@ class Bitbucket(AtlassianAPI):
             if pull_request:
                 d_metadata = branch.metadata.__dict__
                 metadata = d_metadata[
-                    "com.atlassian_api.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata"
+                    "com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata"
                 ]
                 try:
                     state = metadata.pullRequest.state

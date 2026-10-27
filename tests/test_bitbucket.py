@@ -170,7 +170,7 @@ class TestBitbucket:
             displayId="feature-1",
             metadata=SimpleNamespace(
                 **{
-                    "com.atlassian_api.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata": SimpleNamespace(
+                    "com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata": SimpleNamespace(
                         pullRequest=SimpleNamespace(state="MERGED"), merged=True
                     )
                 }
@@ -200,7 +200,7 @@ class TestBitbucket:
             displayId="feature-3",
             metadata=SimpleNamespace(
                 **{
-                    "com.atlassian_api.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata": SimpleNamespace(
+                    "com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata": SimpleNamespace(
                         merged=True
                     )
                 }
@@ -216,7 +216,7 @@ class TestBitbucket:
             displayId="feature-4",
             metadata=SimpleNamespace(
                 **{
-                    "com.atlassian_api.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata": SimpleNamespace(
+                    "com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata": SimpleNamespace(
                         pullRequest=SimpleNamespace(state="MERGED")
                     )
                 }
@@ -935,7 +935,7 @@ class TestBitbucket:
         }
 
     def test_get_merged_branch_skips_open_pull_request(self, bitbucket):
-        metadata_key = "com.atlassian_api.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata"
+        metadata_key = "com.atlassian.bitbucket.server.bitbucket-ref-metadata:outgoing-pull-request-metadata"
         open_branch = SimpleNamespace(
             displayId="feature-open",
             metadata=SimpleNamespace(

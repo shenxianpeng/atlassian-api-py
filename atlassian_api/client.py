@@ -142,7 +142,13 @@ class AtlassianAPI:
         self.cloud = is_cloud_url(self.url) if cloud is None else cloud
         self.max_retries = max_retries
         self.max_retry_wait = max_retry_wait
-        self._bearer_auth = token is not None and not (username and password)
+        # Site URLs take API tokens as basic auth; api.atlassian.com takes
+        # OAuth bearer tokens, so the 401 hint only applies to site URLs.
+        self._bearer_auth = (
+            token is not None
+            and not (username and password)
+            and (urlsplit(self.url).hostname or "").lower() != "api.atlassian.com"
+        )
         if session is None:
             self._session = requests.Session()
         else:

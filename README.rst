@@ -45,7 +45,8 @@ handling code.
   Atlassian Cloud from the URL (``*.atlassian.net``) and switch to the Cloud
   endpoints where they differ: Jira's ``/search/jql`` with ``nextPageToken``
   paging, ``accountId`` instead of usernames, and the Confluence REST API v2.
-  Code written against Data Center keeps working after a move to Cloud.
+  Method names and arguments stay the same; returned items are Cloud objects
+  (for example a Confluence page has ``spaceId`` instead of ``space.key``).
 * **Installs next to** ``atlassian-python-api``. The import package is
   ``atlassian_api``, so both libraries can live in the same environment.
 * **One runtime dependency** (``requests``) and inline type hints.
@@ -158,6 +159,15 @@ two overwrote each other. Update your imports:
    # 2.x
    from atlassian_api import Jira
    from atlassian_api.error import APIError
+
+If ``atlassian-python-api`` is installed in the same environment, reinstall it
+after upgrading. Uninstalling 1.x removes the ``atlassian`` files the two
+packages shared:
+
+.. code-block:: bash
+
+   pip install --upgrade atlassian-api-py
+   pip install --force-reinstall --no-deps atlassian-python-api
 
 The deprecated ``Jira.create_task()`` and ``Jira.create_sub_task()`` are
 removed; use ``Jira.create_issue()``. See the
