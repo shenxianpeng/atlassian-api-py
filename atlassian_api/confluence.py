@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlsplit
 
 from atlassian_api.client import AtlassianAPI
-from atlassian_api.error import APIError
+from atlassian_api.error import APIError, NotFoundError
 from atlassian_api.logger import get_logger
 
 logger = get_logger(__name__)
@@ -540,19 +542,14 @@ class Confluence(AtlassianAPI):
         :rtype: dict or None
         """
         url = f"/rest/api/content/{page_id}/child/attachment"
-        full_url = self.url + url
-        # Send the CSRF bypass header with this request only, so concurrent
-        # requests on the shared session never see it.
-        response = self._session.post(
-            full_url,
+        response = self.request(
+            "POST",
+            url,
             files={"file": (filename, file_data, content_type)},
             data={"comment": ""},
+            # CSRF bypass, sent with this request only.
             headers={"X-Atlassian-Token": "nocheck"},
-            timeout=self.timeout,
         )
-        response.encoding = "utf-8"
-        if response.status_code >= 400:
-            raise APIError(response.status_code, response.text)
         return self._response_handler(response)
 
     def get_comments(self, page_id: int | str) -> SimpleNamespace | str | None:
@@ -595,3 +592,149 @@ class Confluence(AtlassianAPI):
             "body": {"storage": {"value": body, "representation": "storage"}},
         }
         return self.post(url, json=payload)
+
+    # ------------------------------------------------------------------
+    # Higher-level helpers
+    # ------------------------------------------------------------------
+
+    def iter_search(self, cql: str, page_size: int = 50) -> Iterator[SimpleNamespace]:
+        """Yield every result of a CQL search, following ``_links.next``.
+
+        Works on Server/Data Center (``start`` paging) and Cloud (cursor
+        paging).
+
+        .. code-block:: python
+
+            for page in confluence.iter_search('space = DOC and type = page'):
+                print(page.id, page.title)
+
+        :param cql: The CQL query string.
+        :type cql: str
+        :param page_size: Results requested per API call.
+        :type page_size: int, optional
+        :return: Content results.
+        :rtype: Iterator[SimpleNamespace]
+        """
+        params: dict[str, Any] = {"cql": cql, "limit": page_size}
+        while True:
+            response = self.get("/rest/api/content/search", params=params)
+            if not isinstance(response, SimpleNamespace):
+                return
+            results = getattr(response, "results", None) or []
+            yield from results
+            next_link = getattr(getattr(response, "_links", None), "next", None)
+            if not results or not next_link:
+                return
+            query = parse_qs(urlsplit(next_link).query)
+            moved = False
+            for key in ("start", "cursor"):
+                if key in query:
+                    params[key] = query[key][0]
+                    moved = True
+            if not moved:
+                return
+
+    def create_or_update_page(
+        self,
+        space_key: str,
+        title: str,
+        body_value: str,
+        parent_id: int | str | None = None,
+    ) -> dict | None:
+        """Create a page, or update it if a page with this title exists.
+
+        Handy for publishing generated reports: run the same script every
+        time and the page is created once, then updated.
+
+        :param space_key: The key of the space.
+        :type space_key: str
+        :param title: The exact page title.
+        :type title: str
+        :param body_value: Body content in Confluence storage format.
+        :type body_value: str
+        :param parent_id: Parent page for a new page. An existing page is not
+            moved.
+        :type parent_id: int or str, optional
+        :return: The created or updated page.
+        :rtype: dict or None
+        """
+        existing = self.get_page_by_title(space_key, title)
+        results = getattr(existing, "results", None) or []
+        if results:
+            return self.update_content(results[0].id, title, body_value)
+        return self.create_content(title, space_key, body_value, ancestors_id=parent_id)
+
+    def download_attachment(
+        self,
+        page_id: int | str,
+        filename: str,
+        path: str | Path | None = None,
+    ) -> bytes | Path:
+        """Download a page attachment by file name.
+
+        :param page_id: The ID of the page.
+        :type page_id: int or str
+        :param filename: The attachment's file name.
+        :type filename: str
+        :param path: Where to write the file. The download is streamed to disk
+            in chunks, so large files are not held in memory.
+        :type path: str or pathlib.Path, optional
+        :return: The file contents, or ``path`` when one was given.
+        :rtype: bytes or pathlib.Path
+        :raises NotFoundError: If the page has no attachment with this name.
+        """
+        params = {"filename": filename}
+        if self.cloud:
+            listing = self.get(f"{V2}/pages/{page_id}/attachments", params=params)
+        else:
+            listing = self.get(
+                f"/rest/api/content/{page_id}/child/attachment", params=params
+            )
+        results = getattr(listing, "results", None) or []
+        if not results:
+            raise NotFoundError(
+                404, f"Page {page_id} has no attachment named {filename!r}"
+            )
+        attachment = results[0]
+        if self.cloud:
+            link = getattr(attachment, "downloadLink", None)
+        else:
+            link = getattr(getattr(attachment, "_links", None), "download", None)
+        if not link:
+            raise APIError(None, f"Attachment {filename!r} has no download link")
+        media = str(
+            getattr(attachment, "mediaType", None)
+            or getattr(getattr(attachment, "extensions", None), "mediaType", None)
+            or ""
+        )
+        # A login page instead of a non-HTML file is an error, not the file.
+        return self._download(
+            link, path, reject_html=bool(media) and not media.startswith("text/html")
+        )
+
+    def export_page_pdf(
+        self, page_id: int | str, path: str | Path | None = None
+    ) -> bytes | Path:
+        """Export a page as PDF (Server/Data Center).
+
+        :param page_id: The ID of the page.
+        :type page_id: int or str
+        :param path: Where to write the PDF. When omitted, the bytes are
+            returned.
+        :type path: str or pathlib.Path, optional
+        :return: The PDF contents, or ``path`` when one was given.
+        :rtype: bytes or pathlib.Path
+        :raises NotImplementedError: On Cloud, which has no REST endpoint for
+            PDF export.
+        """
+        if self.cloud:
+            raise NotImplementedError(
+                "Confluence Cloud has no REST API for PDF export; use the "
+                "page's Export to PDF action in the browser."
+            )
+        return self._download(
+            "/spaces/flyingpdf/pdfpageexport.action",
+            path,
+            params={"pageId": page_id},
+            reject_html=True,
+        )

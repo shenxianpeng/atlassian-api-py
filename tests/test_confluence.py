@@ -194,10 +194,10 @@ class TestConfluence:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"results": []}
-        confluence._session.post = MagicMock(return_value=mock_response)
+        confluence._session.request = MagicMock(return_value=mock_response)
         confluence.upload_attachment(123, "test.txt", b"hello world", "text/plain")
-        assert confluence._session.post.called
-        args, kwargs = confluence._session.post.call_args
+        assert confluence._session.request.called
+        args, kwargs = confluence._session.request.call_args
         assert "test.txt" in str(kwargs.get("files", args))
 
     def test_get_comments(self, confluence):
@@ -239,23 +239,27 @@ class TestConfluence:
     def test_upload_attachment_request(self, confluence):
         seen_headers = {}
 
-        def fake_post(url, **kwargs):
+        def fake_request(**kwargs):
             seen_headers.update(confluence._session.headers)
             response = MagicMock(status_code=200)
             response.json.return_value = {"results": [{"id": "att1"}]}
             return response
 
-        confluence._session.post = MagicMock(side_effect=fake_post)
+        confluence._session.request = MagicMock(side_effect=fake_request)
 
         result = confluence.upload_attachment(123, "test.txt", b"hello", "text/plain")
 
         assert result == {"results": [{"id": "att1"}]}
-        confluence._session.post.assert_called_once_with(
-            "https://fake_url/rest/api/content/123/child/attachment",
-            files={"file": ("test.txt", b"hello", "text/plain")},
+        confluence._session.request.assert_called_once_with(
+            method="POST",
+            url="https://fake_url/rest/api/content/123/child/attachment",
             data={"comment": ""},
+            json=None,
+            params=None,
+            files={"file": ("test.txt", b"hello", "text/plain")},
             headers={"X-Atlassian-Token": "nocheck"},
             timeout=60,
+            stream=False,
         )
         # The XSRF bypass header is sent per request and never set on the
         # shared session, so concurrent requests cannot pick it up.
@@ -264,7 +268,7 @@ class TestConfluence:
 
     def test_upload_attachment_error_raises_and_resets_header(self, confluence):
         response = MagicMock(status_code=413, text="Request Entity Too Large")
-        confluence._session.post = MagicMock(return_value=response)
+        confluence._session.request = MagicMock(return_value=response)
 
         with pytest.raises(APIError) as exc_info:
             confluence.upload_attachment(123, "big.bin", b"x")

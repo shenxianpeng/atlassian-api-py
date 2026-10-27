@@ -90,3 +90,74 @@ class APIError(Exception):
         :rtype: str
         """
         return "Error [{0}] : {1}".format(self.code, self.message)
+
+
+class AuthenticationError(APIError):
+    """HTTP 401: the credentials are missing or wrong."""
+
+
+class PermissionDeniedError(APIError):
+    """HTTP 403: the user is authenticated but not allowed to do this."""
+
+
+class NotFoundError(APIError):
+    """HTTP 404: the resource does not exist or is not visible to the user."""
+
+
+class ConflictError(APIError):
+    """HTTP 409: the request conflicts with the current state of the resource."""
+
+
+class RateLimitError(APIError):
+    """HTTP 429: too many requests.
+
+    :param retry_after: Seconds the server asked to wait, when it said.
+    :type retry_after: float, optional
+    """
+
+    def __init__(
+        self,
+        code: int | None = 429,
+        message: str | None = None,
+        retry_after: float | None = None,
+    ) -> None:
+        """Create a rate-limit error."""
+        super().__init__(code, message)
+        self.retry_after = retry_after
+
+
+class ServerError(APIError):
+    """HTTP 5xx: the server failed to handle the request."""
+
+
+_ERRORS_BY_CODE: dict[int, type[APIError]] = {
+    401: AuthenticationError,
+    403: PermissionDeniedError,
+    404: NotFoundError,
+    409: ConflictError,
+    429: RateLimitError,
+}
+
+
+def error_for_status(
+    code: int, message: str | None = None, retry_after: float | None = None
+) -> APIError:
+    """Return the most specific :class:`APIError` subclass for a status code.
+
+    Every class returned here is a subclass of :class:`APIError`, so existing
+    ``except APIError`` handlers keep catching everything.
+
+    :param code: HTTP status code.
+    :type code: int
+    :param message: Response body or custom message.
+    :type message: str, optional
+    :param retry_after: Seconds to wait, for HTTP 429.
+    :type retry_after: float, optional
+    :return: An exception instance (not raised).
+    :rtype: APIError
+    """
+    if code == 429:
+        return RateLimitError(code, message, retry_after=retry_after)
+    if code >= 500:
+        return ServerError(code, message)
+    return _ERRORS_BY_CODE.get(code, APIError)(code, message)

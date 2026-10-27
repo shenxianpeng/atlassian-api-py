@@ -327,19 +327,48 @@ response body contains JSON:
 
 If a response body is not JSON, the raw response text is returned. Empty
 responses return ``None``. Mutating methods such as ``post()``, ``put()``, and
-``delete()`` return a decoded dictionary when JSON is available.
+``delete()`` return a decoded dictionary when JSON is available. An HTML page
+where JSON was expected (typically a login or SSO redirect) raises ``APIError``
+instead of being returned as text.
 
-Use ``APIError`` to handle unsuccessful HTTP responses:
+Errors raise a subclass of ``APIError`` that matches the status code, so you
+can catch only what you expect:
 
 .. code-block:: python
 
-   from atlassian_api.error import APIError
+   from atlassian_api.error import APIError, NotFoundError
 
    try:
        jira.issue("MISSING-1")
-   except APIError as exc:
-       print(exc.code)
-       print(exc.message)
+   except NotFoundError:
+       print("no such issue")
+   except APIError as exc:          # everything else: 401, 403, 409, 429, 5xx
+       print(exc.code, exc.message)
+
+Rate limits are handled for you: HTTP 429 (and 503 for ``GET``) is retried up
+to ``max_retries`` times (default 3), honouring ``Retry-After``. If the server
+asks to wait longer than ``max_retry_wait`` seconds (default 60), a
+``RateLimitError`` with ``retry_after`` is raised instead of sleeping.
+
+Paging and files
+~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from pathlib import Path
+
+   # Process a large JQL result without loading it all into memory
+   for issue in jira.iter_issues("project = TEST", fields=["summary"]):
+       print(issue["key"])
+
+   print(jira.count_issues("project = TEST AND status = Open"))
+
+   jira.update_issue("TEST-1", fields={jira.get_field_id("Story Points"): 3})
+   jira.add_attachment("TEST-1", "report.csv", Path("report.csv").read_bytes())
+
+   # Publish a generated report: created the first time, updated afterwards
+   confluence.create_or_update_page("SPACE", "Nightly report", "<p>All green</p>")
+   confluence.download_attachment(123456, "diagram.png", path="diagram.png")
 
 More Jira, Bitbucket, and Confluence examples are available in the
 `documentation <https://atlassian-api-py.readthedocs.io/>`_.
