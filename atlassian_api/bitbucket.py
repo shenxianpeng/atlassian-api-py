@@ -1349,12 +1349,24 @@ class Bitbucket(AtlassianAPI):
         :type repo_slug: str
         :return: Branch object with ``id`` and ``displayId``.
         :rtype: SimpleNamespace or str or None
+        :raises NotFoundError: If the repository has no default branch yet
+            (an empty repository) or does not exist.
         """
         repo = self._repo_path(project_key, repo_slug)
         try:
             return self.get(f"{repo}/default-branch")
-        except NotFoundError:
-            return self.get(f"{repo}/branches/default")
+        except NotFoundError as error:
+            try:
+                return self.get(f"{repo}/branches/default")
+            except NotFoundError:
+                # Bitbucket 9 removed /branches/default, so its 404 says
+                # nothing. The first 404 is the answer: usually an empty
+                # repository, which has no default branch yet.
+                raise NotFoundError(
+                    404,
+                    f"Repository {project_key}/{repo_slug} has no default "
+                    f"branch (is it empty?): {error.message}",
+                ) from error
 
     def get_webhooks(
         self, project_key: str, repo_slug: str, limit: int | None = None

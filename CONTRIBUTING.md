@@ -90,6 +90,19 @@ Tests live in `tests/` and mirror the package structure:
 
 Use `unittest.mock.MagicMock` to mock HTTP calls (see existing tests for examples).
 
+### Checking against a live Cloud site
+
+The unit tests use mocked servers. To check Cloud behaviour against a real site, run the read-only smoke test. It creates, changes and deletes nothing:
+
+```bash
+export ATLASSIAN_URL=https://your-site.atlassian.net
+export ATLASSIAN_EMAIL=you@example.com
+export ATLASSIAN_API_TOKEN=...   # https://id.atlassian.com/manage-profile/security/api-tokens
+python scripts/cloud_smoke_test.py
+```
+
+Set `JIRA_PROJECT` and `CONFLUENCE_SPACE` to pick what it reads; otherwise it uses the first project and space. It prints one line per check and exits with 1 if any check fails.
+
 ## Submitting a Pull Request
 
 1. Push your branch to your fork:

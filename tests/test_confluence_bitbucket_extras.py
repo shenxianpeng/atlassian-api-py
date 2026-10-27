@@ -486,6 +486,7 @@ class TestExportPagePdf:
             match=[query({"pageId": "123"})],
         )
         assert server.export_page_pdf(123) == self.PDF
+        assert http.calls[0].request.headers["X-Atlassian-Token"] == "no-check"
 
     def test_saves_pdf_to_path(self, http, server, tmp_path):
         http.get(self.EXPORT, body=self.PDF, content_type="application/pdf")
@@ -554,8 +555,10 @@ class TestDefaultBranch:
 
     def test_missing_repository_raises_when_fallback_is_404_too(self, http, bb):
         http.get(f"{REPO}/default-branch", status=404)
-        http.get(f"{REPO}/branches/default", status=404)
-        with pytest.raises(NotFoundError):
+        http.get(f"{REPO}/branches/default", status=404, body="No such endpoint")
+        with pytest.raises(
+            NotFoundError, match="no default branch \\(is it empty\\?\\)"
+        ):
             bb.get_default_branch("PROJ", "repo")
 
     @pytest.mark.parametrize("status", [400, 401, 403, 500])

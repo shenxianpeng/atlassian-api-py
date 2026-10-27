@@ -180,9 +180,14 @@ class Confluence(AtlassianAPI):
                 "title": title,
                 "body": self._storage(body_value),
             }
+            params: dict[str, Any] | None = None
             if ancestors_id is not None:
                 payload["parentId"] = str(ancestors_id)
-            return self.post(f"{V2}/{collection}", json=payload)
+            elif type == "page":
+                # v2 puts parentless pages under the space homepage; Data
+                # Center creates them at the top level of the space.
+                params = {"root-level": "true"}
+            return self.post(f"{V2}/{collection}", json=payload, params=params)
         url = "/rest/api/content"
         payload = {
             "type": f"{type}",
@@ -271,7 +276,9 @@ class Confluence(AtlassianAPI):
         url = f"/rest/api/content/{page_id}"
         return self.delete(url)
 
-    def get_content_by_id(self, page_id: int | str) -> SimpleNamespace | str | None:
+    def get_content_by_id(
+        self, page_id: int | str, type: str = "page"
+    ) -> SimpleNamespace | str | None:
         """Return content by content ID.
 
         On Cloud the page body is included in storage format
@@ -279,28 +286,41 @@ class Confluence(AtlassianAPI):
 
         :param page_id: The ID of the content to retrieve.
         :type page_id: int or str
+        :param type: ``page`` or ``blogpost``. Only used on Cloud, where pages
+            and blog posts have separate endpoints; Data Center accepts any
+            content ID.
+        :type type: str
         :return: Content data, raw response text for non-JSON responses, or
             ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         if self.cloud:
-            return self.get(f"{V2}/pages/{page_id}", params={"body-format": "storage"})
+            return self.get(
+                f"{V2}/{self._v2_collection(type)}/{page_id}",
+                params={"body-format": "storage"},
+            )
         url = f"/rest/api/content/{page_id}"
         return self.get(url)
 
-    def get_content_history(self, page_id: int | str) -> SimpleNamespace | str | None:
+    def get_content_history(
+        self, page_id: int | str, type: str = "page"
+    ) -> SimpleNamespace | str | None:
         """Return version history for a content item.
 
         On Cloud this is the v2 version list (``results`` of versions).
 
         :param page_id: The ID of the content to retrieve the history for.
         :type page_id: int or str
+        :param type: ``page`` or ``blogpost``. Only used on Cloud, where pages
+            and blog posts have separate endpoints; Data Center accepts any
+            content ID.
+        :type type: str
         :return: History data, raw response text for non-JSON responses, or
             ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         if self.cloud:
-            return self.get(f"{V2}/pages/{page_id}/versions")
+            return self.get(f"{V2}/{self._v2_collection(type)}/{page_id}/versions")
         url = f"/rest/api/content/{page_id}/history"
         return self.get(url)
 
@@ -435,31 +455,45 @@ class Confluence(AtlassianAPI):
     # Attachments, labels, comments
     # ------------------------------------------------------------------
 
-    def get_attachments(self, page_id: int | str) -> SimpleNamespace | str | None:
+    def get_attachments(
+        self, page_id: int | str, type: str = "page"
+    ) -> SimpleNamespace | str | None:
         """Return attachments for a page.
 
         :param page_id: The ID of the page.
         :type page_id: int or str
+        :param type: ``page`` or ``blogpost``. Only used on Cloud, where pages
+            and blog posts have separate endpoints; Data Center accepts any
+            content ID.
+        :type type: str
         :return: Attachment data, raw response text for non-JSON responses, or
             ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         if self.cloud:
-            return self._v2_list(f"{V2}/pages/{page_id}/attachments", limit=50)
+            return self._v2_list(
+                f"{V2}/{self._v2_collection(type)}/{page_id}/attachments", limit=50
+            )
         url = f"/rest/api/content/{page_id}/child/attachment"
         return self.get(url)
 
-    def get_labels(self, page_id: int | str) -> SimpleNamespace | str | None:
+    def get_labels(
+        self, page_id: int | str, type: str = "page"
+    ) -> SimpleNamespace | str | None:
         """Return labels for a content item.
 
         :param page_id: The ID of the content.
         :type page_id: int or str
+        :param type: ``page`` or ``blogpost``. Only used on Cloud, where pages
+            and blog posts have separate endpoints; Data Center accepts any
+            content ID.
+        :type type: str
         :return: Label data, raw response text for non-JSON responses, or
             ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         if self.cloud:
-            return self._v2_list(f"{V2}/pages/{page_id}/labels")
+            return self._v2_list(f"{V2}/{self._v2_collection(type)}/{page_id}/labels")
         url = f"/rest/api/content/{page_id}/label"
         return self.get(url)
 
@@ -552,18 +586,24 @@ class Confluence(AtlassianAPI):
         )
         return self._response_handler(response)
 
-    def get_comments(self, page_id: int | str) -> SimpleNamespace | str | None:
+    def get_comments(
+        self, page_id: int | str, type: str = "page"
+    ) -> SimpleNamespace | str | None:
         """Return comments for a page.
 
         :param page_id: The ID of the page.
         :type page_id: int or str
+        :param type: ``page`` or ``blogpost``. Only used on Cloud, where pages
+            and blog posts have separate endpoints; Data Center accepts any
+            content ID.
+        :type type: str
         :return: Comment data, raw response text for non-JSON responses, or
             ``None`` for an empty body.
         :rtype: SimpleNamespace or str or None
         """
         if self.cloud:
             return self._v2_list(
-                f"{V2}/pages/{page_id}/footer-comments",
+                f"{V2}/{self._v2_collection(type)}/{page_id}/footer-comments",
                 params={"body-format": "storage"},
             )
         url = f"/rest/api/content/{page_id}/child/comment"
@@ -669,6 +709,7 @@ class Confluence(AtlassianAPI):
         page_id: int | str,
         filename: str,
         path: str | Path | None = None,
+        type: str = "page",
     ) -> bytes | Path:
         """Download a page attachment by file name.
 
@@ -679,13 +720,20 @@ class Confluence(AtlassianAPI):
         :param path: Where to write the file. The download is streamed to disk
             in chunks, so large files are not held in memory.
         :type path: str or pathlib.Path, optional
+        :param type: ``page`` or ``blogpost``. Only used on Cloud, where pages
+            and blog posts have separate endpoints; Data Center accepts any
+            content ID.
+        :type type: str
         :return: The file contents, or ``path`` when one was given.
         :rtype: bytes or pathlib.Path
         :raises NotFoundError: If the page has no attachment with this name.
         """
         params = {"filename": filename}
         if self.cloud:
-            listing = self.get(f"{V2}/pages/{page_id}/attachments", params=params)
+            listing = self.get(
+                f"{V2}/{self._v2_collection(type)}/{page_id}/attachments",
+                params=params,
+            )
         else:
             listing = self.get(
                 f"/rest/api/content/{page_id}/child/attachment", params=params
@@ -736,5 +784,6 @@ class Confluence(AtlassianAPI):
             "/spaces/flyingpdf/pdfpageexport.action",
             path,
             params={"pageId": page_id},
+            headers={"X-Atlassian-Token": "no-check"},
             reject_html=True,
         )

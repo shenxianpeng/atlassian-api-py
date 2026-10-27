@@ -114,12 +114,21 @@ What changes on Cloud:
    * - ``Jira.get_projects()``
      - ``/rest/api/2/project``
      - all pages of ``/rest/api/2/project/search``
+   * - ``Jira.issue_changelog()``
+     - ``expand=changelog``
+     - all pages of ``/rest/api/2/issue/{key}/changelog`` (``expand`` only
+       returns recent updates on Cloud), in the same ``changelog.histories``
    * - Confluence pages, spaces, child pages, comments, labels, attachments
      - REST API v1
      - REST API v2 (``/wiki/api/v2``). Lists keep ``results``/``start``/
-       ``limit``/``size``; items are v2 objects (a page has ``spaceId``).
-   * - ``Confluence.search_content()``, ``add_label()``,
-       ``remove_label()``, ``upload_attachment()``
+       ``limit``/``size`` and contain current pages only; items are v2
+       objects (a page has ``spaceId``). Pass ``type="blogpost"`` to methods
+       that take a content ID when it is a blog post.
+   * - ``Confluence.search_content()``
+     - REST API v1, ``start`` paging
+     - REST API v1, cursor paging (``start``/``limit`` still work)
+   * - ``Confluence.add_label()``, ``remove_label()``,
+       ``upload_attachment()``
      - REST API v1
      - REST API v1 (still the Cloud endpoint)
 
