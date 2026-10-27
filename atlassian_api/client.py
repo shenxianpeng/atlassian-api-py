@@ -412,6 +412,7 @@ class AtlassianAPI:
         path: str | Path | None = None,
         params: dict | None = None,
         reject_html: bool = False,
+        headers: dict | None = None,
     ) -> bytes | Path:
         """Download a file from ``url`` (a path or a same-host absolute URL).
 
@@ -425,10 +426,14 @@ class AtlassianAPI:
         :param reject_html: Raise instead of saving an HTML page, for
             downloads that can never be HTML (a login page is).
         :type reject_html: bool
+        :param headers: Extra headers for this request only.
+        :type headers: dict, optional
         :return: File contents, or the written path.
         :rtype: bytes or pathlib.Path
         """
-        response = self.request("GET", url, params=params, stream=path is not None)
+        response = self.request(
+            "GET", url, params=params, headers=headers, stream=path is not None
+        )
         if reject_html and _is_html(response):
             response.close()
             raise APIError(

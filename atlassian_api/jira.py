@@ -45,6 +45,10 @@ class Jira(AtlassianAPI):
     def issue_changelog(self, issue_key: str) -> SimpleNamespace | str | None:
         """Return an issue with changelog data expanded.
 
+        On Cloud, ``expand=changelog`` returns only recent updates, so the full
+        history is read from the paginated ``/changelog`` endpoint and returned
+        in the same ``changelog.histories`` shape.
+
         :param issue_key: The key of the issue to retrieve the changelog for.
         :type issue_key: str
         :return: Issue data including ``changelog`` and ``summary`` fields, raw
@@ -52,7 +56,29 @@ class Jira(AtlassianAPI):
         :rtype: SimpleNamespace or str or None
         """
         url = f"/rest/api/2/issue/{issue_key}"
-        return self.get(url, params={"expand": "changelog", "fields": "summary"})
+        if not self.cloud:
+            return self.get(url, params={"expand": "changelog", "fields": "summary"})
+        issue = self.get(url, params={"fields": "summary"})
+        if not isinstance(issue, SimpleNamespace):
+            return issue
+        histories: list = []
+        start = 0
+        while True:
+            page = self.get(
+                f"{url}/changelog", params={"startAt": start, "maxResults": 100}
+            )
+            values = getattr(page, "values", None) or []
+            histories.extend(values)
+            start += len(values)
+            if not values or getattr(page, "isLast", True):
+                break
+        issue.changelog = SimpleNamespace(
+            startAt=0,
+            maxResults=len(histories),
+            total=len(histories),
+            histories=histories,
+        )
+        return issue
 
     def update_issue_label(
         self,

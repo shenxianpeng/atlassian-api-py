@@ -158,6 +158,42 @@ class TestJiraCloudSearch:
         assert server.search_issue_with_jql("project = A") == [{"key": "A-1"}]
 
 
+class TestJiraCloudChangelog:
+    ISSUE = f"{SITE}/rest/api/2/issue/T-1"
+
+    def test_full_history_comes_from_paged_changelog(self, http, jira):
+        # expand=changelog on Cloud only returns recent updates.
+        http.get(
+            self.ISSUE,
+            match=[matchers.query_param_matcher({"fields": "summary"})],
+            json={"key": "T-1", "fields": {"summary": "S"}},
+        )
+        http.get(
+            f"{self.ISSUE}/changelog",
+            match=[matchers.query_param_matcher({"startAt": "0", "maxResults": "100"})],
+            json={"values": [{"id": "1"}, {"id": "2"}], "isLast": False},
+        )
+        http.get(
+            f"{self.ISSUE}/changelog",
+            match=[matchers.query_param_matcher({"startAt": "2", "maxResults": "100"})],
+            json={"values": [{"id": "3"}], "isLast": True},
+        )
+        issue = jira.issue_changelog("T-1")
+        assert issue.fields.summary == "S"
+        assert [h.id for h in issue.changelog.histories] == ["1", "2", "3"]
+        assert issue.changelog.total == 3
+
+    def test_empty_page_ends_paging(self, http, jira):
+        http.get(self.ISSUE, json={"key": "T-1"})
+        http.get(f"{self.ISSUE}/changelog", json={"values": [], "isLast": False})
+        assert jira.issue_changelog("T-1").changelog.histories == []
+
+    def test_non_json_issue_is_returned_as_is(self, http, jira):
+        http.get(self.ISSUE, body="")
+        assert jira.issue_changelog("T-1") is None
+        assert len(http.calls) == 1
+
+
 class TestJiraCloudUsers:
     def test_assign_by_account_id(self, http, jira):
         http.put(f"{SITE}/rest/api/2/issue/A-1/assignee", status=204)
@@ -263,9 +299,34 @@ class TestConfluenceCloudPages:
             "body": {"representation": "storage", "value": "<p>x</p>"},
         }
 
+    def test_create_page_under_parent_is_not_root_level(self, http, confluence):
+        spaces_lookup(http)
+        http.post(
+            f"{WIKI}/api/v2/pages",
+            match=[matchers.query_param_matcher({})],
+            json={"id": "5"},
+        )
+        confluence.create_content("T", "DOC", "<p>x</p>", ancestors_id=7)
+
+    def test_create_page_without_parent_is_root_level(self, http, confluence):
+        # Data Center puts parentless pages at the top of the space; v2 would
+        # put them under the space homepage unless root-level is set.
+        spaces_lookup(http)
+        http.post(
+            f"{WIKI}/api/v2/pages",
+            match=[matchers.query_param_matcher({"root-level": "true"})],
+            json={"id": "5"},
+        )
+        confluence.create_content("T", "DOC", "<p>x</p>")
+        assert "parentId" not in sent_json(http.calls[1])
+
     def test_create_blogpost(self, http, confluence):
         spaces_lookup(http)
-        http.post(f"{WIKI}/api/v2/blogposts", json={"id": "6"})
+        http.post(
+            f"{WIKI}/api/v2/blogposts",
+            match=[matchers.query_param_matcher({})],
+            json={"id": "6"},
+        )
         confluence.create_content("News", "DOC", "<p>y</p>", type="blogpost")
         assert "parentId" not in sent_json(http.calls[1])
 
@@ -337,6 +398,53 @@ class TestConfluenceCloudPages:
         spaces_lookup(http)
         http.get(f"{WIKI}/api/v2/pages", json={"results": []})
         assert confluence.get_page_by_title("DOC", "Nope").size == 0
+
+
+class TestConfluenceCloudBlogPosts:
+    """Methods that take a content ID reach blog posts with ``type="blogpost"``."""
+
+    @pytest.mark.parametrize(
+        "method, suffix",
+        [
+            ("get_content_by_id", ""),
+            ("get_content_history", "/versions"),
+            ("get_attachments", "/attachments"),
+            ("get_labels", "/labels"),
+            ("get_comments", "/footer-comments"),
+        ],
+    )
+    def test_blogpost_endpoints(self, http, confluence, method, suffix):
+        http.get(f"{WIKI}/api/v2/blogposts/6{suffix}", json={"results": []})
+        getattr(confluence, method)(6, type="blogpost")
+        assert len(http.calls) == 1
+
+    @pytest.mark.parametrize(
+        "method",
+        [
+            "get_content_by_id",
+            "get_content_history",
+            "get_attachments",
+            "get_labels",
+            "get_comments",
+        ],
+    )
+    def test_unsupported_type(self, confluence, method):
+        with pytest.raises(ValueError, match="'comment' is not supported"):
+            getattr(confluence, method)(6, type="comment")
+
+    def test_download_blogpost_attachment(self, http, confluence):
+        http.get(
+            f"{WIKI}/api/v2/blogposts/6/attachments",
+            json={"results": [{"downloadLink": "/download/attachments/6/a.txt"}]},
+        )
+        http.get(f"{WIKI}/download/attachments/6/a.txt", body=b"blog")
+        assert confluence.download_attachment(6, "a.txt", type="blogpost") == b"blog"
+
+    def test_data_center_ignores_type(self, http):
+        server = Confluence(url="https://wiki.company.com", token="t")
+        http.get("https://wiki.company.com/rest/api/content/6/label", json={})
+        server.get_labels(6, type="blogpost")
+        assert len(http.calls) == 1
 
 
 class TestConfluenceCloudSpaces:
