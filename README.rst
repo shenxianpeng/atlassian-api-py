@@ -47,6 +47,9 @@ handling code.
   paging, ``accountId`` instead of usernames, and the Confluence REST API v2.
   Method names and arguments stay the same; returned items are Cloud objects
   (for example a Confluence page has ``spaceId`` instead of ``space.key``).
+* **Jira Software boards, sprints and epics.** List a board's sprints, walk
+  through the issues of a sprint, epic or backlog, and move issues between
+  sprints, on Data Center and Cloud.
 * **Installs next to** ``atlassian-python-api``. The import package is
   ``atlassian_api``, so both libraries can live in the same environment.
   `Coming from atlassian-python-api <https://atlassian-api-py.readthedocs.io/en/latest/migration.html>`_
@@ -267,6 +270,18 @@ Create an issue:
            "description": "This issue was created through the Jira REST API.",
        }
    )
+
+Report on the active sprint of a board, then move issues into the next one:
+
+.. code-block:: python
+
+   board = jira.get_boards(project="TEST", board_type="scrum")[0]
+   sprint = jira.get_board_sprints(board.id, state="active")[0]
+   for issue in jira.iter_sprint_issues(sprint.id, fields=["summary", "status"]):
+       print(issue.key, issue.fields.status.name, issue.fields.summary)
+
+   next_sprint = jira.get_board_sprints(board.id, state="future")[0]
+   jira.move_issues_to_sprint(next_sprint.id, ["TEST-7", "TEST-8"])
 
 Common Bitbucket tasks
 ~~~~~~~~~~~~~~~~~~~~~~
