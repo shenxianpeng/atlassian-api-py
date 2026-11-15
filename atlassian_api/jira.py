@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -12,14 +12,24 @@ from atlassian_api.logger import get_logger
 
 logger = get_logger(__name__)
 
+#: Jira Software (Agile) REST API: boards, sprints and epics.
+_AGILE = "/rest/agile/1.0"
+#: Where Jira Cloud serves the issues of a board, sprint or epic.
+_SOFTWARE = "/rest/software/1.0"
+#: Boards, sprints or epics requested per page (Jira's default page size).
+_AGILE_PAGE_SIZE = 50
+#: Most issues Jira accepts in one "move issues" request.
+_MOVE_ISSUES_MAX = 50
+
 
 class Jira(AtlassianAPI):
     """Client for Jira REST API operations on Cloud and Server/Data Center.
 
     Use this class for issue lookup, issue updates, JQL searches, comments,
-    watchers, transitions, projects, and versions. Responses from read methods
-    are usually nested ``SimpleNamespace`` objects; methods that mutate Jira
-    return decoded JSON dictionaries or ``None`` for empty responses.
+    watchers, transitions, projects, versions, and Jira Software boards,
+    sprints and epics. Responses from read methods are usually nested
+    ``SimpleNamespace`` objects; methods that mutate Jira return decoded JSON
+    dictionaries or ``None`` for empty responses.
 
     The same calls work on both deployments. On Jira Cloud (detected from a
     ``*.atlassian.net`` URL, or ``cloud=True``) the client uses the Cloud
@@ -28,6 +38,10 @@ class Jira(AtlassianAPI):
 
     .. seealso::
         `Jira REST API Documentation <https://docs.atlassian.com/software/jira/docs/api/REST/7.6.1/>`_
+
+        Jira Software REST API for
+        `Cloud <https://developer.atlassian.com/cloud/jira/software/rest/>`_ and
+        `Data Center <https://docs.atlassian.com/jira-software/REST/latest/>`_
     """
 
     def issue(self, issue_key: str) -> SimpleNamespace | str | None:
@@ -901,3 +915,537 @@ class Jira(AtlassianAPI):
         if release_date is not None:
             payload["releaseDate"] = release_date
         return self.post(url, json=payload)
+
+    # ------------------------------------------------------------------
+    # Jira Software (Agile): boards, sprints and epics
+    # ------------------------------------------------------------------
+
+    def _agile_values(
+        self, path: str, params: dict | None = None, limit: int | None = None
+    ) -> list:
+        """Collect ``values`` from a paginated Jira Software endpoint.
+
+        :param path: Endpoint path below ``/rest/agile/1.0``.
+        :type path: str
+        :param params: Query parameters; ``None`` values are not sent.
+        :type params: dict, optional
+        :param limit: Most items to return. ``None`` returns every page.
+        :type limit: int, optional
+        :return: Items from each page, in order.
+        :rtype: list
+        """
+        if limit is not None and limit <= 0:
+            return []
+        # ``requests`` leaves out parameters whose value is None.
+        query = {**(params or {}), "startAt": 0}
+        values: list = []
+        while True:
+            query["maxResults"] = (
+                _AGILE_PAGE_SIZE
+                if limit is None
+                else min(_AGILE_PAGE_SIZE, limit - len(values))
+            )
+            page = self.get(f"{_AGILE}{path}", params=query)
+            items = getattr(page, "values", None) or []
+            values.extend(items)
+            # Jira may return fewer items than requested: advance by what
+            # arrived, not by the page size.
+            query["startAt"] += len(items)
+            if not items or (limit is not None and len(values) >= limit):
+                break
+            is_last = getattr(page, "isLast", None)
+            if is_last is None:
+                # Without "isLast", go by "total"; Jira may leave that out
+                # too, and then only an empty page ends the listing.
+                total = getattr(page, "total", None)
+                is_last = total is not None and query["startAt"] >= total
+            if is_last:
+                break
+        return values if limit is None else values[:limit]
+
+    def _iter_agile_issues(
+        self,
+        path: str,
+        jql: str | None,
+        fields: list[str] | None,
+        page_size: int,
+    ) -> Iterator[SimpleNamespace]:
+        """Yield the issues of a board, sprint or epic, one page at a time.
+
+        Server/Data Center pages ``/rest/agile/1.0`` with ``startAt``. Cloud
+        deprecated those issue lists; there ``/rest/software/1.0`` is used,
+        which pages with ``nextPageToken`` and reports no ``total``.
+
+        :param path: Endpoint path below the API root, the same on both.
+        :type path: str
+        :param jql: JQL that narrows (and can reorder) the issues.
+        :type jql: str or None
+        :param fields: Fields to return. ``None`` returns navigable and Jira
+            Software fields.
+        :type fields: list[str] or None
+        :param page_size: Issues requested per API call.
+        :type page_size: int
+        :return: Issue objects.
+        :rtype: Iterator[SimpleNamespace]
+        """
+        params: dict = {"maxResults": page_size}
+        if jql:
+            params["jql"] = jql
+        if fields is not None:
+            params["fields"] = ",".join(fields)
+        url = f"{_SOFTWARE if self.cloud else _AGILE}{path}"
+        if not self.cloud:
+            params["startAt"] = 0
+        while True:
+            page = self.get(url, params=params)
+            issues = getattr(page, "issues", None) or []
+            yield from issues
+            if not issues:
+                return
+            if self.cloud:
+                # The last page carries no token.
+                token = getattr(page, "nextPageToken", None)
+                if getattr(page, "isLast", False) or not token:
+                    return
+                params["nextPageToken"] = token
+            else:
+                # Jira may return fewer issues than requested: advance by
+                # what arrived, not by the page size. "total" is optional;
+                # without it only an empty page ends the listing.
+                params["startAt"] += len(issues)
+                total = getattr(page, "total", None)
+                if total is not None and params["startAt"] >= total:
+                    return
+
+    def _move_issues(self, path: str, issues: str | Iterable[str | int]) -> None:
+        """Post issue keys to a "move issues" endpoint, 50 per request.
+
+        :param path: Endpoint path below ``/rest/agile/1.0``.
+        :type path: str
+        :param issues: Issue keys or IDs; one key may be given as a string.
+            Duplicates are sent once.
+        :type issues: str or Iterable[str or int]
+        """
+        if isinstance(issues, str):
+            issues = [issues]
+        keys = list(dict.fromkeys(str(issue) for issue in issues))
+        for start in range(0, len(keys), _MOVE_ISSUES_MAX):
+            chunk = keys[start : start + _MOVE_ISSUES_MAX]
+            self.post(f"{_AGILE}{path}", json={"issues": chunk})
+
+    def get_boards(
+        self,
+        project: str | None = None,
+        name: str | None = None,
+        board_type: str | None = None,
+        limit: int | None = None,
+    ) -> list:
+        """Return the boards visible to the current user.
+
+        All pages are collected unless ``limit`` is given.
+
+        .. code-block:: python
+
+            for board in jira.get_boards(project="TEST", board_type="scrum"):
+                print(board.id, board.name)
+
+        :param project: Key or ID of a project; only boards whose filter
+            refers to that project are returned.
+        :type project: str, optional
+        :param name: Only boards whose name contains this text.
+        :type name: str, optional
+        :param board_type: ``"scrum"`` or ``"kanban"`` (Cloud also has
+            ``"simple"``, the boards of team-managed projects).
+        :type board_type: str, optional
+        :param limit: Most boards to return. ``None`` returns all of them.
+        :type limit: int, optional
+        :return: Board objects with ``id``, ``name`` and ``type``.
+        :rtype: list
+        """
+        params = {"projectKeyOrId": project, "name": name, "type": board_type}
+        return self._agile_values("/board", params, limit)
+
+    def get_board(self, board_id: int | str) -> SimpleNamespace | str | None:
+        """Return a board by ID.
+
+        :param board_id: The ID of the board.
+        :type board_id: int or str
+        :return: Board data, raw response text for non-JSON responses, or
+            ``None`` for an empty body.
+        :rtype: SimpleNamespace or str or None
+        """
+        return self.get(f"{_AGILE}/board/{board_id}")
+
+    def get_board_sprints(
+        self,
+        board_id: int | str,
+        state: str | None = None,
+        limit: int | None = None,
+    ) -> list:
+        """Return the sprints of a board.
+
+        Closed sprints come first, then active, then future ones. All pages
+        are collected unless ``limit`` is given. Jira answers HTTP 400 for a
+        board without sprints, such as a kanban board.
+
+        .. code-block:: python
+
+            active = jira.get_board_sprints(84, state="active")
+
+        :param board_id: The ID of the board.
+        :type board_id: int or str
+        :param state: ``"future"``, ``"active"`` or ``"closed"``; separate
+            several with commas, for example ``"active,future"``.
+        :type state: str, optional
+        :param limit: Most sprints to return. ``None`` returns all of them.
+        :type limit: int, optional
+        :return: Sprint objects with ``id``, ``name``, ``state`` and, once
+            set, ``startDate``, ``endDate``, ``completeDate`` and ``goal``.
+        :rtype: list
+        """
+        return self._agile_values(f"/board/{board_id}/sprint", {"state": state}, limit)
+
+    def get_board_epics(
+        self,
+        board_id: int | str,
+        done: bool | None = None,
+        limit: int | None = None,
+    ) -> list:
+        """Return the epics on a board.
+
+        All pages are collected unless ``limit`` is given.
+
+        :param board_id: The ID of the board.
+        :type board_id: int or str
+        :param done: ``True`` for epics marked as done only, ``False`` for
+            the others. ``None`` returns both.
+        :type done: bool, optional
+        :param limit: Most epics to return. ``None`` returns all of them.
+        :type limit: int, optional
+        :return: Epic objects with ``id``, ``name``, ``summary`` and
+            ``done``.
+        :rtype: list
+        """
+        params = {"done": None if done is None else str(bool(done)).lower()}
+        return self._agile_values(f"/board/{board_id}/epic", params, limit)
+
+    def iter_board_issues(
+        self,
+        board_id: int | str,
+        jql: str | None = None,
+        fields: list[str] | None = None,
+        page_size: int = 100,
+    ) -> Iterator[SimpleNamespace]:
+        """Yield every issue on a board, ordered by rank.
+
+        An issue is on the board when its status is mapped to one of the
+        board's columns. Epics are not part of a scrum board.
+
+        Unlike :meth:`iter_issues`, issues are ``SimpleNamespace`` objects, as
+        returned by :meth:`issue`, with the Jira Software fields ``sprint``,
+        ``closedSprints``, ``flagged`` and ``epic`` added.
+
+        On Cloud, where ``/rest/agile/1.0/board/{id}/issue`` is deprecated,
+        ``/rest/software/1.0/board/{id}/issue`` is used and paged with
+        ``nextPageToken``.
+
+        :param board_id: The ID of the board.
+        :type board_id: int or str
+        :param jql: JQL that narrows the issues, for example
+            ``"status != Done"``. An ``ORDER BY`` replaces the rank order.
+        :type jql: str, optional
+        :param fields: Fields to return. ``None`` returns navigable and Jira
+            Software fields.
+        :type fields: list[str], optional
+        :param page_size: Issues requested per API call.
+        :type page_size: int, optional
+        :return: Issue objects.
+        :rtype: Iterator[SimpleNamespace]
+        """
+        return self._iter_agile_issues(
+            f"/board/{board_id}/issue", jql, fields, page_size
+        )
+
+    def iter_backlog_issues(
+        self,
+        board_id: int | str,
+        jql: str | None = None,
+        fields: list[str] | None = None,
+        page_size: int = 100,
+    ) -> Iterator[SimpleNamespace]:
+        """Yield every issue in a board's backlog, ordered by rank.
+
+        The backlog holds the unfinished issues that are in no active or
+        future sprint. Paging and issue objects are those of
+        :meth:`iter_board_issues`.
+
+        :param board_id: The ID of the board.
+        :type board_id: int or str
+        :param jql: JQL that narrows the issues.
+        :type jql: str, optional
+        :param fields: Fields to return. ``None`` returns navigable and Jira
+            Software fields.
+        :type fields: list[str], optional
+        :param page_size: Issues requested per API call.
+        :type page_size: int, optional
+        :return: Issue objects.
+        :rtype: Iterator[SimpleNamespace]
+        """
+        return self._iter_agile_issues(
+            f"/board/{board_id}/backlog", jql, fields, page_size
+        )
+
+    def get_sprint(self, sprint_id: int | str) -> SimpleNamespace | str | None:
+        """Return a sprint by ID.
+
+        :param sprint_id: The ID of the sprint.
+        :type sprint_id: int or str
+        :return: Sprint data with ``id``, ``name``, ``state``,
+            ``originBoardId`` and, once set, the dates and ``goal``; raw
+            response text for non-JSON responses, or ``None`` for an empty
+            body.
+        :rtype: SimpleNamespace or str or None
+        """
+        return self.get(f"{_AGILE}/sprint/{sprint_id}")
+
+    def create_sprint(
+        self,
+        board_id: int,
+        name: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        goal: str | None = None,
+    ) -> dict | None:
+        """Create a future sprint on a board.
+
+        .. code-block:: python
+
+            sprint = jira.create_sprint(
+                84,
+                "Sprint 12",
+                start_date="2026-11-16T09:00:00.000+0000",
+                end_date="2026-11-27T17:00:00.000+0000",
+                goal="Ship the importer",
+            )
+            jira.move_issues_to_sprint(sprint["id"], ["TEST-1", "TEST-2"])
+
+        :param board_id: The ID of the board the sprint belongs to.
+        :type board_id: int
+        :param name: The name of the sprint. Jira trims it.
+        :type name: str
+        :param start_date: Planned start, as an ISO 8601 date-time.
+        :type start_date: str, optional
+        :param end_date: Planned end, as an ISO 8601 date-time.
+        :type end_date: str, optional
+        :param goal: The sprint goal.
+        :type goal: str, optional
+        :return: The created sprint.
+        :rtype: dict or None
+        """
+        payload: dict[str, Any] = {"name": name, "originBoardId": board_id}
+        if start_date is not None:
+            payload["startDate"] = start_date
+        if end_date is not None:
+            payload["endDate"] = end_date
+        if goal is not None:
+            payload["goal"] = goal
+        return self.post(f"{_AGILE}/sprint", json=payload)
+
+    def update_sprint(
+        self,
+        sprint_id: int | str,
+        name: str | None = None,
+        state: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        goal: str | None = None,
+    ) -> dict | None:
+        """Change some fields of a sprint; the others keep their value.
+
+        This is Jira's partial update. Start a sprint with
+        ``state="active"`` (it must be a future sprint with a start and an
+        end date) and complete it with ``state="closed"`` (it must be
+        active); no other state change is allowed.
+
+        .. code-block:: python
+
+            jira.update_sprint(37, state="active")
+            jira.update_sprint(37, goal="Ship the importer")
+
+        A closed sprint cannot be updated on Server/Data Center; on Cloud
+        only its name and goal can.
+
+        :param sprint_id: The ID of the sprint.
+        :type sprint_id: int or str
+        :param name: New name.
+        :type name: str, optional
+        :param state: ``"active"`` to start the sprint, ``"closed"`` to
+            complete it.
+        :type state: str, optional
+        :param start_date: New start, as an ISO 8601 date-time.
+        :type start_date: str, optional
+        :param end_date: New end, as an ISO 8601 date-time.
+        :type end_date: str, optional
+        :param goal: New goal. An empty string removes it.
+        :type goal: str, optional
+        :return: The updated sprint.
+        :rtype: dict or None
+        """
+        values = {
+            "name": name,
+            "state": state,
+            "startDate": start_date,
+            "endDate": end_date,
+            "goal": goal,
+        }
+        payload = {key: value for key, value in values.items() if value is not None}
+        # POST is the partial update; PUT would reset every field left out.
+        return self.post(f"{_AGILE}/sprint/{sprint_id}", json=payload)
+
+    def delete_sprint(self, sprint_id: int | str) -> dict | None:
+        """Delete a sprint; its open issues go back to the backlog.
+
+        Server/Data Center refuses to delete a sprint that is active or
+        completed.
+
+        :param sprint_id: The ID of the sprint.
+        :type sprint_id: int or str
+        :return: Decoded API response, or ``None`` when Jira returns no body.
+        :rtype: dict or None
+        """
+        return self.delete(f"{_AGILE}/sprint/{sprint_id}")
+
+    def iter_sprint_issues(
+        self,
+        sprint_id: int | str,
+        jql: str | None = None,
+        fields: list[str] | None = None,
+        page_size: int = 100,
+    ) -> Iterator[SimpleNamespace]:
+        """Yield every issue in a sprint, ordered by rank.
+
+        .. code-block:: python
+
+            for issue in jira.iter_sprint_issues(37, fields=["summary", "status"]):
+                print(issue.key, issue.fields.status.name, issue.fields.summary)
+
+        Paging and issue objects are those of :meth:`iter_board_issues`: on
+        Cloud ``/rest/software/1.0/sprint/{id}/issue`` is used.
+
+        :param sprint_id: The ID of the sprint.
+        :type sprint_id: int or str
+        :param jql: JQL that narrows the issues, for example
+            ``"status != Done"``.
+        :type jql: str, optional
+        :param fields: Fields to return. ``None`` returns navigable and Jira
+            Software fields.
+        :type fields: list[str], optional
+        :param page_size: Issues requested per API call.
+        :type page_size: int, optional
+        :return: Issue objects.
+        :rtype: Iterator[SimpleNamespace]
+        """
+        return self._iter_agile_issues(
+            f"/sprint/{sprint_id}/issue", jql, fields, page_size
+        )
+
+    def move_issues_to_sprint(
+        self, sprint_id: int | str, issues: str | Iterable[str | int]
+    ) -> None:
+        """Move issues into an active or future sprint.
+
+        Jira accepts 50 issues per request, so longer lists are sent in
+        several requests. If one of them fails, the issues of the earlier
+        requests have already been moved.
+
+        :param sprint_id: The ID of the sprint.
+        :type sprint_id: int or str
+        :param issues: Issue keys or IDs.
+        :type issues: str or Iterable[str or int]
+        """
+        self._move_issues(f"/sprint/{sprint_id}/issue", issues)
+
+    def move_issues_to_backlog(self, issues: str | Iterable[str | int]) -> None:
+        """Move issues out of their active or future sprint, into the backlog.
+
+        Sent 50 issues per request, as :meth:`move_issues_to_sprint`.
+
+        :param issues: Issue keys or IDs.
+        :type issues: str or Iterable[str or int]
+        """
+        self._move_issues("/backlog/issue", issues)
+
+    def get_epic(self, epic_id_or_key: int | str) -> SimpleNamespace | str | None:
+        """Return an epic by issue ID or key.
+
+        On Cloud this does not work for epics in team-managed projects; read
+        those with :meth:`issue`.
+
+        :param epic_id_or_key: The ID or key of the epic.
+        :type epic_id_or_key: int or str
+        :return: Epic data with ``id``, ``name``, ``summary`` and ``done``;
+            raw response text for non-JSON responses, or ``None`` for an
+            empty body.
+        :rtype: SimpleNamespace or str or None
+        """
+        return self.get(f"{_AGILE}/epic/{epic_id_or_key}")
+
+    def iter_epic_issues(
+        self,
+        epic_id_or_key: int | str,
+        jql: str | None = None,
+        fields: list[str] | None = None,
+        page_size: int = 100,
+    ) -> Iterator[SimpleNamespace]:
+        """Yield every issue that belongs to an epic, ordered by rank.
+
+        Paging and issue objects are those of :meth:`iter_board_issues`: on
+        Cloud ``/rest/software/1.0/epic/{key}/issue`` is used.
+
+        On Cloud this does not cover team-managed projects; search for the
+        children instead: ``jira.iter_issues("parent = TEST-1")``.
+
+        :param epic_id_or_key: The ID or key of the epic.
+        :type epic_id_or_key: int or str
+        :param jql: JQL that narrows the issues.
+        :type jql: str, optional
+        :param fields: Fields to return. ``None`` returns navigable and Jira
+            Software fields.
+        :type fields: list[str], optional
+        :param page_size: Issues requested per API call.
+        :type page_size: int, optional
+        :return: Issue objects.
+        :rtype: Iterator[SimpleNamespace]
+        """
+        return self._iter_agile_issues(
+            f"/epic/{epic_id_or_key}/issue", jql, fields, page_size
+        )
+
+    def move_issues_to_epic(
+        self, epic_id_or_key: int | str, issues: str | Iterable[str | int]
+    ) -> None:
+        """Put issues into an epic; an issue leaves the epic it was in.
+
+        Sent 50 issues per request, as :meth:`move_issues_to_sprint`.
+
+        On Cloud this does not work for epics in team-managed projects; set
+        the parent there:
+        ``jira.update_issue("TEST-2", fields={"parent": {"key": "TEST-1"}})``.
+
+        :param epic_id_or_key: The ID or key of the epic.
+        :type epic_id_or_key: int or str
+        :param issues: Issue keys or IDs.
+        :type issues: str or Iterable[str or int]
+        """
+        self._move_issues(f"/epic/{epic_id_or_key}/issue", issues)
+
+    def remove_issues_from_epic(self, issues: str | Iterable[str | int]) -> None:
+        """Take issues out of the epic they belong to.
+
+        Sent 50 issues per request, as :meth:`move_issues_to_sprint`. On
+        Cloud this does not work for issues in team-managed projects.
+
+        :param issues: Issue keys or IDs.
+        :type issues: str or Iterable[str or int]
+        """
+        self._move_issues("/epic/none/issue", issues)
