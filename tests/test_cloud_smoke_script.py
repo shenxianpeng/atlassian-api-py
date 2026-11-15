@@ -181,7 +181,10 @@ class FakeCloud:
         (r"/rest/api/2/user/search", ("GET", lambda s, r: [{"accountId": "a1"}])),
         (
             r"/rest/api/2/project/search",
-            ("GET", lambda s, r: {"values": [{"key": "ABC", "id": "10"}], "isLast": True}),
+            (
+                "GET",
+                lambda s, r: {"values": [{"key": "ABC", "id": "10"}], "isLast": True},
+            ),
         ),
         (r"/rest/api/2/project/ABC", ("GET", lambda s, r: {"key": "ABC", "id": "10"})),
         (r"/rest/api/2/project/ABC/versions", ("GET", lambda s, r: [])),
@@ -233,7 +236,10 @@ class FakeCloud:
         (r"/rest/api/2/attachment/content/900", ("GET", lambda s, r: s.FILE)),
         (
             r"/wiki/api/v2/spaces",
-            ("GET", lambda s, r: {"results": [{"id": "98", "key": "DOC"}], "_links": {}}),
+            (
+                "GET",
+                lambda s, r: {"results": [{"id": "98", "key": "DOC"}], "_links": {}},
+            ),
         ),
         (r"/wiki/api/v2/spaces/98/pages", ("GET", list_pages)),
         (
@@ -277,7 +283,9 @@ def site(monkeypatch):
     fake = FakeCloud()
     with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
         for method in (responses.GET, responses.POST):
-            rsps.add_callback(method, re.compile(re.escape(SITE) + "/.*"), callback=fake)
+            rsps.add_callback(
+                method, re.compile(re.escape(SITE) + "/.*"), callback=fake
+            )
         fake.calls = rsps.calls
         yield fake
 
@@ -300,7 +308,9 @@ class TestSettings:
     @pytest.mark.parametrize(
         "name", ["ATLASSIAN_URL", "ATLASSIAN_EMAIL", "ATLASSIAN_API_TOKEN"]
     )
-    def test_blank_setting_is_reported_as_missing(self, site, monkeypatch, capsys, name):
+    def test_blank_setting_is_reported_as_missing(
+        self, site, monkeypatch, capsys, name
+    ):
         monkeypatch.setenv(name, "")  # how CI passes a secret that is not set
         assert run() == 2
         assert f"Set {name} " in capsys.readouterr().out
@@ -363,13 +373,19 @@ class TestSeed:
         assert seed(monkeypatch) == 0
         out = capsys.readouterr().out
         assert [i["key"] for i in site.issues] == ["ABC-1", "ABC-2", "ABC-3"]
-        assert [i["fields"]["labels"] for i in site.issues] == [["smoke-test-fixture"]] * 3
+        assert [i["fields"]["labels"] for i in site.issues] == [
+            ["smoke-test-fixture"]
+        ] * 3
         assert len(site.issues[0]["fields"]["attachment"]) == 1
         assert [p["title"] for p in site.pages] == [
             f"Smoke test fixture {n}" for n in (1, 2, 3)
         ]
         first = site.pages[0]
-        assert (len(first["attachments"]), len(first["labels"]), len(first["comments"])) == (1, 1, 1)
+        assert (
+            len(first["attachments"]),
+            len(first["labels"]),
+            len(first["comments"]),
+        ) == (1, 1, 1)
         assert "gh variable set JIRA_ISSUE --body ABC-1" in out
         assert "gh variable set CONFLUENCE_PAGE_ID --body 100" in out
 
@@ -413,4 +429,6 @@ class TestSeed:
         assert "PASS  jira.issue(): ABC-3" in out
         assert "SKIP  jira.download_attachment(): the issue has no attachments" in out
         assert "PASS  confluence: CONFLUENCE_PAGE_ID: page 102" in out
-        assert "SKIP  confluence.download_attachment(): the page has no attachments" in out
+        assert (
+            "SKIP  confluence.download_attachment(): the page has no attachments" in out
+        )
