@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Confluence.get_content_by_id()`, `get_content_history()`, `get_attachments()`, `get_labels()`, `get_comments()` and `download_attachment()` accept `type="blogpost"`, so blog posts can be read on Cloud, where pages and blog posts have separate endpoints.
 - On Cloud, `Confluence.create_content()` without a parent creates the page at the top level of the space, as Data Center does (v2 would otherwise put it under the space homepage).
 - On Cloud, `Jira.issue_changelog()` returns the full history from the paginated `/changelog` endpoint; `expand=changelog` only returns recent updates there.
-- `scripts/cloud_smoke_test.py`: a read-only check of the Jira and Confluence clients against a live Cloud site.
+- `scripts/cloud_smoke_test.py`: a read-only check of the Jira and Confluence clients against a live Cloud site. It runs every night in CI against a test site; `--seed` prepares such a site.
 - Errors raise status-specific subclasses of `APIError` (all still caught by `except APIError`): `AuthenticationError`, `PermissionDeniedError`, `NotFoundError`, `ConflictError`, `RateLimitError` (with `retry_after`) and `ServerError`.
 - Automatic retries for HTTP 429 (any method) and 503 (`GET`), honouring `Retry-After` (seconds or HTTP date). New `max_retries` (default 3) and `max_retry_wait` (default 60 s) arguments; a longer `Retry-After` raises `RateLimitError` instead of sleeping. Uploaded file objects are rewound before a retry.
 - `AtlassianAPI.request()` accepts `files=`, `headers=` (per request) and `stream=`.

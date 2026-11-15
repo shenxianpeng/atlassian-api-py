@@ -1,9 +1,9 @@
 # mypy: disable-error-code="arg-type"
 # Values read from live API responses are untyped; this script checks them at run time.
-"""Read-only smoke test against a live Atlassian Cloud site.
+"""Smoke test against a live Atlassian Cloud site.
 
-It only reads. Nothing is created, changed or deleted, so it is safe to run
-against a production site. Jira's search and count are ``POST`` requests
+By default it only reads. Nothing is created, changed or deleted, so it is safe
+to run against a production site. Jira's search and count are ``POST`` requests
 (``/search/jql`` and ``/search/approximate-count``) but do not change anything.
 
 Usage::
@@ -17,6 +17,24 @@ Usage::
 
 It prints one line per check and exits with 1 if any check failed. A check is
 skipped when the site has nothing to test it with (for example, no issues).
+
+Optional settings:
+
+``JIRA_ISSUE`` / ``CONFLUENCE_PAGE_ID``
+    The issue and page to read, instead of the most recent issue and the
+    first page. Point them at ones that have an attachment.
+``SMOKE_STRICT=1``
+    Treat a skipped check as a failure. The nightly CI run uses this, so an
+    empty site cannot pass.
+
+``--seed`` is the only mode that writes. On a test site, it creates what the
+read-only checks need (three issues and three pages named "Smoke test
+fixture", with an attachment, a label and a comment) in ``JIRA_PROJECT`` and
+``CONFLUENCE_SPACE``, which must both be set, and prints the values for
+``JIRA_ISSUE`` and ``CONFLUENCE_PAGE_ID``. Running it again reuses the
+fixtures it finds::
+
+    python scripts/cloud_smoke_test.py --seed
 """
 
 from __future__ import annotations
@@ -30,7 +48,26 @@ from typing import Any
 
 from atlassian_api import Confluence, Jira
 
+FIXTURE_NAME = "Smoke test fixture"
+FIXTURE_LABEL = "smoke-test-fixture"
+FIXTURE_FILE = ("smoke-test.txt", b"atlassian-api-py smoke test fixture\n")
+FIXTURE_NOTE = "Created by scripts/cloud_smoke_test.py --seed"
+
 results: list[tuple[str, str, str]] = []
+
+
+def env(name: str) -> str | None:
+    """Return an environment variable, or ``None`` when unset or blank.
+
+    CI passes unset secrets and variables as empty strings.
+    """
+    return (os.environ.get(name) or "").strip() or None
+
+
+def skip(name: str, why: str) -> None:
+    """Record checks that could not run."""
+    results.append(("SKIP", name, why))
+    print(f"SKIP  {name}: {why}")
 
 
 def value(obj: Any, name: str) -> Any:
@@ -44,15 +81,14 @@ def check(name: str, func: Callable[[], Any]) -> Any:
     """Run one check, record PASS/FAIL/SKIP and return its result."""
     try:
         outcome = func()
-    except Skip as skip:
-        results.append(("SKIP", name, str(skip)))
-        print(f"SKIP  {name}: {skip}")
+    except Skip as skipped:
+        skip(name, str(skipped))
         return None
     except Exception as error:  # noqa: BLE001 - report every failure
         detail = f"{type(error).__name__}: {str(error)[:200]}"
         results.append(("FAIL", name, detail))
         print(f"FAIL  {name}: {detail}")
-        if os.environ.get("SMOKE_TRACEBACK"):
+        if env("SMOKE_TRACEBACK"):
             traceback.print_exc()
         return None
     detail, returned = outcome if isinstance(outcome, tuple) else (outcome, outcome)
@@ -86,9 +122,7 @@ def jira_checks(url: str, email: str, token: str) -> None:
     check("jira.search_users()", lambda: _search_users(jira, me))
 
     projects = check("jira.get_projects()", lambda: _projects(jira))
-    key = os.environ.get("JIRA_PROJECT") or (
-        value(projects[0], "key") if projects else None
-    )
+    key = env("JIRA_PROJECT") or (value(projects[0], "key") if projects else None)
     project = check("jira.get_project()", lambda: _project(jira, key))
     if project is not None:
         check("jira.get_versions()", lambda: _count(jira.get_versions(key)))
@@ -103,7 +137,7 @@ def jira_checks(url: str, email: str, token: str) -> None:
     check("jira.count_issues()", lambda: f"{jira.count_issues(jql)} issues")
     check("jira.get_fields() / get_field_id()", lambda: _fields(jira))
 
-    issue_key = value(issues[0], "key") if issues else None
+    issue_key = env("JIRA_ISSUE") or (value(issues[0], "key") if issues else None)
     issue = check("jira.issue()", lambda: _issue(jira, issue_key))
     if issue is None:
         return
@@ -204,9 +238,7 @@ def confluence_checks(url: str, email: str, token: str) -> None:
     spaces = check("confluence.get_spaces()", lambda: _spaces(confluence))
     if spaces is None:
         return
-    key = os.environ.get("CONFLUENCE_SPACE") or (
-        value(spaces[0], "key") if spaces else None
-    )
+    key = env("CONFLUENCE_SPACE") or (value(spaces[0], "key") if spaces else None)
     check("confluence.get_space()", lambda: _space(confluence, key))
     pages = check("confluence.get_content_by_space()", lambda: _pages(confluence, key))
     check(
@@ -218,7 +250,16 @@ def confluence_checks(url: str, email: str, token: str) -> None:
     )
     check("confluence.iter_search()", lambda: _iter_c(confluence, key))
 
-    page = pages[0] if pages else None
+    pinned = env("CONFLUENCE_PAGE_ID")
+    if pinned:
+        page = check(
+            "confluence: CONFLUENCE_PAGE_ID",
+            lambda: _pinned_page(confluence, pinned),
+        )
+    else:
+        page = pages[0] if pages else None
+        if page is None:
+            skip("confluence page checks", "the space has no pages")
     if page is None:
         return
     page_id = value(page, "id")
@@ -263,6 +304,12 @@ def _pages(confluence: Confluence, key: str | None) -> tuple[str, Any]:
     archived = [p for p in results if value(p, "status") not in (None, "current")]
     expect(not archived, f"archived pages listed: {[value(p, 'id') for p in archived]}")
     return f"{len(results)} current pages", results
+
+
+def _pinned_page(confluence: Confluence, page_id: str) -> tuple[str, Any]:
+    page = confluence.get_content_by_id(page_id)
+    expect(str(value(page, "id")) == page_id, f"page {page_id} not returned")
+    return f"page {page_id}", page
 
 
 def _search_c(confluence: Confluence, key: str | None) -> str:
@@ -331,27 +378,129 @@ def _with_results(result: Any) -> tuple[str, Any]:
     return _size(result), value(result, "results")
 
 
-def main() -> int:
-    try:
-        url = os.environ["ATLASSIAN_URL"]
-        email = os.environ["ATLASSIAN_EMAIL"]
-        token = os.environ["ATLASSIAN_API_TOKEN"]
-    except KeyError as missing:
-        print(f"Set {missing.args[0]} (see the docstring at the top of this file).")
+def seed(url: str, email: str, token: str) -> int:
+    """Create the fixtures the read-only checks need. The only mode that writes."""
+    project, space = env("JIRA_PROJECT"), env("CONFLUENCE_SPACE")
+    if not (project and space):
+        print(
+            "--seed needs JIRA_PROJECT and CONFLUENCE_SPACE: it only writes "
+            "where you tell it to."
+        )
         return 2
-    print(f"Read-only smoke test against {url}\n")
+    print(
+        f"Creating fixtures in Jira project {project} and Confluence space "
+        f"{space} on {url}\n"
+    )
+    jira = Jira(url=url, username=email, password=token)
+    confluence = Confluence(url=url, username=email, password=token)
+    issue_key = check("seed: Jira issues", lambda: _seed_issues(jira, project))
+    page_id = check("seed: Confluence pages", lambda: _seed_pages(confluence, space))
+    if issue_key is None or page_id is None:
+        return 1
+    print("\nSet these for the read-only run (as repository variables for CI):\n")
+    for name, setting in (
+        ("JIRA_PROJECT", project),
+        ("JIRA_ISSUE", issue_key),
+        ("CONFLUENCE_SPACE", space),
+        ("CONFLUENCE_PAGE_ID", page_id),
+    ):
+        print(f"gh variable set {name} --body {setting}")
+    return 0
+
+
+def _seed_issues(jira: Jira, project: str) -> tuple[str, str]:
+    jql = f'project = "{project}" AND labels = "{FIXTURE_LABEL}" ORDER BY created ASC'
+    keys = [value(i, "key") for i in jira.search_issue_with_jql(jql, max_result=10)]
+    for number in range(len(keys) + 1, 4):
+        created = jira.create_issue(
+            {
+                "project": {"key": project},
+                "summary": f"{FIXTURE_NAME} {number}",
+                "issuetype": {"name": env("JIRA_ISSUE_TYPE") or "Task"},
+                "labels": [FIXTURE_LABEL],
+            }
+        )
+        keys.append(value(created, "key"))
+    first = keys[0]
+    if not (value(value(jira.issue(first), "fields"), "attachment") or []):
+        jira.add_attachment(first, *FIXTURE_FILE, "text/plain")
+        jira.add_issue_comment(first, FIXTURE_NOTE)
+    return f"{', '.join(keys)}; attachment and comment on {first}", first
+
+
+def _seed_pages(confluence: Confluence, space: str) -> tuple[str, str]:
+    ids = []
+    for number in (1, 2, 3):
+        title = f"{FIXTURE_NAME} {number}"
+        found = value(confluence.get_page_by_title(space, title), "results") or []
+        page = (
+            found[0]
+            if found
+            else confluence.create_content(title, space, f"<p>{FIXTURE_NOTE}</p>")
+        )
+        ids.append(str(value(page, "id")))
+    first = ids[0]
+    if not (value(confluence.get_attachments(first), "results") or []):
+        confluence.upload_attachment(first, *FIXTURE_FILE, "text/plain")
+    if not (value(confluence.get_labels(first), "results") or []):
+        confluence.add_label(first, FIXTURE_LABEL)
+    if not (value(confluence.get_comments(first), "results") or []):
+        confluence.add_comment(first, f"<p>{FIXTURE_NOTE}</p>")
+    return f"pages {', '.join(ids)}; attachment, label and comment on {first}", first
+
+
+def write_step_summary(headline: str) -> None:
+    """Add a results table to the GitHub Actions run page, when run there."""
+    path = env("GITHUB_STEP_SUMMARY")
+    if not path:
+        return
+    lines = [f"### Cloud smoke test: {headline}", "", "| Result | Check | Detail |"]
+    lines.append("|---|---|---|")
+    for status, name, detail in results:
+        cell = detail.replace("|", "\\|").replace("\n", " ")
+        lines.append(f"| {status} | `{name}` | {cell} |")
+    with open(path, "a", encoding="utf-8") as handle:
+        handle.write("\n".join(lines) + "\n")
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    settings = {
+        name: env(name)
+        for name in ("ATLASSIAN_URL", "ATLASSIAN_EMAIL", "ATLASSIAN_API_TOKEN")
+    }
+    missing = [name for name, setting in settings.items() if not setting]
+    if missing:
+        print(f"Set {', '.join(missing)} (see the docstring at the top of this file).")
+        return 2
+    url, email, token = (str(setting) for setting in settings.values())
     if not Jira(url=url).cloud:
         print("The URL is not an Atlassian Cloud site (*.atlassian.net).")
         return 2
+    if args == ["--seed"]:
+        return seed(url, email, token)
+    if args:
+        print(f"Unknown arguments: {' '.join(args)}. The only option is --seed.")
+        return 2
+    print(f"Read-only smoke test against {url}\n")
     jira_checks(url, email, token)
     print()
     confluence_checks(url, email, token)
-    failed = [r for r in results if r[0] == "FAIL"]
     counts = {s: sum(1 for r in results if r[0] == s) for s in ("PASS", "FAIL", "SKIP")}
-    print(
-        f"\n{counts['PASS']} passed, {counts['FAIL']} failed, {counts['SKIP']} skipped"
+    headline = (
+        f"{counts['PASS']} passed, {counts['FAIL']} failed, {counts['SKIP']} skipped"
     )
-    return 1 if failed else 0
+    print(f"\n{headline}")
+    write_step_summary(headline)
+    if counts["FAIL"]:
+        return 1
+    if counts["SKIP"] and env("SMOKE_STRICT"):
+        print(
+            "SMOKE_STRICT is set, so skipped checks fail the run. Give the site "
+            "data to read: see --seed in the docstring at the top of this file."
+        )
+        return 1
+    return 0
 
 
 if __name__ == "__main__":

@@ -101,7 +101,11 @@ export ATLASSIAN_API_TOKEN=...   # https://id.atlassian.com/manage-profile/secur
 python scripts/cloud_smoke_test.py
 ```
 
-Set `JIRA_PROJECT` and `CONFLUENCE_SPACE` to pick what it reads; otherwise it uses the first project and space. It prints one line per check and exits with 1 if any check fails.
+Set `JIRA_PROJECT` and `CONFLUENCE_SPACE` to pick what it reads; otherwise it uses the first project and space. It prints one line per check and exits with 1 if any check fails. A check is skipped when the site has nothing to run it on.
+
+On a test site, `python scripts/cloud_smoke_test.py --seed` creates the data the checks need (three issues and three pages named "Smoke test fixture") in `JIRA_PROJECT` and `CONFLUENCE_SPACE`. It is the only mode that writes.
+
+The same checks run every night in the `Cloud smoke test` workflow against a test site, with `SMOKE_STRICT=1` so a skipped check fails the run. The workflow reads the site from the repository secrets `ATLASSIAN_URL`, `ATLASSIAN_EMAIL` and `ATLASSIAN_API_TOKEN` and the variables `JIRA_PROJECT`, `JIRA_ISSUE`, `CONFLUENCE_SPACE` and `CONFLUENCE_PAGE_ID`. It does not run for pull requests, so code from a fork cannot read the credentials.
 
 ## Submitting a Pull Request
 
