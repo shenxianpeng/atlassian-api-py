@@ -12,6 +12,7 @@ from types import SimpleNamespace, TracebackType
 from typing import Any
 from urllib.parse import SplitResult, urlsplit
 
+from . import _hints
 from .error import APIError, error_for_status
 from .logger import get_logger
 
@@ -567,3 +568,18 @@ class AtlassianAPI:
         """
         response = self.request("DELETE", path, data=data, json=json, params=params)
         return self._response_handler(response)
+
+
+def _missing_attribute(self: AtlassianAPI, name: str) -> Any:
+    """Raise ``AttributeError``, naming the replacement for a known method.
+
+    Python calls this only after the normal attribute lookup has failed.
+    """
+    raise AttributeError(
+        _hints.missing_attribute_message(type(self), name), name=name, obj=self
+    )
+
+
+# Set here and not in the class body so that type checkers do not see it: they
+# keep reporting unknown attributes instead of accepting any name.
+setattr(AtlassianAPI, "__getattr__", _missing_attribute)
