@@ -1,10 +1,9 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
+# Publishes a GitHub release to PyPI with Trusted Publishing: PyPI accepts the
+# upload because it comes from this workflow in this repository, so no API
+# token is stored anywhere. The upload carries signed attestations that tie
+# the files to this repository and commit.
+#
+# A manual run only builds and checks the package; it publishes nothing.
 
 name: Upload Python Package
 
@@ -17,13 +16,11 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
-
+  build:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # use fetch --all for setuptools_scm to work
+      # setuptools_scm reads the version from the tags
       with:
         fetch-depth: 0
         persist-credentials: false
@@ -32,20 +29,30 @@ jobs:
       with:
         python-version: '3.x'
     - name: Install dependencies
-      run: python -m pip install --upgrade pip twine
-    - name: Build wheel
-      run: python -m pip wheel -w dist --no-deps .
+      run: python -m pip install --upgrade pip build twine
+    - name: Build sdist and wheel
+      run: python -m build
     - name: Check distribution
-      run: twine check dist/*
-    - name: Publish package (to TestPyPI)
-      if: github.event_name == 'workflow_dispatch' && github.repository == 'shenxianpeng/atlassian-api-py'
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
-      run: twine upload --repository testpypi dist/*
-    - name: Publish package (to PyPI)
-      if: github.event_name != 'workflow_dispatch' && github.repository == 'shenxianpeng/atlassian-api-py'
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      run: twine upload dist/*
+      run: twine check --strict dist/*
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: dist
+        path: dist/
+        if-no-files-found: error
+
+  publish:
+    needs: build
+    if: github.event_name == 'release' && github.repository == 'shenxianpeng/atlassian-api-py'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/atlassian-api-py/
+    permissions:
+      id-token: write # the short-lived identity PyPI trusts; nothing else
+    steps:
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: dist
+        path: dist/
+    - name: Publish package to PyPI
+      uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
