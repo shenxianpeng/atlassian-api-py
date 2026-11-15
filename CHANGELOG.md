@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Jira.get_projects()` collects all pages of `/project/search` on Cloud; `Jira.create_version()` sends `projectId`.
   - Confluence page, space, child-page, comment, label-listing and attachment-listing methods use the REST API v2 on Cloud, where the v1 endpoints were removed. List methods, including `get_page_by_title()` and `search_content()`, keep the v1 envelope (`results`, `start`, `limit`, `size`) and map `start`/`limit` onto cursors. Page lists contain current pages only, as on Data Center. `/wiki` is appended to Cloud URLs.
   - A 401 on Cloud with `token=` explains that Cloud API tokens use basic auth.
+- Calling a method name that belongs to `atlassian-python-api` or the `jira` package (for example `jira.jql()`, `jira.search_issues()`, `confluence.get_page_by_id()`) raises `AttributeError` with the method to call instead. 108 names are covered; the `atlassian-python-api` ones come from the mapping tables in the migration guide.
+- The documentation site serves `llms.txt` and `llms-full.txt` for AI assistants: the facts to get right, and every public method with its signature and docstring in one file, generated from the code.
 - `Confluence.delete_content()` accepts `type=` (`page` or `blogpost`), used on Cloud.
 - `Confluence.get_content_by_id()`, `get_content_history()`, `get_attachments()`, `get_labels()`, `get_comments()` and `download_attachment()` accept `type="blogpost"`, so blog posts can be read on Cloud, where pages and blog posts have separate endpoints.
 - On Cloud, `Confluence.create_content()` without a parent creates the page at the top level of the space, as Data Center does (v2 would otherwise put it under the space homepage).

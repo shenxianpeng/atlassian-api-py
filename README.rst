@@ -1,5 +1,5 @@
-Python Wrapper for Atlassian REST API
-=====================================
+atlassian-api-py
+================
 
 .. start-overview
 
@@ -36,35 +36,92 @@ Python Wrapper for Atlassian REST API
 Overview
 --------
 
-``atlassian-api-py`` is a small Python wrapper for Atlassian REST APIs.
-It provides ready-to-use clients for Jira, Bitbucket, and Confluence so you
-can automate common Atlassian tasks without rewriting endpoint and session
-handling code.
+``atlassian-api-py`` is a Python client for the Jira, Confluence and Bitbucket
+REST APIs, written for scripts that have to keep working on both Atlassian
+Data Center and Atlassian Cloud.
 
-* **One script for Data Center and Cloud.** Jira and Confluence clients detect
-  Atlassian Cloud from the URL (``*.atlassian.net``) and switch to the Cloud
-  endpoints where they differ: Jira's ``/search/jql`` with ``nextPageToken``
-  paging, ``accountId`` instead of usernames, and the Confluence REST API v2.
-  Method names and arguments stay the same; returned items are Cloud objects
-  (for example a Confluence page has ``spaceId`` instead of ``space.key``).
-* **Jira Software boards, sprints and epics.** List a board's sprints, walk
-  through the issues of a sprint, epic or backlog, and move issues between
-  sprints, on Data Center and Cloud.
-* **Installs next to** ``atlassian-python-api``. The import package is
-  ``atlassian_api``, so both libraries can live in the same environment.
+.. code-block:: python
+
+   from atlassian_api import Jira
+
+   # Data Center: a personal access token
+   jira = Jira(url="https://jira.company.com", token="personal-access-token")
+   # Cloud: the same code, with your account email and an API token
+   # jira = Jira(url="https://your-site.atlassian.net",
+   #             username="you@example.com", password="api-token")
+
+   issue = jira.issue("TEST-1")
+   print(issue.key, issue.fields.summary)
+
+   for found in jira.iter_issues("project = TEST AND status = Open", fields=["summary"]):
+       print(found["key"], found["fields"]["summary"])
+
+Use it when
+~~~~~~~~~~~
+
+* **The same script has to run on Data Center and Cloud.** The Jira and
+  Confluence clients detect Cloud from the URL (``*.atlassian.net``,
+  ``*.jira.com``, ``api.atlassian.com``) and switch to the Cloud endpoints
+  where the two differ: Jira's ``/search/jql`` with ``nextPageToken`` paging,
+  ``accountId`` instead of usernames, and the Confluence REST API v2. Method
+  names and arguments stay the same; returned items are what each deployment
+  sends (a Confluence page has ``spaceId`` on Cloud instead of ``space.key``).
+* **atlassian-python-api is already installed, or might be.** The import
+  package is ``atlassian_api``, so both libraries live in one environment.
   `Coming from atlassian-python-api <https://atlassian-api-py.readthedocs.io/en/latest/migration.html>`_
   maps its methods to this library's and lists what is missing here.
-* **One runtime dependency** (``requests``) and inline type hints.
-* Bitbucket support targets Bitbucket Server/Data Center.
+* **You want failures you can handle.** Each HTTP error raises a subclass of
+  ``APIError`` (``NotFoundError``, ``AuthenticationError``, ``RateLimitError``
+  and so on). HTTP 429 is retried and ``Retry-After`` is honoured. A login page
+  served by an SSO proxy raises an error instead of being returned as data, and
+  a request to an absolute URL on another host is refused, so credentials are
+  not sent there.
+* **You want a small dependency.** ``requests`` is the only one, and the code
+  has inline type hints.
 
-The clients are intentionally lightweight:
+It covers the common Jira operations including Jira Software boards, sprints
+and epics, Confluence pages, spaces, attachments and search, and Bitbucket
+Server/Data Center repositories, branches, pull requests and permissions.
 
-* ``GET`` helpers return nested ``SimpleNamespace`` objects, so response fields
-  can be accessed with dot notation.
-* ``POST``, ``PUT``, and ``DELETE`` helpers return decoded JSON dictionaries
-  when the API returns JSON, or ``None`` for empty responses.
-* HTTP ``4xx`` and ``5xx`` responses raise ``APIError`` with the status code
-  and response body.
+Use something else when
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* You need **Bitbucket Cloud**, **Jira Service Management**, Bamboo, Crowd or
+  Xray. `atlassian-python-api <https://github.com/atlassian-api/atlassian-python-api>`_
+  covers them, and can be installed next to this library.
+* You need an **async** client. This one is synchronous
+  (`#128 <https://github.com/shenxianpeng/atlassian-api-py/issues/128>`_).
+* You are on **Python 3.9** or older.
+
+What you get back
+~~~~~~~~~~~~~~~~~
+
+* Read methods return nested ``SimpleNamespace`` objects, so response fields
+  are attributes: ``issue.fields.status.name``.
+* Methods that create, update or delete return the decoded JSON as a
+  dictionary, or ``None`` for an empty response. JQL searches return issues as
+  dictionaries.
+* HTTP ``4xx`` and ``5xx`` responses raise ``APIError`` or one of its
+  subclasses, with the status code and the response body.
+
+How it is checked
+~~~~~~~~~~~~~~~~~
+
+Every line and branch of the library is covered by tests, and CI fails below
+100%. The requests sent to Atlassian Cloud follow Atlassian's published
+OpenAPI specifications.
+
+For AI coding assistants
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you are an assistant writing code with this library, or a person using
+one: the import package is ``atlassian_api``, and the method names are not
+those of ``atlassian-python-api`` or the ``jira`` package. Calling one of
+their names raises ``AttributeError`` with the method to use instead.
+`llms.txt <https://atlassian-api-py.readthedocs.io/llms.txt>`_ has the facts
+to get right, and
+`llms-full.txt <https://atlassian-api-py.readthedocs.io/llms-full.txt>`_ has
+every method with its signature in one file.
 
 Documentation: `atlassian-api-py.readthedocs.io <https://atlassian-api-py.readthedocs.io/>`_
 
@@ -91,8 +148,8 @@ Upgrade an existing installation:
 
 .. end-install
 
-Quick Start
------------
+Creating a Client
+-----------------
 
 Create a client for the Atlassian product you want to automate, then call the
 method that matches the operation.

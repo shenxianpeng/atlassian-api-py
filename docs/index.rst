@@ -1,5 +1,5 @@
-Atlassian API for Python
-========================
+atlassian-api-py
+================
 
 .. include:: ../README.rst
    :start-after: start-overview

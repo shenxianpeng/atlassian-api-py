@@ -9,15 +9,21 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("."))
+sys.path.insert(0, os.path.abspath("_ext"))
 
-project = "Atlassian REST API"
+project = "atlassian-api-py"
 copyright = "2021, Xianpeng Shen"
 author = "Xianpeng Shen"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["myst_parser", "sphinx.ext.autodoc", "sphinx.ext.napoleon"]
+extensions = [
+    "myst_parser",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "llms_txt",  # docs/_ext: writes llms.txt and llms-full.txt for AI assistants
+]
 
 templates_path = ["_templates"]
 
