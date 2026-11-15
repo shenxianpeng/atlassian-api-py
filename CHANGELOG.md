@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic retries for HTTP 429 (any method) and 503 (`GET`), honouring `Retry-After` (seconds or HTTP date). New `max_retries` (default 3) and `max_retry_wait` (default 60 s) arguments; a longer `Retry-After` raises `RateLimitError` instead of sleeping. Uploaded file objects are rewound before a retry.
 - `AtlassianAPI.request()` accepts `files=`, `headers=` (per request) and `stream=`.
 - Jira: `iter_issues()` (generator over all pages, Server and Cloud), `count_issues()`, `update_issue()`, `get_fields()`, `get_field_id()`, `search_users()`, `add_worklog()`, `get_worklogs()`, `add_attachment()`, `get_attachment()`, `download_attachment()`, `delete_attachment()`.
+- Jira Software (Agile) boards, sprints and epics, on Server/Data Center and Cloud:
+  - Boards: `get_boards()` (filter by project, name and type), `get_board()`, `get_board_sprints()` (filter by state), `get_board_epics()`, `iter_board_issues()`, `iter_backlog_issues()`.
+  - Sprints: `get_sprint()`, `create_sprint()`, `update_sprint()` (partial update; starts and completes sprints), `delete_sprint()`, `iter_sprint_issues()`, `move_issues_to_sprint()`, `move_issues_to_backlog()`.
+  - Epics: `get_epic()`, `iter_epic_issues()`, `move_issues_to_epic()`, `remove_issues_from_epic()`.
+  - The list methods collect every page and take `limit=`; the `iter_*_issues()` generators fetch a page at a time and yield `SimpleNamespace` issues. On Cloud they use `/rest/software/1.0` with `nextPageToken`, because Cloud deprecated the `/rest/agile/1.0` issue lists.
+  - The move methods accept any number of issues and send them 50 per request, the most Jira accepts.
 - Confluence: `iter_search()` (CQL over all pages), `create_or_update_page()`, `download_attachment()`, `export_page_pdf()` (Server/Data Center).
 - Bitbucket: `get_default_branch()`, `get_webhooks()`, `create_webhook()`, `delete_webhook()`, `get_repo_permissions()`, `set_repo_permission()`, `revoke_repo_permission()`, `list_files()`, `compare_commits()`, `compare_changes()`.
 - Downloads can stream to a file (`path=`) instead of loading the whole file into memory. The file is replaced only when the download completes, and a login page served instead of a non-HTML attachment raises `APIError`.
