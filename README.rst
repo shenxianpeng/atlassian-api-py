@@ -49,6 +49,8 @@ handling code.
   (for example a Confluence page has ``spaceId`` instead of ``space.key``).
 * **Installs next to** ``atlassian-python-api``. The import package is
   ``atlassian_api``, so both libraries can live in the same environment.
+  `Coming from atlassian-python-api <https://atlassian-api-py.readthedocs.io/en/latest/migration.html>`_
+  maps its methods to this library's and lists what is missing here.
 * **One runtime dependency** (``requests``) and inline type hints.
 * Bitbucket support targets Bitbucket Server/Data Center.
 

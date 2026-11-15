@@ -11,6 +11,7 @@ Atlassian API for Python
 
    installation
    usage
+   migration
 
 .. toctree::
    :maxdepth: 2
