@@ -118,6 +118,12 @@ What changes on Cloud:
      - ``expand=changelog``
      - all pages of ``/rest/api/2/issue/{key}/changelog`` (``expand`` only
        returns recent updates on Cloud), in the same ``changelog.histories``
+   * - ``Jira.iter_board_issues()``, ``iter_backlog_issues()``,
+       ``iter_sprint_issues()``, ``iter_epic_issues()``
+     - ``/rest/agile/1.0/...``, ``startAt`` paging
+     - ``/rest/software/1.0/...``, ``nextPageToken`` paging (Cloud
+       deprecated the ``/rest/agile/1.0`` issue lists). Boards, sprints and
+       epics themselves stay on ``/rest/agile/1.0``.
    * - Confluence pages, spaces, child pages, comments, labels, attachments
      - REST API v1
      - REST API v2 (``/wiki/api/v2``). Lists keep ``results``/``start``/
@@ -233,6 +239,101 @@ Transition an issue:
        print(transition.id, transition.name)
 
    jira.issue_transition("TEST-1", transition_id="31")
+
+Boards, Sprints and Epics
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Jira Software boards, sprints and epics work on Data Center and Cloud with the
+same calls.
+
+Sprint report: find the board and its active sprint, then group the sprint's
+issues by status.
+
+.. code-block:: python
+
+   from collections import defaultdict
+
+   board = jira.get_boards(project="TEST", board_type="scrum")[0]
+   sprint = jira.get_board_sprints(board.id, state="active")[0]
+
+   by_status = defaultdict(list)
+   for issue in jira.iter_sprint_issues(sprint.id, fields=["summary", "status"]):
+       by_status[issue.fields.status.name].append(issue)
+
+   print(f"{sprint.name}: {sprint.startDate[:10]} to {sprint.endDate[:10]}")
+   for status, issues in by_status.items():
+       print(f"{status} ({len(issues)})")
+       for issue in issues:
+           print(f"  {issue.key}  {issue.fields.summary}")
+
+Move issues into a sprint, here the unfinished work of the active sprint into
+the next one. Any number of issues can be passed; Jira takes 50 per request,
+so they are sent in batches.
+
+.. code-block:: python
+
+   unfinished = [
+       issue.key
+       for issue in jira.iter_sprint_issues(sprint.id, jql="statusCategory != Done")
+   ]
+   next_sprint = jira.get_board_sprints(board.id, state="future")[0]
+   jira.move_issues_to_sprint(next_sprint.id, unfinished)
+
+   jira.move_issues_to_backlog(["TEST-7", "TEST-8"])  # out of their sprint
+
+Create, start and complete a sprint:
+
+.. code-block:: python
+
+   sprint = jira.create_sprint(
+       board.id,
+       "Sprint 13",
+       start_date="2026-11-16T09:00:00.000+0000",
+       end_date="2026-11-27T17:00:00.000+0000",
+       goal="Ship the importer",
+   )
+   jira.update_sprint(sprint["id"], state="active")  # other fields are kept
+   jira.update_sprint(sprint["id"], state="closed")
+
+Epics:
+
+.. code-block:: python
+
+   for epic in jira.get_board_epics(board.id, done=False):
+       print(epic.id, epic.name)
+
+   for issue in jira.iter_epic_issues("TEST-5", fields=["summary"]):
+       print(issue.key, issue.fields.summary)
+
+   jira.move_issues_to_epic("TEST-5", ["TEST-8", "TEST-9"])
+   jira.remove_issues_from_epic(["TEST-9"])
+
+Things to know:
+
+* ``get_boards()``, ``get_board_sprints()`` and ``get_board_epics()`` return
+  every page as one list; pass ``limit=`` to stop early. The ``iter_*_issues()``
+  methods are generators that fetch a page at a time.
+* Issues from ``iter_board_issues()``, ``iter_backlog_issues()``,
+  ``iter_sprint_issues()`` and ``iter_epic_issues()`` are ``SimpleNamespace``
+  objects like the result of ``jira.issue()`` (``issue.fields.status.name``),
+  with the Jira Software fields ``sprint``, ``closedSprints``, ``flagged`` and
+  ``epic``. ``iter_issues()`` yields dictionaries.
+* On Cloud the issue lists come from ``/rest/software/1.0`` and are paged with
+  ``nextPageToken``; Cloud deprecated the ``/rest/agile/1.0`` issue lists. The
+  response has no ``total`` there.
+* The move methods send 50 issues per request. If a request fails, the issues
+  of the earlier requests have already been moved.
+* ``update_sprint()`` is a partial update: fields you do not pass keep their
+  value. A closed sprint cannot be changed on Data Center; on Cloud only its
+  name and goal can. Data Center refuses to delete an active or completed
+  sprint.
+* A board without sprints (a kanban board) answers ``get_board_sprints()``
+  with HTTP 400.
+* Cloud, team-managed projects: ``get_epic()``, ``iter_epic_issues()``,
+  ``move_issues_to_epic()`` and ``remove_issues_from_epic()`` do not work for
+  their epics. Use the parent field instead:
+  ``jira.iter_issues("parent = TEST-5")`` and
+  ``jira.update_issue("TEST-8", fields={"parent": {"key": "TEST-5"}})``.
 
 Bitbucket
 ---------
