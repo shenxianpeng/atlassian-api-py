@@ -136,6 +136,8 @@ class TestSphinxHook:
 
     def test_setup_connects_the_hook(self, ext):
         connected = {}
-        app = SimpleNamespace(connect=lambda event, func: connected.update({event: func}))
+        app = SimpleNamespace(
+            connect=lambda event, func: connected.update({event: func})
+        )
         assert ext.setup(app)["parallel_read_safe"] is True
         assert connected == {"build-finished": ext.write_files}

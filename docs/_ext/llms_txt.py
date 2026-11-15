@@ -61,7 +61,7 @@ NOT_COVERED = """\
 atlassian-python-api covers most of these. Both libraries can be installed in the same environment.
 """
 
-EXAMPLES = '''\
+EXAMPLES = """\
 ```python
 from atlassian_api import Confluence, Jira
 from atlassian_api.error import APIError, NotFoundError
@@ -117,7 +117,7 @@ confluence.create_or_update_page("DOCS", "Nightly report", "<p>All green</p>")
 for page in confluence.get_content_by_space("DOCS", limit=50).results:
     print(page.id, page.title)
 ```
-'''
+"""
 
 
 def public_methods(cls: type) -> list[tuple[str, Any]]:
@@ -251,9 +251,7 @@ def errors_list() -> str:
 
 def llms_txt() -> str:
     """Return the content of ``llms.txt``."""
-    counts = ", ".join(
-        f"{cls.__name__} {len(public_methods(cls))}" for cls in CLIENTS
-    )
+    counts = ", ".join(f"{cls.__name__} {len(public_methods(cls))}" for cls in CLIENTS)
     return f"""\
 # atlassian-api-py
 
