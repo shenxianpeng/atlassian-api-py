@@ -40,9 +40,9 @@ you lose does not.
 
 Stay with ``atlassian-python-api`` when:
 
-* You need anything in `What atlassian-api-py does not have`_: Jira Software
-  boards, sprints and epics, Jira Service Management, filters, Bitbucket Cloud,
-  Bamboo, Crowd, Xray, Assets/Insight and more.
+* You need anything in `What atlassian-api-py does not have`_: Jira Service
+  Management, filters, Bitbucket Cloud, Bamboo, Crowd, Xray, Assets/Insight
+  and more.
 * You authenticate with OAuth 1.0a, Kerberos or cookies and want the client to
   set that up for you.
 * You run Python 3.9. ``atlassian-api-py`` needs Python 3.10 or newer.
@@ -402,6 +402,65 @@ here.
      - The left method asks Jira to delete sub-tasks too
        (``delete_subtasks=True`` by default). The right one does not send
        that parameter.
+   * - ``get_all_agile_boards()``
+     - ``get_boards()``
+     - The left method returns one page as Jira sends it. The right one collects every page into a list; ``limit`` caps the total.
+       ``board_name`` and ``project_key`` on the left are ``name`` and
+       ``project`` on the right.
+   * - ``get_agile_board()``
+     - ``get_board()``
+     -
+   * - ``get_all_sprints_from_board()``, ``get_all_sprint()``
+     - ``get_board_sprints()``
+     - One page on the left, every page as a list on the right. ``state``
+       carries over.
+   * - ``get_epics()``
+     - ``get_board_epics()``
+     - One page on the left, every page as a list on the right. ``done``
+       is ``False`` by default on the left; on the right it is ``None``,
+       which returns finished and unfinished epics.
+   * - ``get_issues_for_board()``
+     - ``iter_board_issues()``
+     - The left method returns one page. The right one yields every issue
+       and has no ``expand`` argument; ``fields`` is a list.
+   * - ``get_issues_for_backlog()``
+     - ``iter_backlog_issues()``
+     - The left method returns the first page only.
+   * - ``get_sprint()``
+     - ``get_sprint()``
+     -
+   * - ``create_sprint()``
+     - ``create_sprint()``
+     - Mind the order: the left method takes ``name`` first, the right one
+       ``board_id`` first.
+   * - ``update_partially_sprint()``
+     - ``update_sprint()``
+     - The left method takes the request body as ``data``. The right one
+       takes ``name``, ``state``, ``start_date``, ``end_date`` and ``goal``
+       as keyword arguments.
+   * - ``rename_sprint()``
+     - ``update_sprint()``
+     - The left method replaces the sprint (``PUT``); the right one changes
+       only the fields you pass.
+   * - ``delete_sprint()``
+     - ``delete_sprint()``
+     -
+   * - ``get_sprint_issues()``
+     - ``iter_sprint_issues()``
+     - The left method returns the page selected by ``start`` and
+       ``limit``. The right one yields every issue, and on Cloud it uses
+       the ``/rest/software/1.0`` endpoint that replaces the deprecated one.
+   * - ``get_issues_for_epic()``
+     - ``iter_epic_issues()``
+     - The left method is scoped to a board (``board_id``) and returns one
+       page. The right one takes the epic only and yields every issue.
+   * - ``add_issues_to_sprint()``
+     - ``move_issues_to_sprint()``
+     - The right method sends the issues 50 per request, the most Jira
+       accepts in one call.
+   * - ``add_issues_to_backlog()``, ``move_issues_to_backlog()``
+     - ``move_issues_to_backlog()``
+     - As above, 50 issues per request on the right.
 
 Confluence
 ~~~~~~~~~~
@@ -847,8 +906,9 @@ What atlassian-api-py does not have
 If one of these matters to you, stay with ``atlassian-python-api`` or use both
 libraries side by side.
 
-* **Jira:** no Jira Software (Agile) API: boards, sprints, epics and
-  backlogs. No Jira Service Management. No filters, dashboards, groups,
+* **Jira:** no Jira Service Management. Of Jira Software, boards, sprints
+  and epics can be read and issues moved, but there is no board creation or
+  configuration, velocity or ranking. No filters, dashboards, groups,
   permissions, issue properties or remote links, and no project or user
   administration.
 * **Confluence:** no space creation, deletion or permissions, no templates,
