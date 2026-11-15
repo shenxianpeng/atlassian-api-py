@@ -1,5 +1,5 @@
 import pytest
-from atlassian_api.error import APIError
+from atlassian_api.error import _ERROR_CODE_MESSAGE, APIError
 
 
 class TestAPIError:
@@ -43,3 +43,13 @@ class TestAPIError:
 
         error_500 = APIError(code=500)
         assert error_500.message == "Internal Server Error"
+
+    @pytest.mark.parametrize("code, expected", _ERROR_CODE_MESSAGE.items())
+    def test_api_error_default_message(self, code, expected):
+        error = APIError(code=code)
+        assert error.message == expected
+        assert str(error) == f"Error [{code}] : {expected}"
+
+    def test_every_code_has_a_message(self):
+        assert len(_ERROR_CODE_MESSAGE) > 40
+        assert all(message for message in _ERROR_CODE_MESSAGE.values())
