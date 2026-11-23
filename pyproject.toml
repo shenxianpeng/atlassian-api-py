@@ -4,9 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "atlassian-api-py"
-description = "Python Wrapper for Atlassian REST API"
+description = "Python client for Jira, Confluence and Bitbucket: one script for Data Center and Cloud, installs next to atlassian-python-api"
 readme = "README.rst"
-keywords = ["atlassian", "jira", "bitbucket", "confluence", "rest", "api"]
+keywords = [
+    "atlassian", "jira", "bitbucket", "confluence", "rest", "api",
+    "jira-cloud", "confluence-cloud", "atlassian-cloud", "data-center", "sprint",
+]
 license = {text = "MIT License"}
 authors = [
     {name = "Xianpeng Shen"},
@@ -40,6 +43,8 @@ classifiers = [
 ]
 
 [project.urls]
+documentation = "https://atlassian-api-py.readthedocs.io/"
+changelog = "https://github.com/shenxianpeng/atlassian-api-py/blob/main/CHANGELOG.md"
 source =  "https://github.com/shenxianpeng/atlassian-api-py"
 tracker = "https://github.com/shenxianpeng/atlassian-api-py/issues"
 download = "https://pypi.org/project/atlassian-api-py/#files"

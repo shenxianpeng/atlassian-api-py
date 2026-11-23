@@ -1,5 +1,5 @@
-Atlassian API for Python
-========================
+atlassian-api-py
+================
 
 .. include:: ../README.rst
    :start-after: start-overview
@@ -11,6 +11,7 @@ Atlassian API for Python
 
    installation
    usage
+   migration
 
 .. toctree::
    :maxdepth: 2
